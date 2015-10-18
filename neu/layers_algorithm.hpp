@@ -11,10 +11,10 @@ namespace neu {
 		auto i = 0u;
 		boost::timer timer;
 		for(auto first = begin(layers); first != end(layers); ++first) {
-			std::cout << i << "------" << std::endl;
+			std::cout << "forward layer " << i << "------" << std::endl;
 			timer.restart();
 			first->forward(input);
-			std::cout << timer.elapsed() << std::endl;
+			std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
 			input = first->get_next_input();
 			++i;
 		}
@@ -27,9 +27,9 @@ namespace neu {
 		boost::timer timer;
 		for(auto first = rbegin(layers); first != rend(layers); ++first) {
 			timer.restart();
-			std::cout << i << "------" << std::endl;
+			std::cout << "backward layer " << i << "------" << std::endl;
 			first->backward(delta);
-			std::cout << timer.elapsed() << std::endl;
+			std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
 			delta = first->get_prev_delta();
 			--i;
 		}

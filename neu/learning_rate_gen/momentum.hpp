@@ -15,9 +15,8 @@ namespace neu {
 	template<typename LearningRateGen>
 	class momentum {
 	public:
-		explicit momentum(scalar rate, LearningRateGen const& learning_rate_gen_) :
-			kernel_(make_kernel(momentum_kernel_source,"momentum")),
-			rate_(rate), learning_rate_gen_(learning_rate_gen) {}
+		explicit momentum(scalar rate, LearningRateGen const& lrg)
+			: kernel_(make_kernel(momentum_kernel_source,"momentum")), rate_(rate), lrg_(lrg) {}
 		decltype(auto) operator()(gpu_vector& weight, gpu_vector& bias,
 				gpu_vector const& delta_weight, gpu_vector const& delta_bias) {
 			learning_rate_gen_(weight, bias, delta_weight, delta_bias);

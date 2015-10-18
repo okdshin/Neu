@@ -16,6 +16,7 @@ namespace neu {
 			neu::gpu_vector result(x.size());
 			boost::compute::transform(x.begin(), x.end(),
 				result.begin(), neu::rectifier_kernel);
+			boost::compute::system::default_queue().finish();
 			return result;
 		}
 	};
@@ -26,6 +27,7 @@ namespace neu {
 			neu::gpu_vector result(x.size());
 			boost::compute::transform(x.begin(), x.end(),
 				result.begin(), neu::diff_rectifier_kernel);
+			boost::compute::system::default_queue().finish();
 			return result;
 		}
 	};

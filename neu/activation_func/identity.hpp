@@ -16,6 +16,7 @@ namespace neu {
 	public:
 		decltype(auto) operator()(neu::gpu_vector x) const {
 			boost::compute::fill(x.begin(), x.end(), 1.);
+			boost::compute::system::default_queue().finish();
 			return x;
 		}
 	};

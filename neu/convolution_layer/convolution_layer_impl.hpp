@@ -20,7 +20,7 @@ namespace neu {
 			convolution_indices const& indices,
 			kernel const& convolution_kernel,
 			kernel const& convolution_back_kernel,
-			kernel const& update_delta_filters_kernel)
+			kernel const& update_del_filters_kernel)
 		: input_width_(input_width), filter_width_(filter_width),
 		input_channel_num_(input_channel_num), output_channel_num_(output_channel_num),
 		stride_(stride), batch_size_(batch_size),
@@ -29,19 +29,20 @@ namespace neu {
 		learning_rate_gen_(learning_rate_gen),
 		convolution_kernel_(convolution_kernel),
 		convolution_back_kernel_(convolution_back_kernel),
-		update_delta_filters_kernel_(update_delta_filters_kernel),
+		update_del_filters_kernel_(update_del_filters_kernel),
 		output_width_(output_width),
 		input_(input_width_*input_width_*input_channel_num_*batch_size_),
 		next_input_(output_width_*output_width_*output_channel_num_*batch_size_),
 		delta_(next_input_.size()),
 		prev_delta_(input_.size()),
-		delta_filters_(filters_.size()),
-		delta_bias_(bias_.size()) {}
+		del_filters_(filters.size()),
+		del_bias_(bias.size()) {}
 
 		decltype(auto) get_filters() const { return (filters_); }
+		decltype(auto) get_bias() const { return (bias_); }
 
 		decltype(auto) forward(gpu_vector const& input) {
-			Expects(all_of_finite(input));
+			Expects(is_all_of_finite(input));
 			auto input_copy_future = boost::compute::
 				copy_async(input.begin(), input.end(), input_.begin());
 			neu::execute_nd_range_kernel<2>(convolution_kernel_,
@@ -53,19 +54,32 @@ namespace neu {
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
-				input, next_input_, filters_);
+				input, next_input_, filters_, bias_);
 			input_copy_future.wait();
-			/*
-			std::cout << input[0] << " " << input[1] << std::endl;
-			std::cout << filters_[0] << " " << filters_[1] << std::endl;
-			std::cout << next_input_[0] << " " << next_input_[1] << std::endl;
-			*/
-			Ensures(all_of_finite(next_input_));
+			std::cout << "input[0]: " << input[0] << " input[1]: " << input[1] << std::endl;
+			std::cout << "filters[0]: " << filters_[0] << " filters[1]: " << filters_[1] << std::endl;
+			std::cout << "bias[0]: " << bias_[0] << " filters[1]: " << bias_[1] << std::endl;
+			std::cout << "next_input[0]: " << next_input_[0] << " next_input[1]: " << next_input_[1] << std::endl;
+			if(!is_all_of_finite(next_input_)) {
+				std::cout << "input max element: " << *boost::compute::max_element(input.begin(), input.end()) << std::endl;
+				std::cout << "filter max element: " << *boost::compute::max_element(filters_.begin(), filters_.end()) << std::endl;
+				std::cout << "bias max element: " << *boost::compute::max_element(bias_.begin(), bias_.end()) << std::endl;
+				std::cout << "next_input max element: " << *boost::compute::max_element(next_input_.begin(), next_input_.end()) << std::endl;
+				std::ofstream inputf("conv_input.txt");
+				std::ofstream filtersf("conv_filters.txt");
+				std::ofstream biasf("conv_bias.txt");
+				std::ofstream next_inputf("conv_next_input.txt");
+				print(inputf, input, input_width_*input_width_*input_channel_num_);
+				print(filtersf, filters_, filter_width_*filter_width_*input_channel_num_);
+				print(biasf, bias_, filter_width_*filter_width_);
+				print(next_inputf, next_input_, output_width_*output_width_*output_channel_num_);
+			}
+			Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			Expects(all_of_finite(delta));
+			Expects(is_all_of_finite(delta));
 			auto delta_copy_future = boost::compute::
 				copy_async(delta.begin(), delta.end(), delta_.begin());
 			neu::execute_nd_range_kernel<2>(convolution_back_kernel_,
@@ -79,14 +93,12 @@ namespace neu {
 				static_cast<int>(output_channel_num_),
 				prev_delta_, delta, filters_);
 			delta_copy_future.wait();
-			Ensures(all_of_finite(prev_delta_));
-			Ensures(all_of_finite(delta_filters_));
+			Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
 		decltype(auto) update() {
-			Expects(all_of_finite(delta_filters_));
-			neu::execute_nd_range_kernel<2>(update_delta_filters_kernel_,
+			neu::execute_nd_range_kernel<2>(update_del_filters_kernel_,
 				{0, 0}, {filter_width_*filter_width_, output_channel_num_},
 				indices_.indices_range_list_for_filter,
 				indices_.input_indices_list_for_filter,
@@ -95,11 +107,15 @@ namespace neu {
 				static_cast<int>(filter_width_), static_cast<int>(batch_size_),
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
-				input_, delta_, delta_filters_);
-			learning_rate_gen_(filters_, bias_, delta_filters_, delta_bias_);
-			Ensures(all_of_finite(filters_));
+				input_, delta_, del_filters_, del_bias_);
+			Ensures(is_all_of_finite(del_filters_));
+			Ensures(is_all_of_finite(del_bias_));
+			learning_rate_gen_(filters_, bias_, del_filters_, del_bias_);
+			Ensures(is_all_of_finite(filters_));
+			Ensures(is_all_of_finite(bias_));
 		}
-		decltype(auto) get_delta_filters() const { return (delta_filters_); }
+		decltype(auto) get_del_filters() const { return (del_filters_); }
+		decltype(auto) get_del_bias() const { return (del_bias_); }
 
 	private:
 		std::size_t input_width_;
@@ -118,7 +134,7 @@ namespace neu {
 
 		boost::compute::kernel convolution_kernel_;
 		boost::compute::kernel convolution_back_kernel_;
-		boost::compute::kernel update_delta_filters_kernel_;
+		boost::compute::kernel update_del_filters_kernel_;
 
 		std::size_t output_width_;
 
@@ -127,8 +143,8 @@ namespace neu {
 		gpu_vector delta_;
 		gpu_vector prev_delta_;
 
-		gpu_vector delta_filters_;
-		gpu_vector delta_bias_;
+		gpu_vector del_filters_;
+		gpu_vector del_bias_;
 	};
 }// namespace neu
 

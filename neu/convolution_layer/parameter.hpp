@@ -20,6 +20,12 @@ namespace neu {
 		decltype(auto) output_dim() const {
 			return output_width()*output_width()*output_channel_num();
 		}
+		decltype(auto) weight_dim() const {
+			return filter_width()*filter_width()*input_channel_num()*output_channel_num();
+		}
+		decltype(auto) bias_dim() const {
+			return filter_width()*filter_width()*output_channel_num();
+		}
 	};
 	template<typename Param>
 	decltype(auto) make_convolution_layer_parameter(Param const& param) {
@@ -43,20 +49,16 @@ namespace neu {
 			filters, bias,
 			learning_rate_gen);
 	}
-	template<typename RandomNumberGenerator, typename LearningRateGen>
+	template<typename WeightGen, typename BiasGen, typename LearningRateGen>
 	decltype(auto) make_convolution_layer(
 		convolution_layer_parameter const& param,
-		RandomNumberGenerator const& g,
+		WeightGen const& wg, BiasGen const& bg,
 		LearningRateGen const& learning_rate_gen
 	){
 		return make_convolution_layer(
 			param,
-			neu::make_random_gpu_vector(
-				param.filter_width()*param.filter_width()*
-				param.input_channel_num()*param.output_channel_num(), g),
-			neu::make_random_gpu_vector(
-				param.filter_width()*param.filter_width()*
-				param.output_channel_num(), g),
+			neu::make_random_gpu_vector(param.weight_dim(), wg),
+			neu::make_random_gpu_vector(param.bias_dim(), bg),
 			learning_rate_gen);
 	}
 }// namespace neu

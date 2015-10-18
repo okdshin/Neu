@@ -24,7 +24,6 @@ namespace neu {
 				ifs.read(&label_id, 1);
 				std::vector<char> input_byte(input_dim);
 				ifs.read(input_byte.data(), input_dim);
-				std::reverse(input_byte.begin(), input_byte.end());
 				std::vector<scalar> input(input_dim);
 				std::transform(input_byte.begin(), input_byte.end(), input.begin(),
 					[](auto e){

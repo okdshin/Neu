@@ -59,7 +59,7 @@ namespace neu {
 			gpu_indices_(next_input_.size()) {}
 
 		decltype(auto) forward(gpu_vector const& input) {
-			Expects(all_of_finite(input));
+			Expects(is_all_of_finite(input));
 			execute_nd_range_kernel<3>(pooling_kernel_,
 				{0, 0, 0}, {output_width_, output_width_, batch_size_},
 				input, next_input_, gpu_indices_,
@@ -67,12 +67,12 @@ namespace neu {
 				static_cast<int>(input_width_), static_cast<int>(output_width_),
 				static_cast<int>(filter_width_));
 			indices_ = to_cpu_indices(gpu_indices_);
-			Ensures(all_of_finite(next_input_));
+			Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			Expects(all_of_finite(delta));
+			Expects(is_all_of_finite(delta));
 			cpu_vector cpu_prev_delta(
 				input_width_*input_width_*input_channel_num_*batch_size_, 0);
 			auto cpu_delta = to_cpu_vector(delta);
@@ -82,7 +82,7 @@ namespace neu {
 				cpu_prev_delta[indices_[i]] += cpu_delta[i];
 			}
 			prev_delta_ = to_gpu_vector(cpu_prev_delta);
-			Ensures(all_of_finite(prev_delta_));
+			Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 

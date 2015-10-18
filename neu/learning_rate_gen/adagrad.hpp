@@ -26,10 +26,12 @@ namespace neu {
 				gpu_vector const& delta_weight, gpu_vector const& delta_bias) {
 			assert(weight_r_.size() == delta_weight.size());
 			assert(bias_r_.size() == delta_bias.size());
-			auto weight_event = async_execute_nd_range_kernel<1>(kernel_, {0}, {weight.size()},
-				weight, delta_weight, weight_r_, rate_);
-			auto bias_event = async_execute_nd_range_kernel<1>(kernel_, {0}, {bias.size()},
-				bias, delta_bias, bias_r_, rate_);
+			auto weight_event =
+				async_execute_nd_range_kernel<1>(kernel_, {0}, {weight.size()},
+					weight, delta_weight, weight_r_, rate_);
+			auto bias_event =
+				async_execute_nd_range_kernel<1>(kernel_, {0}, {bias.size()},
+					bias, delta_bias, bias_r_, rate_);
 			weight_event.wait();
 			bias_event.wait();
 		}
