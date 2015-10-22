@@ -1,0 +1,17 @@
+- integrate the caliculation of output_width from input_width, stride and pad
+- error functions
+- output layer state
+- zca whitening
+- float4 convolution
+- float4 matrix multiply
+- local memory
+- weight regularization
+- the fewer bias part in convolution_layer
+- avoid the calculation of delta of top layer
+DONE
+- change the keyword "differential" to "derivative"
+- weight decay
+- the bias part in convolution_layer
+- implement factory function of layer parameter
+- softmax
+- layer input output weight bias validation by std::isfinite

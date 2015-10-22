@@ -1,0 +1,138 @@
+train_config:
+    type: weight_decay_and_momentum
+        base_learning_rate: 0.001
+        momentum: 0.9
+        weight_decay: 0.004
+layers:
+    -
+        name: "cifar10"
+        layer: cifar10_like_data
+        params:
+            filepath: "../../../data/cifar10"
+            label_num: 10
+            data_num_per_label: 10
+            input_width: 32
+            input_channel_num: 3
+    -
+        name: "conv1"
+        layer: convolution
+        params:
+            output_channel_num: 32
+            filter_width: 5
+            pad: 2
+            stride: 1
+        initialization:
+            weight:
+                type: gaussian
+                    mean: 0
+                    std: 0.0001
+            bias:
+                type: constant
+                    value: 0
+        learning_rate:
+        weight: 1
+        bias: 2
+    -
+        name: "pool1"
+        layer: max_pooling
+        params:
+            filter_width: 3
+            pad: 1
+            stride: 2
+    -
+        name: "relu1"
+        layer: activation
+        params:
+            function: relu
+    -
+        name: "conv2"
+        layer: convolution
+        params:
+            output_channel_num: 32
+            filter_width: 5
+            pad: 2
+            stride: 1
+        initialization:
+            weight:
+                type: gaussian
+                    mean: 0
+                    std: 0.01
+            bias:
+                type: constant
+                value: 0
+        learning_rate:
+            weight: 1
+            bias: 2
+    -
+        name: "relu2"
+        layer: activation
+        params:
+            function: relu
+    -
+        name: "pool2"
+        layer: average_pooling
+        params:
+            filter_width: 3
+            pad: 1
+            stride: 2
+    -
+        name: "conv3"
+        layer: convolution
+        params:
+            output_channel_num: 64
+            filter_width: 5
+            pad: 2
+            stride: 1
+        initialization:
+            weight:
+                type: gaussian
+                    mean: 0
+                    std: 0.01
+            bias:
+                type: constant
+                value: 0
+        learning_rate:
+            weight: 1
+            bias: 2
+    -
+        name: "relu3"
+        layer: activation
+        params:
+            function: relu
+    -
+        name: "pool3"
+        layer: average_pooling
+        params:
+            filter_width: 3
+            pad: 1
+            stride: 2
+    -
+        name: "fc1"
+        layer: fully_connected
+        params:
+            output_dim: 64
+        initialization:
+            weight:
+                type: gaussian
+                    mean: 0
+                    std: 0.01
+            bias:
+                type: constant
+                    value: 0
+        learning_rate:
+            weight: 1
+            bias: 2
+
+    - name: "fc2"
+        layer: fully_connected
+        initialization:
+            weight:
+                type: gaussian
+                    mean: 0
+                    std: 0.01
+            bias:
+                type: constant
+                    value: 0
+        learning_rate:
+            weight: 1
+            bias: 2
