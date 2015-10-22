@@ -1,90 +1,49 @@
-#ifndef NEU_FULLY_CONNECTED_LAYER_HPP
-#define NEU_FULLY_CONNECTED_LAYER_HPP
+#ifndef NEU_SOFTMAX_WITH_LOSS_FUNCTION_LAYER_HPP
+#define NEU_SOFTMAX_WITH_LOSS_FUNCTION_LAYER_HPP
 //20150901
 #include <gsl.h>
 #include <neu/basic_type.hpp>
 #include <neu/kernel.hpp>
 #include <neu/layer_parameter.hpp>
 namespace neu {
-	const char multiply_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
-		__kernel void multiply(
-			const __global float* input, __global float* output,
-			const __global float* weight, const __global float* bias,
-			const int input_dim, const int output_dim)
+	const char softmax_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+		__kernel void softmax(
+			__global float* input, __global float* output,
+			const int input_dim)
 		{
-			const int b = get_global_id(1);
-			const int o = get_global_id(0);
-
-			float sum = bias[o];
+			const int b = get_global_id(0);
+			float m = input[0+b*input_dim];
 			for(int i = 0; i < input_dim; ++i) {
-				sum += weight[i+input_dim*o]*input[i+input_dim*b];
+				if(m < input[i+b*input_dim]) {
+					m = input[i+b*input_dim];
+				}
 			}
-			output[o+output_dim*b] = sum;
-		}
-	);
-	const char multiply_back_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
-		__kernel void multiply_back(
-			__global float* input, const __global float* output,
-			const __global float* weight,
-			const int input_dim, const int output_dim)
-		{
-			const int b = get_global_id(1);
-			const int i = get_global_id(0);
+			for(int i = 0; i < input_dim; ++i) {
+				input[i+b*input_dim] -= m;
+			}
 
-			float sum = 0.0;
-			for(int o = 0; o < output_dim; ++o) {
-				sum += weight[i+input_dim*o]*output[o+output_dim*b];
+			float sum = 0.f;
+			for(int i = 0; i < input_dim; ++i) {
+				sum += exp(input[i+b*input_dim]);
 			}
-			input[i+input_dim*b] = sum;
+			const float log_sum = log(sum);
+			for(int i = 0; i < input_dim; ++i) {
+				output[i+b*input_dim] = exp(input[i+b*input_dim]-log_sum);
+				//output[i+b*input_dim] = exp(input[i+b*input_dim])/sum;
+				
+			}
 		}
 	);
-	const char calc_del_weight_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
-		__kernel void calc_del_weight(
-			const __global float* input, const __global float* delta,
-			__global float* del_weight, __global float* del_bias,
-			const int input_dim, const int output_dim, const int batch_size)
-		{
-			const int gr = get_global_id(1);
-			const int gc = get_global_id(0);
-
-			float weight_sum = 0.0;
-			float bias_sum = 0.0;
-			for(int b = 0; b < batch_size; ++b) {
-				weight_sum += delta[gr+output_dim*b]*input[gc+input_dim*b];
-				bias_sum += delta[gr+output_dim*b];
-			}
-			del_weight[gc+input_dim*gr] = weight_sum/batch_size;
-			del_bias[gr] = bias_sum/batch_size;
-		}
-	);
-	/*
-	struct fully_connected_layer_parameter {
-		std::size_t input_dim;
-		std::size_t output_dim;
-		std::size_t batch_size;
-		gpu_vector weight;
-		gpu_vector bias;
-	};
-	*/
 	template<typename LearningRateGen>
-	class fully_connected_layer {
+	class softmax_with_loss_function_layer {
 	public:
-		fully_connected_layer(
+		softmax_with_loss_function_layer(
 			std::size_t input_dim, std::size_t output_dim, std::size_t batch_size,
-			gpu_vector const& weight, gpu_vector const& bias,
-			LearningRateGen const& learning_rate_gen,
-			kernel const& multiply_kernel,
-			kernel const& multiply_back_kernel,
-			kernel const& calc_del_weight_kernel) 
+			kernel const& softmax_kernel)
 		: input_dim_(input_dim), output_dim_(output_dim), batch_size_(batch_size),
-		weight_(weight), bias_(bias), learning_rate_gen_(learning_rate_gen),
-		multiply_kernel_(multiply_kernel),
-		multiply_back_kernel_(multiply_back_kernel),
-		calc_del_weight_kernel_(calc_del_weight_kernel),
+		multiply_kernel_(softmax_kernel),
 		input_(input_dim*batch_size), next_input_(output_dim*batch_size),
-		delta_(output_dim*batch_size),
-		prev_delta_(input_dim*batch_size),
-		del_weight_(weight.size()), del_bias_(bias.size()) {
+		prev_delta_(input_dim*batch_size) {
 			if(weight.size() != input_dim*output_dim || bias.size() != output_dim) {
 				throw std::invalid_argument(
 					"the size of weight and/or bias are not correct.");
@@ -142,7 +101,7 @@ namespace neu {
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
-		decltype(auto) update() {
+		decltype(auto) update() { //TODO async
 			execute_nd_range_kernel<2>(calc_del_weight_kernel_,
 				{0, 0}, {input_dim_, output_dim_},
 				input_, delta_, del_weight_, del_bias_,
@@ -167,7 +126,7 @@ namespace neu {
 		gpu_vector del_weight_, del_bias_;
 	};
 	template<typename LearningRateGen>
-	decltype(auto) make_fully_connected_layer(
+	decltype(auto) make_softmax_with_loss_function_layer(
 			std::size_t input_dim, std::size_t output_dim, std::size_t batch_size,
 			gpu_vector const& weight, gpu_vector const& bias,
 			LearningRateGen const& learning_rate_gen) {
@@ -177,12 +136,12 @@ namespace neu {
 			= make_kernel(multiply_back_kernel_source, "multiply_back");
 		auto calc_del_weight_kernel
 			= make_kernel(calc_del_weight_kernel_source, "calc_del_weight");
-		return fully_connected_layer<LearningRateGen>(
+		return softmax_with_loss_function_layer<LearningRateGen>(
 			input_dim, output_dim, batch_size, weight, bias, learning_rate_gen,
 			multiply_kernel, multiply_back_kernel, calc_del_weight_kernel);
 	}
 
-	class fully_connected_layer_parameter {
+	class softmax_with_loss_function_layer_parameter {
 		NEU_PP_PARAMETER(input_dim)
 		NEU_PP_PARAMETER(output_dim)
 		NEU_PP_PARAMETER(batch_size)
@@ -195,33 +154,32 @@ namespace neu {
 		}
 	};
 	template<typename Param>
-	decltype(auto) make_fully_connected_layer_parameter(Param const& param) {
-		fully_connected_layer_parameter p;
+	decltype(auto) make_softmax_with_loss_function_layer_parameter(Param const& param) {
+		softmax_with_loss_function_layer_parameter p;
 		p.input_dim(param.output_dim());
 		p.batch_size(param.batch_size());
 		return p;
 	}
 	template<typename LearningRateGen>
-	decltype(auto) make_fully_connected_layer(
-			fully_connected_layer_parameter const& param,
+	decltype(auto) make_softmax_with_loss_function_layer(
+			softmax_with_loss_function_layer_parameter const& param,
 			gpu_vector const& weight, gpu_vector const& bias,
 			LearningRateGen const& learning_rate_gen) {
-		return make_fully_connected_layer(
+		return make_softmax_with_loss_function_layer(
 			param.input_dim(), param.output_dim(), param.batch_size(),
 			weight, bias, learning_rate_gen);
 	}
 	template<typename WeightGen, typename BiasGen, typename LearningRateGen>
-	decltype(auto) make_fully_connected_layer(
-			fully_connected_layer_parameter const& param,
+	decltype(auto) make_softmax_with_loss_function_layer(
+			softmax_with_loss_function_layer_parameter const& param,
 			WeightGen const& wg, BiasGen const& bg,
 			LearningRateGen const& learning_rate_gen) {
-		return make_fully_connected_layer(
+		return make_softmax_with_loss_function_layer(
 			param,
 			neu::make_random_gpu_vector(param.weight_dim(), wg),
 			neu::make_random_gpu_vector(param.bias_dim(), bg),
 			learning_rate_gen);
 	}
-
 }// namespace neu
 
-#endif //NEU_FULLY_CONNECTED_LAYER_HPP
+#endif //NEU_SOFTMAX_WITH_LOSS_FUNCTION_LAYER_HPP

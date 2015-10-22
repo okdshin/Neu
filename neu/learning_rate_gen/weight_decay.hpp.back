@@ -1,0 +1,36 @@
+#ifndef NEU_WEIGHT_DECAY_HPP
+#define NEU_WEIGHT_DECAY_HPP
+//20150830
+#include <neu/basic_type.hpp>
+#include <neu/kernel.hpp>
+namespace neu {
+	const char weight_decay_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+		__kernel void weight_decay(
+			__global float* weight, const __global float* delta_weight,
+			const float lr, const float dr)
+		{
+			const int o = get_global_id(0);
+			weight[o] -= (lr*delta_weight[o]+dr*weight[o]);
+		}
+	);
+	class weight_decay {
+	public:
+		explicit weight_decay(scalar lr, scalar dr) :
+			kernel_(make_kernel(weight_decay_kernel_source, "weight_decay")),
+			lr_(lr), dr_(dr) {}
+		decltype(auto) operator()(gpu_vector& weight, gpu_vector& bias,
+				gpu_vector const& delta_weight, gpu_vector const& delta_bias) {
+			auto weight_event = async_execute_nd_range_kernel<1>(
+				kernel_, {0}, {weight.size()}, weight, delta_weight, lr_, dr_);
+			auto bias_event = async_execute_nd_range_kernel<1>(
+				kernel_, {0}, {bias.size()}, bias, delta_bias, lr_, 0.f);
+			weight_event.wait();
+			bias_event.wait();
+		}
+	private:
+		boost::compute::kernel kernel_;
+		scalar lr_, dr_;
+	};
+}// namespace neu
+
+#endif //NEU_WEIGHT_DECAY_HPP

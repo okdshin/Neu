@@ -14,7 +14,7 @@ namespace neu {
 			std::size_t input_width, std::size_t output_width,
 			std::size_t filter_width,
 			std::size_t input_channel_num, std::size_t output_channel_num,
-			std::size_t stride, std::size_t batch_size,
+			std::size_t stride, std::size_t pad, std::size_t batch_size,
 			gpu_vector const& filters, gpu_vector const& bias,
 			LearningRateGen const& learning_rate_gen,
 			convolution_indices const& indices,
@@ -23,7 +23,7 @@ namespace neu {
 			kernel const& update_del_filters_kernel)
 		: input_width_(input_width), filter_width_(filter_width),
 		input_channel_num_(input_channel_num), output_channel_num_(output_channel_num),
-		stride_(stride), batch_size_(batch_size),
+		stride_(stride), pad_(pad), batch_size_(batch_size),
 		indices_(indices),
 		filters_(filters), bias_(bias),
 		learning_rate_gen_(learning_rate_gen),
@@ -45,6 +45,15 @@ namespace neu {
 			Expects(is_all_of_finite(input));
 			auto input_copy_future = boost::compute::
 				copy_async(input.begin(), input.end(), input_.begin());
+			neu::execute_nd_range_kernel<3>(convolution_kernel_,
+				{0, 0, 0}, {output_width_, output_width_, batch_size_},
+				static_cast<int>(input_width_), static_cast<int>(output_width_),
+				static_cast<int>(filter_width_),
+				static_cast<int>(input_channel_num_),
+				static_cast<int>(output_channel_num_),
+				static_cast<int>(stride_), static_cast<int>(pad_),
+				input, next_input_, filters_, bias_);
+			/* // by indices version
 			neu::execute_nd_range_kernel<2>(convolution_kernel_,
 				{0, 0}, {output_width_*output_width_, batch_size_},
 				indices_.indices_range_list_for_output,
@@ -55,25 +64,8 @@ namespace neu {
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
 				input, next_input_, filters_, bias_);
+			*/
 			input_copy_future.wait();
-			std::cout << "input[0]: " << input[0] << " input[1]: " << input[1] << std::endl;
-			std::cout << "filters[0]: " << filters_[0] << " filters[1]: " << filters_[1] << std::endl;
-			std::cout << "bias[0]: " << bias_[0] << " filters[1]: " << bias_[1] << std::endl;
-			std::cout << "next_input[0]: " << next_input_[0] << " next_input[1]: " << next_input_[1] << std::endl;
-			if(!is_all_of_finite(next_input_)) {
-				std::cout << "input max element: " << *boost::compute::max_element(input.begin(), input.end()) << std::endl;
-				std::cout << "filter max element: " << *boost::compute::max_element(filters_.begin(), filters_.end()) << std::endl;
-				std::cout << "bias max element: " << *boost::compute::max_element(bias_.begin(), bias_.end()) << std::endl;
-				std::cout << "next_input max element: " << *boost::compute::max_element(next_input_.begin(), next_input_.end()) << std::endl;
-				std::ofstream inputf("conv_input.txt");
-				std::ofstream filtersf("conv_filters.txt");
-				std::ofstream biasf("conv_bias.txt");
-				std::ofstream next_inputf("conv_next_input.txt");
-				print(inputf, input, input_width_*input_width_*input_channel_num_);
-				print(filtersf, filters_, filter_width_*filter_width_*input_channel_num_);
-				print(biasf, bias_, filter_width_*filter_width_);
-				print(next_inputf, next_input_, output_width_*output_width_*output_channel_num_);
-			}
 			Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
@@ -98,6 +90,16 @@ namespace neu {
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
 		decltype(auto) update() {
+			neu::async_execute_nd_range_kernel<3>(update_del_filters_kernel_,
+				{0, 0, 0}, {filter_width_, filter_width_, output_channel_num_},
+				static_cast<int>(input_width_), static_cast<int>(output_width_),
+				static_cast<int>(filter_width_),
+				static_cast<int>(input_channel_num_),
+				static_cast<int>(output_channel_num_),
+				static_cast<int>(stride_), static_cast<int>(pad_),
+				static_cast<int>(batch_size_),
+				input_, delta_, del_filters_, del_bias_);
+			/* by indices version
 			neu::execute_nd_range_kernel<2>(update_del_filters_kernel_,
 				{0, 0}, {filter_width_*filter_width_, output_channel_num_},
 				indices_.indices_range_list_for_filter,
@@ -108,11 +110,16 @@ namespace neu {
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
 				input_, delta_, del_filters_, del_bias_);
+			*/
 			Ensures(is_all_of_finite(del_filters_));
 			Ensures(is_all_of_finite(del_bias_));
 			learning_rate_gen_(filters_, bias_, del_filters_, del_bias_);
 			Ensures(is_all_of_finite(filters_));
 			Ensures(is_all_of_finite(bias_));
+		}
+
+		decltype(auto) print(std::ostream& os) {
+			fmt::format("{{name: \"conv\", layer: convolution, params: {{}}}}");
 		}
 		decltype(auto) get_del_filters() const { return (del_filters_); }
 		decltype(auto) get_del_bias() const { return (del_bias_); }
@@ -123,6 +130,7 @@ namespace neu {
 		std::size_t input_channel_num_;
 		std::size_t output_channel_num_;
 		std::size_t stride_;
+		std::size_t pad_;
 		std::size_t batch_size_;
 
 		convolution_indices indices_;

@@ -12,17 +12,18 @@ decltype(auto) load_rgb_image_as_3ch_image_vector(std::string const& filename) {
 	}
 	image.convertTo32Bits();
 	std::vector<neu::scalar> cpu_vec(3*image.getHeight()*image.getWidth());
-	// coordinate system of freeimage is upside down.
-	for(auto y = static_cast<int>(image.getHeight())-1; y >= 0; --y) {
+	for(auto y = 0u; y < image.getHeight(); ++y) {
 		BYTE* row = image.getScanLine(y);
 		for(auto x = 0u; x < image.getWidth(); ++x) {
 			assert(y*image.getWidth()+x < cpu_vec.size());
 			assert(image.getHeight()*image.getWidth()+y*image.getWidth()+x < cpu_vec.size());
 			assert(2*image.getHeight()*image.getWidth()+y*image.getWidth()+x < cpu_vec.size());
-			cpu_vec[y*image.getWidth()+x] = *(row+4*x)/255.0;
-			cpu_vec[image.getHeight()*image.getWidth()+y*image.getWidth()+x] =
+			// coordinate system of freeimage is upside down.
+			auto oy = (static_cast<int>(image.getHeight())-1) - y;
+			cpu_vec[oy*image.getWidth()+x] = *(row+4*x)/255.0;
+			cpu_vec[image.getHeight()*image.getWidth()+oy*image.getWidth()+x] =
 				*(row+4*x+1)/255.0;
-			cpu_vec[2*image.getHeight()*image.getWidth()+y*image.getWidth()+x] =
+			cpu_vec[2*image.getHeight()*image.getWidth()+oy*image.getWidth()+x] =
 				*(row+4*x+2)/255.0;
 		}
 	}
@@ -52,39 +53,6 @@ decltype(auto) normalize(InIter first, InIter const& last, OutIter out) {
 	*/
 }
 
-/*
-decltype(auto) zero_padding(std::vector<neu::scalar> const& input,
-		std::size_t width, std::size_t height, std::size_t channel_num,
-		std::size_t up, std::size_t left, std::size_t right, std::size_t down) {
-	auto result_width = left+width+right;
-	auto result_height = up+height+down;
-	std::vector<neu::scalar> result(channel_num*result_width*result_height, 0);
-	for(auto c = 0u; c < channel_num; ++c) {
-		auto input_ch_offset = c*height*width;
-		for(auto h = 0u; h < height; ++h) {
-			std::copy(
-				input.begin()+input_ch_offset+h*width,
-				input.begin()+input_ch_offset+(h+1)*width,
-				result.begin()+c*result_height*result_width+(up+h)*result_width+left);
-		}
-	}
-	return result;
-}
-
-decltype(auto) zero_padding(std::vector<neu::scalar> const& vec,
-		std::size_t width, std::size_t channel_num, std::size_t padding_size) {
-	return zero_padding(vec, width, width, channel_num,
-		padding_size, padding_size, padding_size, padding_size);
-}
-
-decltype(auto) zero_padding(neu::gpu_vector const& gpu_vec,
-		std::size_t width, std::size_t channel_num, std::size_t padding_size) {
-	auto cpu_vec = neu::to_cpu_vector(gpu_vec);
-	return neu::to_gpu_vector(
-		neu::zero_padding(cpu_vec, width, channel_num, padding_size));
-
-}
-*/ 
 template<typename Iter>
 decltype(auto) save_image_vector_as_image(Iter first, Iter const& last,
 		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {

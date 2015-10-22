@@ -18,8 +18,6 @@ namespace neu {
 	) {
 		auto indices =
 			make_convolution_indices(input_width, output_width, filter_width, stride, pad);
-		std::cout << "here" << std::endl;
-
 		auto conv_kernel = make_kernel(convolution_kernel_source, "convolution");
 		auto conv_back_kernel =
 			make_kernel(convolution_back_kernel_source, "convolution_back");
@@ -28,7 +26,7 @@ namespace neu {
 		return convolution_layer<LearningRateGen>(
 			input_width, output_width, filter_width,
 			input_channel_num, output_channel_num,
-			stride, batch_size, filters, bias, learning_rate_gen, indices,
+			stride, pad, batch_size, filters, bias, learning_rate_gen, indices,
 			conv_kernel, conv_back_kernel, update_delta_filters_kernel);
 	}
 }// namespace neu

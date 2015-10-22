@@ -1,3 +1,4 @@
+#define NEU_CONVOLUTION_LAYER_USE_VECTORIZED_KERNEL
 #include <iostream>
 #include <boost/timer.hpp>
 #include <neu/vector_io.hpp>
@@ -10,7 +11,7 @@
 #include <neu/activation_func/sigmoid.hpp>
 #include <neu/activation_func/rectifier.hpp>
 #include <neu/activation_func/identity.hpp>
-#include <neu/activation_func/softmax.hpp>
+#include <neu/activation_func/softmax_loss.hpp>
 #include <neu/activation_layer.hpp>
 #include <neu/convolution_layer.hpp>
 #include <neu/max_pooling_layer.hpp>
@@ -60,11 +61,7 @@ int main(int argc, char** argv) {
 		.output_dim(64);
 	auto fc2_param = neu::make_fully_connected_layer_parameter(fc1_param)
 		.output_dim(label_num);
-	auto softmax_param = neu::make_activation_layer_parameter(fc2_param);
-
-	std::cout << "fc2 input_dim: " << fc2_param.input_dim() << std::endl;
-	std::cout << "fc2 output_dim: " << fc2_param.output_dim() << std::endl;
-	std::cout << "fc2 batch_size: " << fc2_param.batch_size() << std::endl;
+	auto softmax_loss_param = neu::make_activation_layer_parameter(fc2_param);
 
 	auto conv1_g = [&rand, dist=std::normal_distribution<>(0.f, 0.0001f)]
 		() mutable { return dist(rand); };
@@ -82,16 +79,16 @@ int main(int argc, char** argv) {
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
 	auto pool1 = neu::make_max_pooling_layer(pool1_param);
-	auto relu1 = neu::make_activation_layer(relu1_param, neu::rectifier());
+	auto relu1 = neu::make_activation_layer<neu::rectifier>(relu1_param);
 	auto conv2 = neu::make_convolution_layer(conv2_param, conv23_g, constant_g,
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv2_param.weight_dim(), conv2_param.bias_dim()));
-	auto relu2 = neu::make_activation_layer(relu2_param, neu::rectifier());
+	auto relu2 = neu::make_activation_layer<neu::rectifier>(relu2_param);
 	auto pool2 = neu::make_uniform_average_pooling_layer(pool2_param);
 	auto conv3 = neu::make_convolution_layer(conv3_param, conv23_g, constant_g,
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv3_param.weight_dim(), conv3_param.bias_dim()));
-	auto relu3 = neu::make_activation_layer(relu3_param, neu::rectifier());
+	auto relu3 = neu::make_activation_layer<neu::rectifier>(relu3_param);
 	auto pool3 = neu::make_uniform_average_pooling_layer(pool3_param);
 	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
@@ -100,8 +97,7 @@ int main(int argc, char** argv) {
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc2_param.weight_dim(), fc2_param.bias_dim()));
 	std::cout << "fc2 output dim directly: " << fc2.get_next_input().size() << std::endl;
-	auto softmax = neu::make_activation_layer(softmax_param,
-		neu::softmax(label_num, batch_size));
+	auto softmax_loss = neu::make_activation_layer<neu::softmax_loss>(softmax_loss_param);
 
 	auto layers = std::vector<neu::layer>{
 		std::ref(conv1),
@@ -115,74 +111,48 @@ int main(int argc, char** argv) {
 		pool3,
 		std::ref(fc1),
 		std::ref(fc2),
-		softmax
+		softmax_loss
 	};
-	std::ofstream error_log("error.txt");
+	std::ofstream mse_log("mean_square_error.txt");
+	std::ofstream cel_log("cross_entropy_loss.txt");
 	std::ofstream log("log.txt");
 	make_next_batch(ds);
 	boost::timer timer;
+	boost::timer update_timer;
 	for(auto i = 0u; i < 5000u; ++i) {
 		timer.restart();
 		auto batch = ds.get_batch();
-		auto input = batch.train_data;
-		auto teach = batch.teach_data;
+		const auto input = batch.train_data;
+		const auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
 
 		std::cout << "forward..." << std::endl;
 		neu::layers_forward(layers, input);
 		std::cout << "forward finished " << timer.elapsed() << std::endl;
-		timer.restart();
 
-		if(i%10 == 0) {
-			log << "conv1_filters_l2norm: " << neu::l2_norm(conv1.get_filters())
-				<< " conv1_bias_l2norm: " << neu::l2_norm(conv1.get_bias()) << std::endl;
-			log << "conv2_filters_l2norm: " << neu::l2_norm(conv2.get_filters())
-				<< " conv2_bias_l2norm: " << neu::l2_norm(conv2.get_bias()) << std::endl;
-			log << "conv3_filters_l2norm: " << neu::l2_norm(conv3.get_filters())
-				<< " conv3_bias_l2norm: " << neu::l2_norm(conv3.get_bias()) << std::endl;
-			log << "fc1_weight_l2norm: " << neu::l2_norm(fc1.get_weight())
-				<< " fc1_weight_l2norm: " << neu::l2_norm(fc1.get_bias()) << std::endl;
-			log << "fc2_weight_l2norm: " << neu::l2_norm(fc2.get_weight())
-				<< " fc2_weight_l2norm: " << neu::l2_norm(fc2.get_bias()) << std::endl;
-		}
-		if(i%100 == 0) {
-			for(auto j = 0u; j < layers.size(); ++j) {
-				auto output = layers[j].get_next_input();
-				std::ofstream outputf(
-					"output l"+std::to_string(j)+" i"+std::to_string(i)+".txt");
-				neu::print(outputf, output, output.size()/batch_size);
-			}
-		}
 		auto output = layers.back().get_next_input();
-		volatile auto output_sum = boost::compute::accumulate(output.begin(), output.end(),
-			0.f, boost::compute::plus<neu::scalar>());
-		std::cout << "output sum: " << output_sum << std::endl;
-		neu::gpu_vector error(output.size());
-		boost::compute::transform(output.begin(), output.end(),
-			teach.begin(), error.begin(), boost::compute::minus<neu::scalar>());
-
-		neu::gpu_vector squared_error(error.size());
-		boost::compute::transform(error.begin(), error.end(),
-			error.begin(), squared_error.begin(),
-			boost::compute::multiplies<neu::scalar>());
-		auto squared_error_sum = boost::compute::accumulate(
-			squared_error.begin(), squared_error.end(), 0.f);
-		std::cout << i << ":squared_error_sum: " << squared_error_sum << std::endl;
-		error_log << i << "\t" << squared_error_sum << std::endl;
+		auto error = neu::calc_last_layer_delta(output, teach);
 
 		std::cout << "backward..." << std::endl;
+		timer.restart();
 		neu::layers_backward(layers, error);
 		std::cout << "backward finished" << timer.elapsed() << std::endl;
-		timer.restart();
 
 		std::cout << "update..." << std::endl;
-		conv1.update();
-		conv2.update();
-		conv3.update();
-		fc1.update();
-		fc2.update();
-		std::cout << "update finished" << timer.elapsed() << std::endl;
 		timer.restart();
+		neu::layers_update(layers);
+		std::cout << "update finished" << timer.elapsed() << std::endl;
+
+		std::cout << "calc error..." << std::endl;
+		timer.restart();
+		auto mse = neu::mean_square_error(error);
+		std::cout << i << ":mean square error: " << mse << std::endl;
+		mse_log << i << "\t" << mse << std::endl;
+
+		auto cel = neu::cross_entropy_loss(output, teach);
+		cel_log << i << "\t" << cel << std::endl;
+		std::cout << "cross entropy loss: " << cel << std::endl;
+		std::cout << "error calculation finished" << timer.elapsed() << std::endl;
 
 		make_next_batch_future.wait();
 	}

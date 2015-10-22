@@ -24,6 +24,8 @@ namespace neu {
 
 			virtual void backward(gpu_vector const& delta) = 0;
 			virtual gpu_vector const& get_prev_delta() const = 0;
+
+			virtual void update() = 0;
 		};
 		template<typename Layer>
 		class layer_holder : public layer_holder_base {
@@ -71,8 +73,8 @@ namespace neu {
 				return unwrapper<Layer>::call(l_).get_prev_delta();
 			}
 
-			void update(gpu_vector const& input, gpu_vector const& delta) {
-				unwrapper<Layer>::call(l_).update(input, delta);
+			void update() {
+				unwrapper<Layer>::call(l_).update();
 			}
 			
 		private:
@@ -111,6 +113,10 @@ namespace neu {
 		}
 		gpu_vector const& get_prev_delta() const {
 			return holder_->get_prev_delta();
+		}
+
+		void update() {
+			holder_->update();
 		}
 
 	private:

@@ -119,6 +119,8 @@ namespace neu {
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
+		decltype(auto) update() { /* do nothing */ }
+
 	private:
 		std::size_t input_width_;
 		std::size_t filter_width_;

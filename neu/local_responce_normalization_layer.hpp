@@ -157,6 +157,7 @@ namespace neu {
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
+		decltype(auto) update() { /* do nothing */ }
 	private:
 		const std::size_t n_;
 		const float alpha_;

@@ -2,8 +2,9 @@
 #define NEU_ACTIVATION_FUNC_SIGMOID_HPP
 //20150528
 #include <cmath>
+#include <neu/as_const.hpp>
 #include <neu/basic_type.hpp>
-#include <neu/activation_func/differential.hpp>
+#include <neu/activation_func/derivative.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, sigmoid_kernel, (float x), {
 		return 1./(1.+exp(-x));
@@ -14,22 +15,30 @@ namespace neu {
 	});
 	class sigmoid {
 	public:
-		decltype(auto) operator()(neu::gpu_vector x) const {
+		sigmoid(std::size_t input_dim, std::size_t batch_size)
+			: output_(input_dim*batch_size) {}
+		decltype(auto) operator()(neu::gpu_vector const& x) {
 			boost::compute::transform(x.begin(), x.end(),
-				x.begin(), neu::sigmoid_kernel);
+				output_.begin(), neu::sigmoid_kernel);
 			boost::compute::system::default_queue().finish();
-			return x;
+			return as_const(output_);
 		}
+	private:
+		gpu_vector output_;
 	};
 	template<>
-	class differential<sigmoid> {
+	class derivative<sigmoid> {
 	public:
-		decltype(auto) operator()(neu::gpu_vector x) const {
+		derivative(std::size_t input_dim, std::size_t batch_size)
+			: output_(input_dim*batch_size) {}
+		decltype(auto) operator()(neu::gpu_vector x) {
 			boost::compute::transform(x.begin(), x.end(),
-				x.begin(), neu::diff_sigmoid_kernel);
+				output_.begin(), neu::diff_sigmoid_kernel);
 			boost::compute::system::default_queue().finish();
-			return x;
+			return as_const(output_);
 		}
+	private:
+		gpu_vector output_;
 	};
 }// namespace neu
 

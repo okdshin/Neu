@@ -39,6 +39,8 @@ namespace neu {
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
+		decltype(auto) update() { /* do nothing */ }
+
 	private:
 		std::size_t input_dim_, output_dim_, batch_size_;
 		ActivationFunc activation_func_;
@@ -49,17 +51,17 @@ namespace neu {
 	decltype(auto) make_activation_layer(
 			std::size_t input_dim, std::size_t output_dim, std::size_t batch_size,
 			ActivationFunc const& activation_func) {
-		return activation_layer<ActivationFunc, differential<ActivationFunc>>(
+		return activation_layer<ActivationFunc, derivative<ActivationFunc>>(
 			input_dim, output_dim, batch_size,
-			activation_func, differential<ActivationFunc>());
+			activation_func, derivative<ActivationFunc>());
 	}
 	template<typename ActivationFunc>
 	decltype(auto) make_activation_layer(
-			std::size_t input_dim, std::size_t batch_size,
-			ActivationFunc const& activation_func) {
-		return activation_layer<ActivationFunc, differential<ActivationFunc>>(
+			std::size_t input_dim, std::size_t batch_size) {
+		return activation_layer<ActivationFunc, derivative<ActivationFunc>>(
 			input_dim, input_dim, batch_size,
-			activation_func, differential<ActivationFunc>());
+			ActivationFunc(input_dim, batch_size),
+			derivative<ActivationFunc>(input_dim, batch_size));
 	}
 
 	class activation_layer_parameter {
@@ -71,18 +73,14 @@ namespace neu {
 	decltype(auto) make_activation_layer_parameter(Param const& param) {
 		activation_layer_parameter p;
 		p.input_dim(param.output_dim());
+		p.output_dim(param.output_dim());
 		p.batch_size(param.batch_size());
 		return p;
 	}
 	template<typename ActivationFunc>
-	decltype(auto) make_activation_layer(
-			activation_layer_parameter const& param,
-			ActivationFunc const& activation_func) {
-		auto output_dim = param.is_output_dim_set() ?
-			param.output_dim() : param.input_dim();
-		return activation_layer<ActivationFunc, differential<ActivationFunc>>(
-			param.input_dim(), output_dim, param.batch_size(),
-			activation_func, differential<ActivationFunc>());
+	decltype(auto) make_activation_layer(activation_layer_parameter const& param) {
+		return make_activation_layer<ActivationFunc>(
+			param.input_dim(), param.batch_size());
 	}
 }// namespace neu
 
