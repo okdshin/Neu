@@ -4,6 +4,7 @@
 #include <cmath>
 #include <gsl.h>
 #include <neu/basic_type.hpp>
+#include <neu/as_const.hpp>
 #include <neu/kernel.hpp>
 #include <neu/validation.hpp>
 #include <neu/activation_func/derivative.hpp>

@@ -2,7 +2,7 @@
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
-#include <neu/activation_func/softmax.hpp>
+#include <neu/activation_func/softmax_loss.hpp>
 #include <neu/activation_func/sigmoid.hpp>
 #include <neu/activation_func/rectifier.hpp>
 #include <neu/activation_func/identity.hpp>
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 	auto relu1_param = neu::make_activation_layer_parameter(fc1_param);
 	auto fc2_param = neu::make_fully_connected_layer_parameter(fc1_param)
 		.output_dim(output_dim);
-	auto softmax_param = neu::make_activation_layer_parameter(fc2_param);
+	auto softmax_loss_param = neu::make_activation_layer_parameter(fc2_param);
 
 	auto fc12_g = [&rand, dist=std::normal_distribution<>(0.f, 1.f)]
 		() mutable { return dist(rand); };
@@ -57,22 +57,21 @@ int main(int argc, char** argv) {
 	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc1_param.weight_dim(), fc1_param.bias_dim()));
-	auto relu1 = neu::make_activation_layer(relu1_param, neu::rectifier());
+	auto relu1 = neu::make_activation_layer<neu::rectifier>(relu1_param);
 	auto fc2 = neu::make_fully_connected_layer(fc2_param, fc12_g, constant_g,
 		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc2_param.weight_dim(), fc2_param.bias_dim()));
-	auto softmax = neu::make_activation_layer(softmax_param,
-		neu::softmax(input_dim, batch_size));
+	auto softmax_loss = neu::make_activation_layer<neu::softmax_loss>(softmax_loss_param);
 
 	auto layers = std::vector<neu::layer>{
 		std::ref(fc1),
 		relu1,
 		std::ref(fc2),
-		softmax
+		softmax_loss
 	};
 	std::ofstream error_log("error.txt");
 	std::ofstream output_log("output.txt");
-	for(auto i = 0u; i < 5000u; ++i) {
+	for(auto i = 0u; i < 3000u; ++i) {
 		neu::layers_forward(layers, input);
 		auto output = layers.back().get_next_input();
 		neu::print(output_log, output, batch_size);
@@ -93,4 +92,8 @@ int main(int argc, char** argv) {
 	}
 	neu::print(teach); std::cout << "\n";
 	neu::print(layers.back().get_next_input());
+	/*
+	YAML::Emitter yaml_emitter;
+	print_yaml(yaml_emitter, layers);
+	*/
 }

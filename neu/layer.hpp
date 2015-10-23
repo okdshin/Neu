@@ -1,6 +1,7 @@
 #ifndef NEU_LAYER_HPP
 #define NEU_LAYER_HPP
 //20150622
+#include <typeinfo>
 #include <memory>
 #include <functional>
 #include <type_traits>
@@ -17,6 +18,9 @@ namespace neu {
 			layer_holder_base& operator=(layer_holder_base&&) = default;
 			virtual ~layer_holder_base() {}
 
+			virtual std::type_info const& target_type() const = 0;
+			virtual void* get() = 0;
+
 			virtual std::unique_ptr<layer_holder_base> clone() = 0;
 
 			virtual void forward(gpu_vector const& input) = 0;
@@ -32,6 +36,7 @@ namespace neu {
 		private:
 			template<typename T>
 			struct unwrapper {
+				using type = T;
 				template<typename T2>
 				static decltype(auto) call(T2& t2) {
 					return (t2);
@@ -39,6 +44,7 @@ namespace neu {
 			};
 			template<typename U>
 			struct unwrapper<std::reference_wrapper<U>> {
+				using type = U;
 				template<typename T2>
 				static decltype(auto) call(T2 t2) {
 					return t2.get();
@@ -54,8 +60,14 @@ namespace neu {
 
 			explicit layer_holder(Layer const& l)
 			: layer_holder_base(), l_(l) {}
+			
+			std::type_info const& target_type() const override {
+				return typeid(typename unwrapper<Layer>::type);
+			}
 
-			virtual std::unique_ptr<layer_holder_base> clone() override {
+			void* get() override { return &unwrapper<Layer>::call(l_); }
+
+			std::unique_ptr<layer_holder_base> clone() override {
 				return std::make_unique<layer_holder>(*this);
 			}
 
@@ -100,6 +112,24 @@ namespace neu {
 		layer(Layer&& l)
 		: holder_(std::make_unique<layer_impl::layer_holder<std::decay_t<Layer>>>(
 					std::forward<Layer>(l))) {}
+
+		std::type_info const& target_type() const {
+			return holder_->target_type();
+		}
+
+		template <typename Layer>
+		Layer* target() {
+			if(target_type() != typeid(Layer)) {
+				return nullptr;
+			}
+			else {
+				return static_cast<Layer*>(holder_->get());
+			}
+		}
+		template <typename Layer>
+		Layer const* target() const {
+			return static_cast<Layer const*>(const_cast<layer*>(this)->target<Layer>());
+		}
 
 		void forward(gpu_vector const& input) {
 			holder_->forward(input);

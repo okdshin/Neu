@@ -1,3 +1,4 @@
+#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #include <iostream>
 #include <neu/vector_io.hpp>
 #include <boost/compute/algorithm/accumulate.hpp>

@@ -118,9 +118,6 @@ namespace neu {
 			Ensures(is_all_of_finite(bias_));
 		}
 
-		decltype(auto) print(std::ostream& os) {
-			fmt::format("{{name: \"conv\", layer: convolution, params: {{}}}}");
-		}
 		decltype(auto) get_del_filters() const { return (del_filters_); }
 		decltype(auto) get_del_bias() const { return (del_bias_); }
 
