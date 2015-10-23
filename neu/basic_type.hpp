@@ -42,7 +42,6 @@ namespace neu {
 	decltype(auto) make_random_gpu_vector(std::size_t size, Rand const& rand) {
 		cpu_vector cpu_vec(size);
 		std::generate(cpu_vec.begin(), cpu_vec.end(), rand);
-		boost::compute::system::default_queue().finish();
 		return to_gpu_vector(cpu_vec);
 	}
 }// namespace neu

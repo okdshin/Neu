@@ -15,7 +15,6 @@ namespace neu {
 				new_delta_weight.begin(), _1*rate_);
 			boost::compute::transform(delta_bias.begin(), delta_bias.end(),
 				new_delta_bias.begin(), _1*rate_);
-			boost::compute::system::default_queue().finish();
 		}
 	private:
 		scalar rate_;

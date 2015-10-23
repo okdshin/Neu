@@ -18,7 +18,6 @@ namespace neu {
 		decltype(auto) operator()(neu::gpu_vector const& input) {
 			boost::compute::transform(input.begin(), input.end(),
 				output_.begin(), neu::rectifier_kernel);
-			boost::compute::system::default_queue().finish();
 			return as_const(output_);
 		}
 	private:
@@ -33,7 +32,6 @@ namespace neu {
 			Expects(output_.size() == input.size());
 			boost::compute::transform(input.begin(), input.end(),
 				output_.begin(), neu::diff_rectifier_kernel);
-			boost::compute::system::default_queue().finish();
 			return as_const(output_);
 		}
 	private:

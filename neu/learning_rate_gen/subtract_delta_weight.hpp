@@ -28,8 +28,6 @@ namespace neu {
 				new_delta_bias.begin(), _1*bias_rate_);
 			boost::compute::transform(bias.begin(), bias.end(), new_delta_bias.begin(),
 				bias.begin(), boost::compute::minus<scalar>());
-
-			boost::compute::system::default_queue().finish();
 		}
 	private:
 		scalar weight_rate_, bias_rate_;

@@ -17,7 +17,6 @@ namespace neu {
 				decay_weight.begin(), delta_weight.begin(), boost::compute::minus<scalar>());
 			boost::compute::transform(delta_bias.begin(), delta_bias.end(),
 				decay_bias, delta_bias.begin(), boost::compute::minus<scalar>());
-			boost::compute::system::default_queue().finish();
 			lrg_(weight, bias, delta_weight, delta_bias, new_delta_weight, new_delta_bias);
 		}
 	private:

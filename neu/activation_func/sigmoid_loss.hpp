@@ -16,7 +16,6 @@ namespace neu {
 		decltype(auto) operator()(neu::gpu_vector const& x) {
 			boost::compute::transform(x.begin(), x.end(),
 				output_.begin(), neu::sigmoid_loss_kernel);
-			boost::compute::system::default_queue().finish();
 			return as_const(output_);
 		}
 	private:

@@ -42,8 +42,6 @@ namespace neu {
 				weight.begin(), _1+_2);
 			transform(bias.begin(), bias.end(), delta_bias_.begin(),
 				bias.begin(), _1+_2);
-
-			boost::compute::system::default_queue().finish();
 		}
 	private:
 		scalar learning_rate_, momentum_rate_, decay_rate_;

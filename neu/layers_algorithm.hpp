@@ -56,7 +56,6 @@ namespace neu {
 		gpu_vector error(last_output.size());
 		boost::compute::transform(last_output.begin(), last_output.end(),
 			teach.begin(), error.begin(), boost::compute::minus<neu::scalar>());
-		boost::compute::system::default_queue().finish();
 		return error;
 	}
 
@@ -65,10 +64,8 @@ namespace neu {
 		gpu_vector error(last_output.size());
 		boost::compute::transform(last_output.begin(), last_output.end(),
 			teach.begin(), error.begin(), boost::compute::minus<neu::scalar>());
-		boost::compute::system::default_queue().finish();
 		boost::compute::transform(error.begin(), error.end(),
 			error.begin(), error.begin(), boost::compute::multiplies<scalar>());
-		boost::compute::system::default_queue().finish();
 		scalar sum = 0.f;
 		boost::compute::reduce(error.begin(), error.end(), &sum);
 		return sum/error.size();
@@ -77,7 +74,6 @@ namespace neu {
 	decltype(auto) mean_square_error(gpu_vector error) {
 		boost::compute::transform(error.begin(), error.end(),
 			error.begin(), error.begin(), boost::compute::multiplies<scalar>());
-		boost::compute::system::default_queue().finish();
 		scalar sum = 0.f;
 		boost::compute::reduce(error.begin(), error.end(), &sum);
 		return sum/error.size();
@@ -91,7 +87,6 @@ namespace neu {
 		gpu_vector cross_entropy(last_output.size());
 		boost::compute::transform(teach.begin(), teach.end(),
 			last_output.begin(), cross_entropy.begin(), cross_entropy_kernel);
-		boost::compute::system::default_queue().finish();
 		scalar sum = 0.f;
 		boost::compute::reduce(cross_entropy.begin(), cross_entropy.end(), &sum);
 		return sum;
