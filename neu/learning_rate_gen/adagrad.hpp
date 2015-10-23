@@ -1,7 +1,7 @@
 #ifndef NEU_ADAGRAD_HPP
 #define NEU_ADAGRAD_HPP
 //20150830
-
+#include <gsl.h>
 namespace neu {
 	const char adagrad_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void adagrad(
