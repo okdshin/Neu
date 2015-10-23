@@ -21,10 +21,8 @@ namespace neu {
 
 		decltype(auto) forward(gpu_vector const& input) {
 			Expects(is_all_of_finite(input));
-			auto future = boost::compute::
-				copy_async(input.begin(), input.end(), input_.begin());
+			input_ = input;
 			next_input_ = activation_func_(input);
-			future.wait();
 			Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }

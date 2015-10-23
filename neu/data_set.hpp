@@ -39,14 +39,12 @@ namespace neu {
 							teach.begin(), teach.end());
 					}
 				}
-				auto train_copy_future = boost::compute::copy_async(
+				boost::compute::copy(
 					cpu_train_data.begin(), cpu_train_data.end(),
 					batch_.train_data.begin());
-				auto teach_copy_future = boost::compute::copy_async(
+				boost::compute::copy(
 					cpu_teach_data.begin(), cpu_teach_data.end(),
 					batch_.teach_data.begin());
-				train_copy_future.wait();
-				teach_copy_future.wait();
 			});
 		}
 		decltype(auto) get_batch() const { return (batch_); }

@@ -53,13 +53,11 @@ namespace neu {
 		decltype(auto) forward(gpu_vector const& input) {
 			Expects(input.size() == input_dim_*batch_size_);
 			Expects(is_all_of_finite(input));
-			auto future = boost::compute::
-				copy_async(input.begin(), input.end(), input_.begin());
+			input_ = input;
 			execute_nd_range_kernel<2>(multiply_kernel_,
 				{0, 0}, {output_dim_, batch_size_},
 				input, next_input_, weight_, bias_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
-			future.wait();
 			if(is_any_of_inf(next_input_)) {
 				std::ofstream inputf("input.txt");
 				std::ofstream weightf("weight.txt");
@@ -78,25 +76,11 @@ namespace neu {
 		decltype(auto) backward(gpu_vector const& delta) {
 			Expects(delta.size() == output_dim_*batch_size_);
 			Expects(is_all_of_finite(delta));
-			auto future = boost::compute::
-				copy_async(delta.begin(), delta.end(), delta_.begin());
+			delta_ = delta;
 			execute_nd_range_kernel<2>(multiply_back_kernel_,
 				{0, 0}, {input_dim_, batch_size_},
 				prev_delta_, delta, weight_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
-			future.wait();
-			/*
-			if(!all_of_finite(prev_delta_)) {
-				std::ofstream deltaf("delta.txt");
-				std::ofstream weightf("weight.txt");
-				std::ofstream biasf("bias.txt");
-				std::ofstream prev_deltaf("prev_delta.txt");
-				print(deltaf, delta);
-				print(weightf, weight_);
-				print(biasf, bias_);
-				print(prev_deltaf, prev_delta_);
-			}
-			*/
 			Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
