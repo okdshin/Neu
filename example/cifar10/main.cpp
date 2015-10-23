@@ -76,25 +76,25 @@ int main(int argc, char** argv) {
 	//neu::scalar weight_decay = 0.004;
 	neu::scalar weight_decay = 0.0;
 	auto conv1 = neu::make_convolution_layer(conv1_param, conv1_g, constant_g,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
 	auto pool1 = neu::make_max_pooling_layer(pool1_param);
 	auto relu1 = neu::make_activation_layer<neu::rectifier>(relu1_param);
 	auto conv2 = neu::make_convolution_layer(conv2_param, conv23_g, constant_g,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv2_param.weight_dim(), conv2_param.bias_dim()));
 	auto relu2 = neu::make_activation_layer<neu::rectifier>(relu2_param);
 	auto pool2 = neu::make_uniform_average_pooling_layer(pool2_param);
 	auto conv3 = neu::make_convolution_layer(conv3_param, conv23_g, constant_g,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv3_param.weight_dim(), conv3_param.bias_dim()));
 	auto relu3 = neu::make_activation_layer<neu::rectifier>(relu3_param);
 	auto pool3 = neu::make_uniform_average_pooling_layer(pool3_param);
 	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc1_param.weight_dim(), fc1_param.bias_dim()));
 	auto fc2 = neu::make_fully_connected_layer(fc2_param, fc12_g, constant_g,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc2_param.weight_dim(), fc2_param.bias_dim()));
 	std::cout << "fc2 output dim directly: " << fc2.get_next_input().size() << std::endl;
 	auto softmax_loss = neu::make_activation_layer<neu::softmax_loss>(softmax_loss_param);
