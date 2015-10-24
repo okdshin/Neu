@@ -44,15 +44,15 @@ namespace neu {
 		decltype(auto) forward(gpu_vector const& input) {
 			//Expects(is_all_of_finite(input));
 			input_ = input;
-			neu::enqueue_nd_range_kernel<3>(convolution_kernel_,
+			auto event = neu::enqueue_nd_range_kernel<3>(convolution_kernel_,
 				{0, 0, 0}, {output_width_, output_width_, batch_size_},
 				static_cast<int>(input_width_), static_cast<int>(output_width_),
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
 				static_cast<int>(stride_), static_cast<int>(pad_),
-				input, next_input_, filters_, bias_)
-			.wait(); //TODO workaround?
+				input, next_input_, filters_, bias_);
+			event.wait();
 			//Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
@@ -60,7 +60,7 @@ namespace neu {
 		decltype(auto) backward(gpu_vector const& delta) {
 			//Expects(is_all_of_finite(delta));
 			delta_ = delta;
-			neu::enqueue_nd_range_kernel<2>(convolution_back_kernel_,
+			auto event = neu::enqueue_nd_range_kernel<2>(convolution_back_kernel_,
 				{0, 0}, {input_width_*input_width_, batch_size_},
 				indices_.indices_range_list_for_input,
 				indices_.output_indices_list_for_input,
@@ -70,13 +70,13 @@ namespace neu {
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
 				prev_delta_, delta, filters_)
-			.wait(); //TODO workaround?
+			event.wait();
 			//Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
 		decltype(auto) update() {
-			neu::enqueue_nd_range_kernel<3>(update_del_filters_kernel_,
+			auto event = neu::enqueue_nd_range_kernel<3>(update_del_filters_kernel_,
 				{0, 0, 0}, {filter_width_, filter_width_, output_channel_num_},
 				static_cast<int>(input_width_), static_cast<int>(output_width_),
 				static_cast<int>(filter_width_),
@@ -85,7 +85,7 @@ namespace neu {
 				static_cast<int>(stride_), static_cast<int>(pad_),
 				static_cast<int>(batch_size_),
 				input_, delta_, del_filters_, del_bias_)
-			.wait(); //TODO workaround?
+			event.wait();
 			//Ensures(is_all_of_finite(del_filters_));
 			//Ensures(is_all_of_finite(del_bias_));
 			learning_rate_gen_(filters_, bias_, del_filters_, del_bias_);
