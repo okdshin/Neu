@@ -15,7 +15,7 @@ set(CMAKE_C_FLAGS_DEBUG "-Wall -Wno-unused-parameter -Wno-deprecated-declaration
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -std=c++14 -O2 -DBOOST_COMPUTE_THREAD_SAFE")
 set(CMAKE_C_FLAGS_RELEASE "-Wall -Wextra -Wno-unused-parameter -Werror -O2")
 
-find_package( Boost COMPONENTS system thread timer filesystem REQUIRED)
+find_package( Boost COMPONENTS system thread timer filesystem program_options REQUIRED)
 if( NOT Boost_SYSTEM_FOUND )
 	message( SEND_ERROR "Required package Boost.System is not detected." )
 endif (NOT Boost_SYSTEM_FOUND)
@@ -28,6 +28,9 @@ endif (NOT Boost_TIMER_FOUND)
 if( NOT Boost_FILESYSTEM_FOUND )
 	message( SEND_ERROR "Required package Boost.Filesystem is not detected." )
 endif (NOT Boost_FILESYSTEM_FOUND)
+if( NOT Boost_PROGRAM_OPTIONS_FOUND )
+	message( SEND_ERROR "Required package Boost.ProgramOptions is not detected." )
+endif (NOT Boost_PROGRAM_OPTIONS_FOUND)
 
 find_package( BoostCompute REQUIRED )
 if( NOT BoostCompute_FOUND )

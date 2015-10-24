@@ -1,6 +1,7 @@
 #define NEU_CONVOLUTION_LAYER_USE_VECTORIZED_KERNEL
 #include <iostream>
 #include <boost/timer.hpp>
+#include <boost/program_options.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
