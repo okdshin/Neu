@@ -66,14 +66,25 @@ int main(int argc, char** argv) {
 	//std::random_device rd; std::mt19937 rand(rd());
 	std::mt19937 rand(3); std::cout << "INFO: fixed random engine" << std::endl;
 
-	auto data = neu::load_cifar10("../../../data/cifar-10-batches-bin/");
-	for(auto& labeled : data) {
+	auto train_data = neu::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
+	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
 				[](auto e){ return (e-127.); });
 		}
 	}
-	auto ds = neu::make_data_set(label_num, data_num_per_label, input_dim, data, rand);
+	auto train_ds = neu::make_data_set(
+		label_num, data_num_per_label, input_dim, train_data, rand);
+
+	auto test_data = neu::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
+	for(auto& labeled : test_data) {
+		for(auto& d : labeled) {
+			std::transform(d.begin(), d.end(), d.begin(),
+				[](auto e){ return (e-127.); });
+		}
+	}
+	auto test_ds = neu::make_data_set(
+		label_num, test_data_num_per_label, input_dim, test_data, rand);
 
 	auto conv1_param = neu::convolution_layer_parameter()
 		.input_width(32).input_channel_num(3).output_channel_num(32)
@@ -149,16 +160,18 @@ int main(int argc, char** argv) {
 	};
 	std::ofstream mse_log("mean_square_error.txt");
 	std::ofstream cel_log("cross_entropy_loss.txt");
-	std::ofstream log("log.txt");
-	make_next_batch(ds);
+	std::ofstream test_accuracy_log("test_accuracy.txt");
+	std::ofstream test_cel_log("test_cross_entropy_loss.txt"); std::ofstream log("log.txt");
+	make_next_batch(train_ds);
+	make_next_batch(test_ds);
 	boost::timer timer;
 	boost::timer update_timer;
 	for(auto i = 0u; i < 5000u; ++i) {
 		timer.restart();
-		auto batch = ds.get_batch();
+		auto batch = train_ds.get_batch();
 		const auto input = batch.train_data;
 		const auto teach = batch.teach_data;
-		auto make_next_batch_future = ds.async_make_next_batch();
+		auto make_next_batch_future = train_ds.async_make_next_batch();
 
 		std::cout << "forward..." << std::endl;
 		neu::layers_forward(layers, input);
@@ -187,6 +200,22 @@ int main(int argc, char** argv) {
 		cel_log << i << "\t" << cel << std::endl;
 		std::cout << "cross entropy loss: " << cel << std::endl;
 		std::cout << "error calculation finished" << timer.elapsed() << std::endl;
+
+		if(i%100 == 0) {
+			auto test_batch = test_ds.get_batch();
+			const auto test_input = batch.train_data;
+			const auto test_teach = batch.teach_data;
+			std::cout << "test forward..." << std::endl;
+			neu::layers_forward(layers, test_input);
+			std::cout << "test forward finished " << timer.elapsed() << std::endl;
+			auto test_output = layers.back().get_next_input();
+			auto test_cel = neu::cross_entropy_loss(test_output, test_teach);
+			test_cel_log << i << "\t" << test_cel << std::endl;
+			std::cout << "test cross entropy loss: " << test_cel << std::endl;
+			std::cout << "test error calculation finished" << timer.elapsed() << std::endl;
+			test_accuracy_log << neu::accuracy(
+				label_num, test_data_num_per_label*label_num, test_output, test_teach) << std::endl;
+		}
 
 		make_next_batch_future.wait();
 	}
