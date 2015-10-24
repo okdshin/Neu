@@ -91,7 +91,7 @@ namespace neu {
 
 		decltype(auto) forward(gpu_vector const& input) {
 			Expects(is_all_of_finite(input));
-			enqueue_nd_range_kernel<3>(pooling_kernel_,
+			auto event = enqueue_nd_range_kernel<3>(pooling_kernel_,
 				{0, 0, 0}, {output_width_*output_width_, input_channel_num_, batch_size_},
 				indices_.indices_range_list_for_output,
 				indices_.input_indices_list_for_output,
@@ -100,13 +100,14 @@ namespace neu {
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
 				input, next_input_, filter_);
+			event.wait();
 			Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
 			Expects(is_all_of_finite(delta));
-			enqueue_nd_range_kernel<3>(pooling_back_kernel_,
+			auto event = enqueue_nd_range_kernel<3>(pooling_back_kernel_,
 				{0, 0, 0}, {input_width_*input_width_, input_channel_num_, batch_size_},
 				indices_.indices_range_list_for_input,
 				indices_.output_indices_list_for_input,
@@ -115,6 +116,7 @@ namespace neu {
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
 				prev_delta_, delta, filter_);
+			event.wait();
 			Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
