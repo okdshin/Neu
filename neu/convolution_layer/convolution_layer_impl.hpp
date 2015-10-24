@@ -42,7 +42,7 @@ namespace neu {
 		decltype(auto) get_bias() const { return (bias_); }
 
 		decltype(auto) forward(gpu_vector const& input) {
-			//Expects(is_all_of_finite(input));
+			Expects(is_all_of_finite(input));
 			input_ = input;
 			auto event = neu::enqueue_nd_range_kernel<3>(convolution_kernel_,
 				{0, 0, 0}, {output_width_, output_width_, batch_size_},
@@ -53,12 +53,14 @@ namespace neu {
 				static_cast<int>(stride_), static_cast<int>(pad_),
 				input, next_input_, filters_, bias_);
 			event.wait();
-			//Ensures(is_all_of_finite(next_input_));
+			Ensures(is_all_of_finite(next_input_));
 		}
-		decltype(auto) get_next_input() const { return (next_input_); }
+		decltype(auto) get_next_input() const {
+			return (next_input_);
+		}
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			//Expects(is_all_of_finite(delta));
+			Expects(is_all_of_finite(delta));
 			delta_ = delta;
 			auto event = neu::enqueue_nd_range_kernel<2>(convolution_back_kernel_,
 				{0, 0}, {input_width_*input_width_, batch_size_},
@@ -69,9 +71,9 @@ namespace neu {
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
 				static_cast<int>(output_channel_num_),
-				prev_delta_, delta, filters_)
+				prev_delta_, delta, filters_);
 			event.wait();
-			//Ensures(is_all_of_finite(prev_delta_));
+			Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
@@ -84,13 +86,13 @@ namespace neu {
 				static_cast<int>(output_channel_num_),
 				static_cast<int>(stride_), static_cast<int>(pad_),
 				static_cast<int>(batch_size_),
-				input_, delta_, del_filters_, del_bias_)
+				input_, delta_, del_filters_, del_bias_);
 			event.wait();
-			//Ensures(is_all_of_finite(del_filters_));
-			//Ensures(is_all_of_finite(del_bias_));
+			Ensures(is_all_of_finite(del_filters_));
+			Ensures(is_all_of_finite(del_bias_));
 			learning_rate_gen_(filters_, bias_, del_filters_, del_bias_);
-			//Ensures(is_all_of_finite(filters_));
-			//Ensures(is_all_of_finite(bias_));
+			Ensures(is_all_of_finite(filters_));
+			Ensures(is_all_of_finite(bias_));
 		}
 
 		decltype(auto) get_del_filters() const { return (del_filters_); }

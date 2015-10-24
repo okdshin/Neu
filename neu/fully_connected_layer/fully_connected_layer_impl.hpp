@@ -77,8 +77,8 @@ namespace neu {
 			//Ensures(is_all_of_finite(del_weight_));
 			//Ensures(is_all_of_finite(del_bias_));
 			learning_rate_gen_(weight_, bias_, del_weight_, del_bias_);
-			//Ensures(is_all_of_finite(weight_));
-			//Ensures(is_all_of_finite(bias_));
+			Ensures(is_all_of_finite(weight_));
+			Ensures(is_all_of_finite(bias_));
 		}
 
 	private:
