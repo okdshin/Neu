@@ -116,10 +116,6 @@ int main(int argc, char** argv) {
 		() mutable { return dist(rand); };
 	auto constant_g = [](){ return 0.f; };
 
-	neu::scalar base_lr = 0.001;
-	neu::scalar momentum = 0.9;
-	//neu::scalar weight_decay = 0.004;
-	neu::scalar weight_decay = 0.0;
 	auto conv1 = neu::make_convolution_layer(conv1_param, conv1_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
@@ -166,7 +162,7 @@ int main(int argc, char** argv) {
 	make_next_batch(test_ds);
 	boost::timer timer;
 	boost::timer update_timer;
-	for(auto i = 0u; i < 5000u; ++i) {
+	for(auto i = 0; i < iteration_limit; ++i) {
 		timer.restart();
 		auto batch = train_ds.get_batch();
 		const auto input = batch.train_data;
