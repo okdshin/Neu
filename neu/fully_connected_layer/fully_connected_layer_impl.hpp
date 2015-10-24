@@ -58,7 +58,7 @@ namespace neu {
 			Expects(delta.size() == output_dim_*batch_size_);
 			Expects(is_all_of_finite(delta));
 			delta_ = delta;
-			auto = enqueue_nd_range_kernel<2>(multiply_back_kernel_,
+			auto event = enqueue_nd_range_kernel<2>(multiply_back_kernel_,
 				{0, 0}, {input_dim_, batch_size_},
 				prev_delta_, delta, weight_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
