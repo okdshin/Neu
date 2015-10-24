@@ -60,7 +60,7 @@ namespace neu {
 
 		decltype(auto) forward(gpu_vector const& input) {
 			Expects(is_all_of_finite(input));
-			execute_nd_range_kernel<3>(pooling_kernel_,
+			enqueue_nd_range_kernel<3>(pooling_kernel_,
 				{0, 0, 0}, {output_width_, output_width_, batch_size_},
 				input, next_input_, gpu_indices_,
 				static_cast<int>(stride_), static_cast<int>(input_channel_num_),

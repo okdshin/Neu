@@ -20,20 +20,20 @@ namespace neu {
 		prev_delta_(input_dim*batch_size) {}
 
 		decltype(auto) forward(gpu_vector const& input) {
-			Expects(is_all_of_finite(input));
+			//Expects(is_all_of_finite(input));
 			input_ = input;
 			next_input_ = activation_func_(input);
-			Ensures(is_all_of_finite(next_input_));
+			//Ensures(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			Expects(is_all_of_finite(delta));
+			//Expects(is_all_of_finite(delta));
 			auto df = diff_activation_func_(input_);
-			Ensures(is_all_of_finite(df));
+			//Ensures(is_all_of_finite(df));
 			boost::compute::transform(df.begin(), df.end(), delta.begin(),
 				prev_delta_.begin(), boost::compute::multiplies<scalar>());
-			Ensures(is_all_of_finite(prev_delta_));
+			//Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 

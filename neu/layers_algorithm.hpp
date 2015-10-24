@@ -82,7 +82,7 @@ namespace neu {
 	decltype(auto) cross_entropy_loss(
 			gpu_vector const& last_output, gpu_vector const& teach) {
 		static BOOST_COMPUTE_FUNCTION(float, cross_entropy_kernel, (float d, float y), {
-			return -d*log(y);
+			return -d*log(y+0.00001);
 		});
 		gpu_vector cross_entropy(last_output.size());
 		boost::compute::transform(teach.begin(), teach.end(),

@@ -41,45 +41,44 @@ namespace neu {
 		decltype(auto) learning_rate_gen() const { return (learning_rate_gen_); }
 
 		decltype(auto) forward(gpu_vector const& input) {
-			Expects(input.size() == input_dim_*batch_size_);
-			Expects(is_all_of_finite(input));
-			auto future = boost::compute::
-				copy_async(input.begin(), input.end(), input_.begin());
-			execute_nd_range_kernel<2>(multiply_kernel_,
+			//Expects(input.size() == input_dim_*batch_size_);
+			//Expects(is_all_of_finite(input));
+			input_ = input;
+			enqueue_nd_range_kernel<2>(multiply_kernel_,
 				{0, 0}, {output_dim_, batch_size_},
 				input, next_input_, weight_, bias_,
-				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
-			future.wait();
-			Ensures(!is_any_of_nan(next_input_));
-			Ensures(!is_any_of_inf(next_input_));
+				static_cast<int>(input_dim_), static_cast<int>(output_dim_))
+			.wait(); //TODO workaround?
+			//Ensures(!is_any_of_nan(next_input_));
+			//Ensures(!is_any_of_inf(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			Expects(delta.size() == output_dim_*batch_size_);
-			Expects(is_all_of_finite(delta));
-			auto future = boost::compute::
-				copy_async(delta.begin(), delta.end(), delta_.begin());
-			execute_nd_range_kernel<2>(multiply_back_kernel_,
+			//Expects(delta.size() == output_dim_*batch_size_);
+			//Expects(is_all_of_finite(delta));
+			delta_ = delta;
+			enqueue_nd_range_kernel<2>(multiply_back_kernel_,
 				{0, 0}, {input_dim_, batch_size_},
 				prev_delta_, delta, weight_,
-				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
-			future.wait();
-			Ensures(is_all_of_finite(prev_delta_));
+				static_cast<int>(input_dim_), static_cast<int>(output_dim_))
+			.wait(); //TODO workaround?
+			//Ensures(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
 		decltype(auto) update() {
-			execute_nd_range_kernel<2>(calc_del_weight_kernel_,
+			enqueue_nd_range_kernel<2>(calc_del_weight_kernel_,
 				{0, 0}, {input_dim_, output_dim_},
 				input_, delta_, del_weight_, del_bias_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_),
-				static_cast<int>(batch_size_));
-			Ensures(is_all_of_finite(del_weight_));
-			Ensures(is_all_of_finite(del_bias_));
+				static_cast<int>(batch_size_))
+			.wait(); //TODO workaround?
+			//Ensures(is_all_of_finite(del_weight_));
+			//Ensures(is_all_of_finite(del_bias_));
 			learning_rate_gen_(weight_, bias_, del_weight_, del_bias_);
-			Ensures(is_all_of_finite(weight_));
-			Ensures(is_all_of_finite(bias_));
+			//Ensures(is_all_of_finite(weight_));
+			//Ensures(is_all_of_finite(bias_));
 		}
 
 	private:

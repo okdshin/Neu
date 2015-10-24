@@ -52,7 +52,7 @@ namespace neu {
 			std::cout << "input: "; print(inputf, x, input_dim_);
 			*/
 			//gpu_vector output(x.size());
-			execute_nd_range_kernel<1>(softmax_loss_kernel_,
+			enqueue_nd_range_kernel<1>(softmax_loss_kernel_,
 				{0}, {batch_size_}, input, output_, static_cast<int>(input_dim_));
 			/*
 			std::cout << "softmax_loss max element: " << *boost::compute::max_element(output.begin(), output.end()) << std::endl;

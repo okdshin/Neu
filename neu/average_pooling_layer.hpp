@@ -91,7 +91,7 @@ namespace neu {
 
 		decltype(auto) forward(gpu_vector const& input) {
 			Expects(is_all_of_finite(input));
-			execute_nd_range_kernel<3>(pooling_kernel_,
+			enqueue_nd_range_kernel<3>(pooling_kernel_,
 				{0, 0, 0}, {output_width_*output_width_, input_channel_num_, batch_size_},
 				indices_.indices_range_list_for_output,
 				indices_.input_indices_list_for_output,
@@ -106,7 +106,7 @@ namespace neu {
 
 		decltype(auto) backward(gpu_vector const& delta) {
 			Expects(is_all_of_finite(delta));
-			execute_nd_range_kernel<3>(pooling_back_kernel_,
+			enqueue_nd_range_kernel<3>(pooling_back_kernel_,
 				{0, 0, 0}, {input_width_*input_width_, input_channel_num_, batch_size_},
 				indices_.indices_range_list_for_input,
 				indices_.output_indices_list_for_input,
