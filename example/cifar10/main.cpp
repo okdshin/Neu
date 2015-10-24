@@ -23,12 +23,45 @@
 #include <neu/data_set.hpp>
 
 int main(int argc, char** argv) {
-	std::cout << "hello world" << std::endl;
+	namespace po = boost::program_options;
 
 	constexpr auto label_num = 10u;
-	constexpr auto data_num_per_label = 10u;
 	constexpr auto input_dim = 32u*32u*3u;
-	constexpr auto batch_size = label_num * data_num_per_label;
+	constexpr auto test_data_num_per_label = 1000;
+
+	int data_num_per_label;
+	int iteration_limit;
+	neu::scalar base_lr;
+	neu::scalar momentum;
+	//neu::scalar weight_decay = 0.004;
+	neu::scalar weight_decay;
+
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help", "produce help message")
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10), "set number of data per label for Batch SGD")
+		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), "set training iteration limit")
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), "set base learning rate")
+		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), "set momentum rate")
+		("weight_decay", po::value<neu::scalar>(&weight_decay)->default_value(0.), "set weight decay rate")
+		;
+
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);    
+
+	auto batch_size = label_num * data_num_per_label;
+	if (vm.count("help")) {
+		std::cout << desc << "\n";
+		return 1;
+	}
+	std::cout << "data_num_per_label was set to " << data_num_per_label << ".";
+	std::cout << "(so batch_size was set to 10*" << data_num_per_label << "=" << batch_size << ".)\n";
+	std::cout << "iteration_limit was set to " << iteration_limit << ".\n";
+	std::cout << "base_lr was set to " << base_lr << ".\n";
+	std::cout << "momentum was set to " << momentum << ".\n";
+	std::cout << "weight_decay was set to " << weight_decay << ".\n";
+
 
 	//std::random_device rd; std::mt19937 rand(rd());
 	std::mt19937 rand(3); std::cout << "INFO: fixed random engine" << std::endl;
