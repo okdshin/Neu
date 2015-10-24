@@ -41,11 +41,13 @@ namespace neu {
 		decltype(auto) get_filters() const { return (filters_); }
 		decltype(auto) get_bias() const { return (bias_); }
 
-		decltype(auto) forward(gpu_vector const& input) {
+		decltype(auto) test_forward(gpu_vector const& input) {
+			const auto input_dim = input_width_*input_width_*input_channel_num_;
+			Expects(input.size()%input_dim==0);
 			Expects(is_all_of_finite(input));
-			input_ = input;
 			auto event = neu::enqueue_nd_range_kernel<3>(convolution_kernel_,
-				{0, 0, 0}, {output_width_, output_width_, batch_size_},
+				{0, 0, 0},
+				{output_width_, output_width_, input.size()/input_dim},
 				static_cast<int>(input_width_), static_cast<int>(output_width_),
 				static_cast<int>(filter_width_),
 				static_cast<int>(input_channel_num_),
@@ -55,9 +57,12 @@ namespace neu {
 			event.wait();
 			Ensures(is_all_of_finite(next_input_));
 		}
-		decltype(auto) get_next_input() const {
-			return (next_input_);
+		decltype(auto) forward(gpu_vector const& input) {
+			Expects(input.size() == input_.size());
+			test_forward(input);
+			input_ = input;
 		}
+		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
 			Expects(is_all_of_finite(delta));
