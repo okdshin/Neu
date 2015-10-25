@@ -1,6 +1,4 @@
-subdirs( fully_connected_layer_learning_xor )
-subdirs( fully_connected_layer_learning_xor_sigmoid )
+subdirs( xor_sigmoid )
+subdirs( xor_softmax )
 subdirs( cifar10 )
-subdirs( cifar10_easy)
-subdirs( cifar10_mini )
 subdirs( mnist )
