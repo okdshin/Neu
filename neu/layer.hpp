@@ -6,6 +6,7 @@
 #include <functional>
 #include <type_traits>
 #include <neu/basic_type.hpp>
+#include <neu/layer_traits.hpp>
 namespace neu {
 	class layer;
 	namespace layer_impl {
@@ -23,6 +24,7 @@ namespace neu {
 
 			virtual std::unique_ptr<layer_holder_base> clone() = 0;
 
+			virtual void test_forward(gpu_vector const& input) = 0;
 			virtual void forward(gpu_vector const& input) = 0;
 			virtual gpu_vector const& get_next_input() const = 0;
 
@@ -30,6 +32,7 @@ namespace neu {
 			virtual gpu_vector const& get_prev_delta() const = 0;
 
 			virtual void update() = 0;
+
 		};
 		template<typename Layer>
 		class layer_holder : public layer_holder_base {
@@ -71,22 +74,25 @@ namespace neu {
 				return std::make_unique<layer_holder>(*this);
 			}
 
+			void test_forward(gpu_vector const& input) override {
+				layer_test_forward(unwrapper<Layer>::call(l_), input);
+			}
 			void forward(gpu_vector const& input) override {
-				unwrapper<Layer>::call(l_).forward(input);
+				layer_forward(unwrapper<Layer>::call(l_), input);
 			}
 			gpu_vector const& get_next_input() const override {
-				return unwrapper<Layer>::call(l_).get_next_input();
+				return layer_get_next_input(unwrapper<Layer>::call(l_));
 			}
 
 			void backward(gpu_vector const& delta) override {
-				unwrapper<Layer>::call(l_).backward(delta);
+				layer_backward(unwrapper<Layer>::call(l_), delta);
 			}
 			gpu_vector const& get_prev_delta() const override {
-				return unwrapper<Layer>::call(l_).get_prev_delta();
+				return layer_get_prev_delta(unwrapper<Layer>::call(l_));
 			}
 
-			void update() {
-				unwrapper<Layer>::call(l_).update();
+			void update() override {
+				layer_update(unwrapper<Layer>::call(l_));
 			}
 			
 		private:
@@ -131,6 +137,9 @@ namespace neu {
 			return static_cast<Layer const*>(const_cast<layer*>(this)->target<Layer>());
 		}
 
+		void test_forward(gpu_vector const& input) {
+			holder_->test_forward(input);
+		}
 		void forward(gpu_vector const& input) {
 			holder_->forward(input);
 		}
