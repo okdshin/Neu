@@ -1,7 +1,7 @@
 #ifndef NEU_ACTIVATION_LAYER_IMPL_HPP
 #define NEU_ACTIVATION_LAYER_IMPL_HPP
 //20151025
-#include <gsl.h>
+#include <neu/assert.hpp>
 #include <neu/basic_type.hpp>
 #include <neu/validation.hpp>
 #include <neu/kernel.hpp>
@@ -19,20 +19,20 @@ namespace neu {
 		prev_delta_(input_dim*batch_size), df_(input_dim*batch_size) {}
 
 		decltype(auto) forward(gpu_vector const& input) {
-			Expects(is_all_of_finite(input));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
 			input_ = input;
 			next_input_ = activation_func_(input);
-			Ensures(is_all_of_finite(next_input_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_input_));
 		}
 		decltype(auto) get_next_input() const { return (next_input_); }
 
 		decltype(auto) backward(gpu_vector const& delta) {
-			Expects(is_all_of_finite(delta));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta));
 			df_ = diff_activation_func_(input_);
-			Ensures(is_all_of_finite(df_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(df_));
 			boost::compute::transform(df_.begin(), df_.end(), delta.begin(),
 				prev_delta_.begin(), boost::compute::multiplies<scalar>());
-			Ensures(is_all_of_finite(prev_delta_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta_));
 		}
 		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 

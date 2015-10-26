@@ -2,7 +2,7 @@
 #define NEU_ACTIVATION_FUNC_SOFTMAX_LOSS_HPP
 //20150528
 #include <cmath>
-#include <gsl.h>
+#include <neu/assert.hpp>
 #include <neu/basic_type.hpp>
 #include <neu/as_const.hpp>
 #include <neu/kernel.hpp>
@@ -45,8 +45,8 @@ namespace neu {
 			softmax_loss_kernel_(make_kernel(softmax_loss_kernel_source, "softmax_loss")),
 			output_(input_dim*batch_size) {}
 		decltype(auto) operator()(neu::gpu_vector const& input) {
-			Expects(is_all_of_finite(input));
-			Expects(output_.size() == input.size());
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
+			NEU_ASSERT(output_.size() == input.size());
 			/*
 			std::ofstream inputf("softmax_loss_input.txt");
 			std::cout << "input: "; print(inputf, x, input_dim_);
@@ -60,11 +60,13 @@ namespace neu {
 			std::ofstream outputf("softmax_loss_output.txt");
 			std::cout << "output: "; print(outputf, output, input_dim_);
 			*/
-			Ensures(!is_any_of_inf(output_));
-			Ensures(!is_any_of_nan(output_));
-			Ensures(boost::compute::all_of(output_.begin(), output_.end(),
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(!is_any_of_inf(output_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(!is_any_of_nan(output_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(
+				boost::compute::all_of(output_.begin(), output_.end(),
 				0 <= boost::compute::lambda::_1));
-			Ensures(boost::compute::all_of(output_.begin(), output_.end(),
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(
+				boost::compute::all_of(output_.begin(), output_.end(),
 				boost::compute::lambda::_1 <= 1.f));
 			return as_const(output_);
 		}

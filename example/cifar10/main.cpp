@@ -1,4 +1,5 @@
-#define NEU_CONVOLUTION_LAYER_USE_VECTORIZED_KERNEL
+#define NEU_DISABLE_ASSERT
+//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/program_options.hpp>

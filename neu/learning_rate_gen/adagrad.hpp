@@ -1,7 +1,7 @@
 #ifndef NEU_ADAGRAD_HPP
 #define NEU_ADAGRAD_HPP
 //20150830
-#include <gsl.h>
+#include <neu/assert.hpp>
 namespace neu {
 	const char adagrad_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void adagrad(
@@ -24,8 +24,8 @@ namespace neu {
 		}
 		decltype(auto) operator()(gpu_vector& weight, gpu_vector& bias,
 				gpu_vector const& delta_weight, gpu_vector const& delta_bias) {
-			Expects(weight_r_.size() == delta_weight.size());
-			Expects(bias_r_.size() == delta_bias.size());
+			NEU_ASSERT(weight_r_.size() == delta_weight.size());
+			NEU_ASSERT(bias_r_.size() == delta_bias.size());
 			execute_nd_range_kernel<1>(kernel_, {0}, {weight.size()},
 				weight, delta_weight, weight_r_, rate_);
 			execute_nd_range_kernel<1>(kernel_, {0}, {bias.size()},

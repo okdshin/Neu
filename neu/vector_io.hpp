@@ -1,7 +1,7 @@
 #ifndef NEU_VECTOR_IO_HPP
 #define NEU_VECTOR_IO_HPP
 //20150828
-#include <gsl.h>
+#include <neu/assert.hpp>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -33,7 +33,7 @@ namespace neu {
 		std::cout << "]" << std::endl;
 	}
 	decltype(auto) print(std::ofstream& ofs, gpu_vector const& x, std::size_t dim) {
-		Expects(x.size()%dim == 0);
+		NEU_ASSERT(x.size()%dim == 0);
 		auto line_num = x.size()/dim;
 		auto first = x.begin();
 		ofs << "size: " << x.size() << std::endl;

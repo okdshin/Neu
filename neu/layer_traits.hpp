@@ -2,7 +2,6 @@
 #define NEU_LAYER_TRAITS_HPP
 //20151025
 #include <type_traits>
-#include <gsl.h>
 //
 // layer_test_forward
 //
@@ -132,7 +131,7 @@ namespace neu_layer_traits {
 	class update {
 	public:
 		static decltype(auto) call(Layer& l) {
-			assert(!"you should specialize neu_layer_traits::update");
+			assert(!"you should specialize neu_layer_traits::update"); //TODO
 		}
 	};
 }

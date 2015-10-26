@@ -1,6 +1,7 @@
 #ifndef NEU_ACTIVATION_FUNC_RECTIFIER_HPP
 #define NEU_ACTIVATION_FUNC_RECTIFIER_HPP
 //20150528
+#include <neu/assert.hpp>
 #include <neu/as_const.hpp>
 #include <neu/basic_type.hpp>
 #include <neu/activation_func/derivative.hpp>
@@ -29,7 +30,7 @@ namespace neu {
 		derivative(std::size_t input_dim, std::size_t batch_size)
 			: output_(input_dim*batch_size) {}
 		decltype(auto) operator()(neu::gpu_vector const& input) {
-			Expects(output_.size() == input.size());
+			NEU_ASSERT(output_.size() == input.size());
 			boost::compute::transform(input.begin(), input.end(),
 				output_.begin(), neu::diff_rectifier_kernel);
 			return as_const(output_);
