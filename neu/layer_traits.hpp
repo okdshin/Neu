@@ -132,8 +132,7 @@ namespace neu_layer_traits {
 	class update {
 	public:
 		static decltype(auto) call(Layer& l) {
-			Expects(neu::layer_should_update(l));
-			//l.update();
+			assert(!"you should specialize neu_layer_traits::update");
 		}
 	};
 }

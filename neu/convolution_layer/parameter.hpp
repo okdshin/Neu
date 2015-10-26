@@ -2,7 +2,7 @@
 #define NEU_CONVOLUTION_LAYER_PARAMETER_HPP
 //20151005
 #include <neu/layer_parameter.hpp>
-#include <neu/convolution_layer/convolution_layer_impl.hpp>
+#include <neu/convolution_layer/impl.hpp>
 #include <neu/convolution_layer/factory.hpp>
 namespace neu {
 	class convolution_layer_parameter {

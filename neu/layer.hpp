@@ -31,6 +31,7 @@ namespace neu {
 			virtual void backward(gpu_vector const& delta) = 0;
 			virtual gpu_vector const& get_prev_delta() const = 0;
 
+			virtual bool should_update() const = 0;
 			virtual void update() = 0;
 
 		};
@@ -38,21 +39,26 @@ namespace neu {
 		class layer_holder : public layer_holder_base {
 		private:
 			template<typename T>
-			struct unwrapper {
+			struct unwrap_impl {
 				using type = T;
-				template<typename T2>
-				static decltype(auto) call(T2& t2) {
-					return (t2);
+				template<typename U>
+				static decltype(auto) call(U& u) {
+					return (u);
 				}
 			};
-			template<typename U>
-			struct unwrapper<std::reference_wrapper<U>> {
-				using type = U;
-				template<typename T2>
-				static decltype(auto) call(T2 t2) {
-					return t2.get();
+			template<typename T>
+			struct unwrap_impl<std::reference_wrapper<T>> {
+				using type = T;
+				template<typename U>
+				static decltype(auto) call(U& u) {
+					return u.get();
 				}
 			};
+
+			template<typename T>
+			static decltype(auto) unwrap(T& t) {
+				return unwrap_impl<std::decay_t<T>>::call(t);
+			}
 		public:
 			layer_holder() = delete;
 			layer_holder(layer_holder const&) = default;
@@ -65,34 +71,37 @@ namespace neu {
 			: layer_holder_base(), l_(l) {}
 			
 			std::type_info const& target_type() const override {
-				return typeid(typename unwrapper<Layer>::type);
+				return typeid(typename unwrap_impl<Layer>::type);
 			}
 
-			void* get() override { return &unwrapper<Layer>::call(l_); }
+			void* get() override { return std::addressof(unwrap(l_)); }
 
 			std::unique_ptr<layer_holder_base> clone() override {
 				return std::make_unique<layer_holder>(*this);
 			}
 
 			void test_forward(gpu_vector const& input) override {
-				layer_test_forward(unwrapper<Layer>::call(l_), input);
+				layer_test_forward(unwrap(l_), input);
 			}
 			void forward(gpu_vector const& input) override {
-				layer_forward(unwrapper<Layer>::call(l_), input);
+				layer_forward(unwrap(l_), input);
 			}
 			gpu_vector const& get_next_input() const override {
-				return layer_get_next_input(unwrapper<Layer>::call(l_));
+				return layer_get_next_input(unwrap(l_));
 			}
 
 			void backward(gpu_vector const& delta) override {
-				layer_backward(unwrapper<Layer>::call(l_), delta);
+				layer_backward(unwrap(l_), delta);
 			}
 			gpu_vector const& get_prev_delta() const override {
-				return layer_get_prev_delta(unwrapper<Layer>::call(l_));
+				return layer_get_prev_delta(unwrap(l_));
 			}
 
+			bool should_update() const override {
+				return layer_should_update(unwrap(l_));
+			}
 			void update() override {
-				layer_update(unwrapper<Layer>::call(l_));
+				layer_update(unwrap(l_));
 			}
 			
 		private:
@@ -154,6 +163,9 @@ namespace neu {
 			return holder_->get_prev_delta();
 		}
 
+		bool should_update() const {
+			return holder_->should_update();
+		}
 		void update() {
 			holder_->update();
 		}
@@ -162,5 +174,15 @@ namespace neu {
 		std::unique_ptr<layer_impl::layer_holder_base> holder_;
 	};
 }// namespace neu
+
+namespace neu_layer_traits {
+	template<>
+	class should_update<neu::layer> {
+	public:
+		static bool call(neu::layer const& l) {
+			return l.should_update();
+		}
+	};
+}
 
 #endif //NEU_LAYER_HPP

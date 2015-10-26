@@ -3,6 +3,7 @@
 //20150914
 #include <boost/timer.hpp>
 #include <neu/basic_type.hpp>
+#include <neu/layer_traits.hpp>
 namespace neu {
 	template<typename Layers>
 	decltype(auto) layers_forward(Layers& layers, gpu_vector input) {
@@ -43,10 +44,12 @@ namespace neu {
 		auto i = 0u;
 		boost::timer timer;
 		for(auto first = begin(layers); first != end(layers); ++first) {
-			std::cout << "update layer " << i << "------" << std::endl;
-			timer.restart();
-			first->update();
-			std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
+			if(layer_should_update(*first)) {
+				std::cout << "update layer " << i << "------" << std::endl;
+				timer.restart();
+				first->update();
+				std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
+			}
 			++i;
 		}
 	}

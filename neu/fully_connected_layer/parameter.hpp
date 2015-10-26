@@ -2,7 +2,7 @@
 #define NEU_FULLY_CONNECTED_LAYER_PARAMETER_HPP
 //20151023
 #include <neu/layer_parameter.hpp>
-#include <neu/fully_connected_layer/fully_connected_layer_impl.hpp>
+#include <neu/fully_connected_layer/impl.hpp>
 namespace neu {
 	class fully_connected_layer_parameter {
 		NEU_PP_PARAMETER(input_dim)

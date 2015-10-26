@@ -5,7 +5,7 @@
 #include <neu/kernel.hpp>
 #include <neu/convolution_layer/indices.hpp>
 #include <neu/convolution_layer/kernel_source.hpp>
-#include <neu/convolution_layer/convolution_layer_impl.hpp>
+#include <neu/convolution_layer/impl.hpp>
 namespace neu {
 	template<typename LearningRateGen>
 	decltype(auto) make_convolution_layer(
