@@ -15,32 +15,29 @@ namespace neu {
 			DiffActivationFunc const& diff_activation_func)
 		: input_dim_(input_dim), output_dim_(output_dim), batch_size_(batch_size),
 		activation_func_(activation_func), diff_activation_func_(diff_activation_func),
-		input_(input_dim*batch_size), next_input_(output_dim*batch_size),
-		prev_delta_(input_dim*batch_size), df_(input_dim*batch_size) {}
+		input_(input_dim*batch_size), df_(input_dim*batch_size) {}
 
-		decltype(auto) forward(gpu_vector const& input) {
+		decltype(auto) forward(gpu_vector_range input, gpu_vector_range next_input) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			input_ = input;
-			next_input_ = activation_func_(input);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_input_));
+			boost::compute::copy(input.begin(), input.end(), input_.begin());
+			activation_func_(input, next_input);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_input));
 		}
-		decltype(auto) get_next_input() const { return (next_input_); }
 
-		decltype(auto) backward(gpu_vector const& delta) {
+		decltype(auto) backward(gpu_vector_range delta, gpu_vector_range prev_delta) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta));
-			df_ = diff_activation_func_(input_);
+			diff_activation_func_(to_range(input_), to_range(df_));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(df_));
 			boost::compute::transform(df_.begin(), df_.end(), delta.begin(),
 				prev_delta_.begin(), boost::compute::multiplies<scalar>());
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta));
 		}
-		decltype(auto) get_prev_delta() const { return (prev_delta_); }
 
 	private:
 		std::size_t input_dim_, output_dim_, batch_size_;
 		ActivationFunc activation_func_;
 		DiffActivationFunc diff_activation_func_;
-		gpu_vector input_, next_input_, prev_delta_, df_;
+		gpu_vector input_, df_;
 	};
 	template<typename ActivationFunc>
 	decltype(auto) make_activation_layer(

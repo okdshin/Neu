@@ -5,7 +5,8 @@
 namespace neu {
 	constexpr char multiply_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void multiply(
-			const __global float* input, __global float* output,
+			const __global float* input, const int input_offset,
+			__global float* output, const int output_offset,
 			const __global float* weight, const __global float* bias,
 			const int input_dim, const int output_dim)
 		{
@@ -14,14 +15,15 @@ namespace neu {
 
 			float sum = bias[o];
 			for(int i = 0; i < input_dim; ++i) {
-				sum += weight[i+input_dim*o]*input[i+input_dim*b];
+				sum += weight[i+input_dim*o]*input[i+input_dim*b+input_offset];
 			}
-			output[o+output_dim*b] = sum;
+			output[o+output_dim*b+output_offset] = sum;
 		}
 	);
 	constexpr char multiply_back_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void multiply_back(
-			__global float* input, const __global float* output,
+			__global float* input, const int input_offset,
+			const __global float* output, const int output_offset,
 			const __global float* weight,
 			const int input_dim, const int output_dim)
 		{
@@ -30,9 +32,9 @@ namespace neu {
 
 			float sum = 0.0;
 			for(int o = 0; o < output_dim; ++o) {
-				sum += weight[i+input_dim*o]*output[o+output_dim*b];
+				sum += weight[i+input_dim*o]*output[o+output_dim*b+output_offset];
 			}
-			input[i+input_dim*b] = sum;
+			input[i+input_dim*b+input_offset] = sum;
 		}
 	);
 	constexpr char calc_del_weight_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(

@@ -15,4 +15,6 @@ subdirs( activation_func )
 subdirs( yaml_io )
 subdirs( compute_test )
 subdirs( layer )
+subdirs( gpu_buffer_range )
+subdirs( fully_connected_layer )
 

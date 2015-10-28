@@ -1,9 +1,9 @@
 #ifndef NEU_ACTIVATION_FUNC_SIGMOID_LOSS_HPP
 #define NEU_ACTIVATION_FUNC_SIGMOID_LOSS_HPP
 //20150528
-#include <cmath>
-#include <neu/as_const.hpp>
-#include <neu/basic_type.hpp>
+#include <neu/assert.hpp>
+#include <neu/validation.hpp>
+#include <neu/gpu_buffer_range.hpp>
 #include <neu/activation_func/derivative.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, sigmoid_loss_kernel, (float x), {
@@ -11,29 +11,22 @@ namespace neu {
 	});
 	class sigmoid_loss {
 	public:
-		sigmoid_loss(std::size_t input_dim, std::size_t batch_size)
-			: output_(input_dim*batch_size) {}
-		decltype(auto) operator()(neu::gpu_vector const& x) {
-			boost::compute::transform(x.begin(), x.end(),
-				output_.begin(), neu::sigmoid_loss_kernel);
-			return as_const(output_);
+		sigmoid_loss(std::size_t, std::size_t) {} //TODO
+		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
+			NEU_ASSERT(size(output) == size(input));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
+			boost::compute::transform(input.begin(), input.end(),
+				output.begin(), sigmoid_loss_kernel);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
-	private:
-		gpu_vector output_;
 	};
 	template<>
 	class derivative<sigmoid_loss> {
 	public:
-		derivative(std::size_t input_dim, std::size_t batch_size)
-				: output_(input_dim*batch_size) {
-			boost::compute::fill(output_.begin(), output_.end(), 1.f);
+		derivative(std::size_t, std::size_t) {} //TODO
+		decltype(auto) operator()(gpu_vector_range, gpu_vector_range output) const {
+			boost::compute::fill(output.begin(), output.end(), 1.f);
 		}
-	
-		decltype(auto) operator()(neu::gpu_vector) const {
-			return (output_);
-		}
-	private:
-		gpu_vector output_;
 	};
 }// namespace neu
 

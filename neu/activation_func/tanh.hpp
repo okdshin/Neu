@@ -1,41 +1,40 @@
 #ifndef NEU_ACTIVATION_FUNC_TANH_HPP
 #define NEU_ACTIVATION_FUNC_TANH_HPP
 //20150528
-#include <neu/as_const.hpp>
-#include <neu/basic_type.hpp>
+#include <neu/assert.hpp>
+#include <neu/validation.hpp>
+#include <neu/gpu_buffer_range.hpp>
 #include <neu/activation_func/derivative.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, tanh_kernel, (float x), {
 		return tanh(x);
 	});
-	BOOST_COMPUTE_FUNCTION(float, diff_tanh_kernel, (float x), {
+	BOOST_COMPUTE_FUNCTION(float, derivative_tanh_kernel, (float x), {
 		const float t = tan(x);
 		return 1.-t*t;
 	});
 	class tanh {
 	public:
-		tanh(std::size_t input_dim, std::size_t batch_size)
-			: output_(input_dim*batch_size) {}
-		decltype(auto) operator()(neu::gpu_vector const& input) {
+		tanh(std::size_t, std::size_t) {} //TODO
+		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
+			NEU_ASSERT(size(output) == size(input));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
 			boost::compute::transform(input.begin(), input.end(),
-				output_.begin(), neu::tanh_kernel);
-			return as_const(output_);
+				output.begin(), neu::tanh_kernel);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
-	private:
-		gpu_vector output_;
 	};
 	template<>
 	class derivative<tanh> {
 	public:
-		derivative(std::size_t input_dim, std::size_t batch_size)
-			: output_(input_dim*batch_size) {}
-		decltype(auto) operator()(neu::gpu_vector const& input) {
+		derivative(std::size_t, std::size_t) {} //TODO
+		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
+			NEU_ASSERT(size(output) == size(input));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
 			boost::compute::transform(input.begin(), input.end(),
-				output_.begin(), neu::diff_tanh_kernel);
-			return as_const(output_);
+				output.begin(), neu::derivative_tanh_kernel);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
-	private:
-		gpu_vector output_;
 	};
 }// namespace neu
 
