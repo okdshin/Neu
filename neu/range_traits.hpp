@@ -3,20 +3,74 @@
 //20151030
 #include <iterator>
 #include <type_traits>
+
+/*
 namespace neu_range_traits {
 	template<typename Range>
-	class size {
+	class iterator {
+	public:
+		using type = typename Range::iterator;
+	};
+}
+namespace neu {
+	template<typename Range>
+	using iterator_t = typename neu_range_traits::iterator<Range>::type;
+}
+
+namespace neu_range_traits {
+	template<typename Range>
+	class value {
+	public:
+		using type = typename std::iterator_traits<neu::iterator_t<Range>>::value_type;
+	};
+}
+namespace neu {
+	template<typename Range>
+	using value_t = typename neu_range_traits::value<Range>::type;
+}
+*/
+
+namespace neu_range_traits {
+	template<typename Range>
+	class begin {
 	public:
 		static decltype(auto) call(Range const& range) {
-			return range.size();
+			return range.begin();
+		}
+	};
+	template<typename Range>
+	class end {
+	public:
+		static decltype(auto) call(Range const& range) {
+			return range.end();
 		}
 	};
 }
-
 namespace neu {
 	template<typename Range>
-	decltype(auto) range_size(Range const& range) {
-		return neu_range_traits::size<std::decay_t<Range>>::call(range);
+	decltype(auto) range_begin(Range const& range) {
+		return neu_range_traits::begin<std::decay_t<Range>>::call(range);
+	}
+	template<typename Range>
+	decltype(auto) range_end(Range const& range) {
+		return neu_range_traits::end<std::decay_t<Range>>::call(range);
+	}
+}
+
+namespace neu_range_traits {
+	template<typename Range>
+	class distance {
+	public:
+		static decltype(auto) call(Range const& range) {
+			return static_cast<std::size_t>(
+				std::distance(neu::range_begin(range), neu::range_end(range)));
+		}
+	};
+}
+namespace neu {
+	template<typename Range>
+	decltype(auto) range_distance(Range const& range) {
+		return neu_range_traits::distance<std::decay_t<Range>>::call(range);
 	}
 }
 
@@ -29,7 +83,6 @@ namespace neu_range_traits {
 		}
 	};
 }
-
 namespace neu {
 	template<typename Range>
 	decltype(auto) range_get_buffer(Range const& range) {
@@ -53,7 +106,6 @@ namespace neu_range_traits {
 		}
 	};
 }
-
 namespace neu {
 	template<typename Range>
 	decltype(auto) range_get_begin_index(Range const& range) {

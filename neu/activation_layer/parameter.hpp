@@ -18,9 +18,10 @@ namespace neu {
 		return p;
 	}
 	template<typename ActivationFunc>
-	decltype(auto) make_activation_layer(activation_layer_parameter const& param) {
+	decltype(auto) make_activation_layer(activation_layer_parameter const& param,
+			ActivationFunc const& activation_func) {
 		return make_activation_layer<ActivationFunc>(
-			param.input_dim(), param.batch_size());
+			param.input_dim(), param.output_dim(), param.batch_size(), activation_func);
 	}
 }// namespace neu
 

@@ -5,8 +5,9 @@
 #include <memory>
 #include <functional>
 #include <type_traits>
-#include <neu/basic_type.hpp>
+#include <neu/range_traits.hpp>
 #include <neu/layer_traits.hpp>
+#include <neu/gpu_buffer_range.hpp>
 namespace neu {
 	class layer;
 	namespace layer_impl {
@@ -17,19 +18,24 @@ namespace neu {
 			layer_holder_base& operator=(layer_holder_base const&) = default;
 			layer_holder_base(layer_holder_base&&) = default;
 			layer_holder_base& operator=(layer_holder_base&&) = default;
-			virtual ~layer_holder_base() {}
+			virtual ~layer_holder_base() = default;
 
 			virtual std::type_info const& target_type() const = 0;
 			virtual void* get() = 0;
 
 			virtual std::unique_ptr<layer_holder_base> clone() = 0;
 
-			virtual void test_forward(gpu_vector const& input) = 0;
-			virtual void forward(gpu_vector const& input) = 0;
-			virtual gpu_vector const& get_next_input() const = 0;
+			virtual std::size_t input_dim() const = 0;
+			virtual std::size_t output_dim() const = 0;
+			virtual std::size_t batch_size() const = 0;
 
-			virtual void backward(gpu_vector const& delta) = 0;
-			virtual gpu_vector const& get_prev_delta() const = 0;
+			virtual void test_forward(std::size_t batch_size,
+				gpu_vector_range const& input, gpu_vector_range const& output) = 0;
+			virtual void forward(gpu_vector_range const& input,
+				gpu_vector_range const& output) = 0;
+
+			virtual void backward(gpu_vector_range const& delta,
+				gpu_vector_range const& prev_delta) = 0;
 
 			virtual bool should_update() const = 0;
 			virtual void update() = 0;
@@ -80,28 +86,35 @@ namespace neu {
 				return std::make_unique<layer_holder>(*this);
 			}
 
-			void test_forward(gpu_vector const& input) override {
-				layer_test_forward(unwrap(l_), input);
+			std::size_t input_dim() const override {
+				return neu::layer_input_dim(unwrap(l_));
 			}
-			void forward(gpu_vector const& input) override {
-				layer_forward(unwrap(l_), input);
+			std::size_t output_dim() const override {
+				return neu::layer_output_dim(unwrap(l_));
 			}
-			gpu_vector const& get_next_input() const override {
-				return layer_get_next_input(unwrap(l_));
+			std::size_t batch_size() const override {
+				return neu::layer_batch_size(unwrap(l_));
 			}
 
-			void backward(gpu_vector const& delta) override {
-				layer_backward(unwrap(l_), delta);
+			void test_forward(std::size_t batch_size, gpu_vector_range const& input,
+					gpu_vector_range const& output) override {
+				neu::layer_test_forward(unwrap(l_), batch_size, input, output);
 			}
-			gpu_vector const& get_prev_delta() const override {
-				return layer_get_prev_delta(unwrap(l_));
+			void forward(gpu_vector_range const& input,
+					gpu_vector_range const& output) override {
+				neu::layer_forward(unwrap(l_), input, output);
+			}
+
+			void backward(gpu_vector_range const& delta,
+					gpu_vector_range const& prev_delta) override {
+				neu::layer_backward(unwrap(l_), delta, prev_delta);
 			}
 
 			bool should_update() const override {
 				return layer_should_update(unwrap(l_));
 			}
 			void update() override {
-				layer_update(unwrap(l_));
+				neu::layer_update(unwrap(l_));
 			}
 			
 		private:
@@ -111,7 +124,7 @@ namespace neu {
 
 	class layer {
 	public:
-		layer() = delete;
+		layer() = default;
 		layer(layer const& other) : holder_(other.holder_->clone()) {}
 		layer& operator=(layer const& other) {
 			holder_ = other.holder_->clone();
@@ -146,21 +159,22 @@ namespace neu {
 			return static_cast<Layer const*>(const_cast<layer*>(this)->target<Layer>());
 		}
 
-		void test_forward(gpu_vector const& input) {
-			holder_->test_forward(input);
+		std::size_t input_dim() const { return holder_->input_dim(); }
+		std::size_t output_dim() const { return holder_->output_dim(); }
+		std::size_t batch_size() const { return holder_->batch_size(); }
+
+		void test_forward(std::size_t batch_size, gpu_vector_range const& input,
+				gpu_vector_range const& output) {
+			holder_->test_forward(batch_size, input, output);
 		}
-		void forward(gpu_vector const& input) {
-			holder_->forward(input);
-		}
-		gpu_vector const& get_next_input() const {
-			return holder_->get_next_input();
+		void forward(gpu_vector_range const& input,
+				gpu_vector_range const& output) {
+			holder_->forward(input, output);
 		}
 
-		void backward(gpu_vector const& delta) {
-			holder_->backward(delta);
-		}
-		gpu_vector const& get_prev_delta() const {
-			return holder_->get_prev_delta();
+		void backward(gpu_vector_range const& delta,
+				gpu_vector_range const& prev_delta) {
+			holder_->backward(delta, prev_delta);
 		}
 
 		bool should_update() const {

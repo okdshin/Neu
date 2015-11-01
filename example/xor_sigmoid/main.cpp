@@ -55,11 +55,12 @@ int main(int argc, char** argv) {
 	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc1_param.weight_dim(), fc1_param.bias_dim()));
-	auto relu1 = neu::make_activation_layer<neu::rectifier>(relu1_param);
+	auto relu1 = neu::make_activation_layer(relu1_param, neu::rectifier());
 	auto fc2 = neu::make_fully_connected_layer(fc2_param, fc12_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc2_param.weight_dim(), fc2_param.bias_dim()));
-	auto sigmoid_loss = neu::make_activation_layer<neu::sigmoid_loss>(sigmoid_loss_param);
+	auto sigmoid_loss = neu::make_activation_layer(sigmoid_loss_param,
+		neu::sigmoid_loss());
 
 	auto layers = std::vector<neu::layer>{
 		std::ref(fc1),
@@ -69,23 +70,24 @@ int main(int argc, char** argv) {
 	};
 	std::ofstream error_log("error.txt");
 	std::ofstream output_log("output.txt");
-	for(auto i = 0u; i < 100u; ++i) {
-		neu::layers_forward(layers, input);
-		auto output = layers.back().get_next_input();
-		neu::print(output_log, output, batch_size);
-		auto error = neu::calc_last_layer_delta(output, teach);
-		neu::layers_backward(layers, error);
-		fc1.update();
-		fc2.update();
 
-		neu::gpu_vector squared_error(error.size());
-		boost::compute::transform(error.begin(), error.end(),
-			error.begin(), squared_error.begin(),
-			boost::compute::multiplies<neu::scalar>());
-		auto error_sum = boost::compute::accumulate(
-			squared_error.begin(), squared_error.end(), 0.f);
-		error_log << i << " " << error_sum << std::endl;
+	auto buffer_size = neu::max_inoutput_size(layers);
+	neu::gpu_vector buffer1(buffer_size);
+	neu::gpu_vector buffer2(buffer_size);
+	for(auto i = 0u; i < 100u; ++i) {
+		auto output_range = neu::layers_forward(layers,
+			neu::to_range(input), buffer1, buffer2);
+		neu::print(output_log, output_range, output_dim);
+		auto error_range = output_range;
+		neu::calc_last_layer_delta(output_range, teach, error_range);
+		neu::print(error_log, error_range, output_dim);
+		auto prev_delta_range = neu::layers_backward(layers,
+			error_range, buffer1, buffer2);
+		neu::layers_update(layers);
 	}
+	auto output_range = neu::layers_forward(layers,
+		neu::to_range(input), buffer1, buffer2);
 	neu::print(teach); std::cout << "\n";
-	neu::print(layers.back().get_next_input());
+	neu::print(std::cout, output_range, output_dim);
+	boost::compute::system::finish();
 }

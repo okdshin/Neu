@@ -17,4 +17,5 @@ subdirs( compute_test )
 subdirs( layer )
 subdirs( gpu_buffer_range )
 subdirs( fully_connected_layer )
+subdirs( activation_layer )
 

@@ -3,6 +3,66 @@
 //20151025
 #include <type_traits>
 //
+// layer_input_dim
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class input_dim {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			return l.input_dim();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_input_dim(Layer const& l) {
+		return neu_layer_traits::input_dim<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
+// layer_output_dim
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class output_dim {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			return l.output_dim();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_output_dim(Layer const& l) {
+		return neu_layer_traits::output_dim<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
+// layer_batch_size
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class batch_size {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			return l.batch_size();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_batch_size(Layer const& l) {
+		return neu_layer_traits::batch_size<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
 // layer_test_forward
 //
 namespace neu_layer_traits {
@@ -10,15 +70,19 @@ namespace neu_layer_traits {
 	template<typename Layer>
 	class test_forward {
 	public:
-		static decltype(auto) call(Layer& l, neu::gpu_vector const& input) {
-			l.test_forward(input);
+		template<typename InputRange, typename OutputRange>
+		static decltype(auto) call(Layer& l, std::size_t batch_size,
+				InputRange const& input, OutputRange const& output) {
+			l.test_forward(batch_size, input, output);
 		}
 	};
 }
 namespace neu {
-	template<typename Layer>
-	decltype(auto) layer_test_forward(Layer& l, gpu_vector const& input) {
-		neu_layer_traits::test_forward<std::decay_t<Layer>>::call(l, input);
+	template<typename Layer, typename InputRange, typename OutputRange>
+	decltype(auto) layer_test_forward(Layer& l, std::size_t batch_size,
+			InputRange const& input, OutputRange const& output) {
+		neu_layer_traits::test_forward<std::decay_t<Layer>>::
+			call(l, batch_size, input, output);
 	}
 }
 
@@ -30,35 +94,18 @@ namespace neu_layer_traits {
 	template<typename Layer>
 	class forward {
 	public:
-		static decltype(auto) call(Layer& l, neu::gpu_vector const& input) {
-			l.forward(input);
+		template<typename InputRange, typename OutputRange>
+		static decltype(auto) call(Layer& l,
+				InputRange const& input, OutputRange const& output) {
+			l.forward(input, output);
 		}
 	};
 }
 namespace neu {
-	template<typename Layer>
-	decltype(auto) layer_forward(Layer& l, gpu_vector const& input) {
-		neu_layer_traits::forward<std::decay_t<Layer>>::call(l, input);
-	}
-}
-
-//
-// layer_get_next_input
-//
-namespace neu_layer_traits {
-	// default implementation (call member function)
-	template<typename Layer>
-	class get_next_input {
-	public:
-		static decltype(auto) call(Layer const& l) {
-			return l.get_next_input();
-		}
-	};
-}
-namespace neu {
-	template<typename Layer>
-	decltype(auto) layer_get_next_input(Layer const& l) {
-		return neu_layer_traits::get_next_input<std::decay_t<Layer>>::call(l);
+	template<typename Layer, typename InputRange, typename OutputRange>
+	decltype(auto) layer_forward(Layer& l,
+			InputRange const& input, OutputRange const& output) {
+		neu_layer_traits::forward<std::decay_t<Layer>>::call(l, input, output);
 	}
 }
 
@@ -70,35 +117,18 @@ namespace neu_layer_traits {
 	template<typename Layer>
 	class backward {
 	public:
-		static decltype(auto) call(Layer& l, neu::gpu_vector const& delta) {
-			l.backward(delta);
+		template<typename InputRange, typename OutputRange>
+		static decltype(auto) call(Layer& l,
+				InputRange const& delta, OutputRange const& prev_delta) {
+			l.backward(delta, prev_delta);
 		}
 	};
 }
 namespace neu {
-	template<typename Layer>
-	decltype(auto) layer_backward(Layer& l, gpu_vector const& delta) {
-		neu_layer_traits::backward<std::decay_t<Layer>>::call(l, delta);
-	}
-}
-
-//
-// layer_get_prev_delta
-//
-namespace neu_layer_traits {
-	// default implementation (call member function)
-	template<typename Layer>
-	class get_prev_delta {
-	public:
-		static decltype(auto) call(Layer const& l) {
-			return l.get_prev_delta();
-		}
-	};
-}
-namespace neu {
-	template<typename Layer>
-	decltype(auto) layer_get_prev_delta(Layer const& l) {
-		return neu_layer_traits::get_prev_delta<std::decay_t<Layer>>::call(l);
+	template<typename Layer, typename InputRange, typename OutputRange>
+	decltype(auto) layer_backward(Layer& l,
+			InputRange const& delta, OutputRange const& prev_delta) {
+		neu_layer_traits::backward<std::decay_t<Layer>>::call(l, delta, prev_delta);
 	}
 }
 

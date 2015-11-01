@@ -3,7 +3,8 @@
 //20150528
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
-#include <neu/gpu_buffer_range.hpp>
+#include <neu/range_traits.hpp>
+#include <neu/range_algorithm.hpp>
 #include <neu/activation_func/derivative.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, rectifier_kernel, (float x), {
@@ -14,28 +15,22 @@ namespace neu {
 	});
 	class rectifier {
 	public:
-		rectifier(std::size_t, std::size_t) {}
-		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
-			NEU_ASSERT(size(output) == size(input));
+		template<typename InputRange, typename OutputRange>
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			boost::compute::transform(input.begin(), input.end(),
-				output.begin(), rectifier_kernel);
+			neu::range_transform(input, output, rectifier_kernel);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
 	};
 	template<>
 	class derivative<rectifier> {
 	public:
-		derivative(std::size_t, std::size_t) {}
-		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
-			NEU_ASSERT(size(output) == size(input));
+		template<typename InputRange, typename OutputRange>
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			boost::compute::transform(input.begin(), input.end(),
-				output.begin(), neu::derivative_rectifier_kernel);
+			neu::range_transform(input, output, neu::derivative_rectifier_kernel);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
-	private:
-		gpu_vector output_;
 	};
 }// namespace neu
 

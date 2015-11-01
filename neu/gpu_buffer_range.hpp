@@ -10,16 +10,21 @@ namespace neu {
 	template<typename T>
 	class gpu_buffer_range {
 	public:
+		gpu_buffer_range() = default;
 		gpu_buffer_range(
 			boost::compute::buffer_iterator<T> begin,
 			boost::compute::buffer_iterator<T> end)
-		: buffer_(begin.get_buffer()), begin_(begin), end_(end) {
+		: begin_(begin), end_(end) {
 			NEU_ASSERT(begin.get_index() <= end.get_index());
 		}
+		gpu_buffer_range(
+			boost::compute::buffer_iterator<T> begin,
+			std::size_t count)
+		: gpu_buffer_range(begin, begin+count) {}
+
 		decltype(auto) begin() const { return (begin_); }
 		decltype(auto) end() const { return (end_); }
 	private:
-		boost::compute::buffer buffer_;
 		boost::compute::buffer_iterator<T> begin_, end_;
 	};
 	using gpu_vector_range = gpu_buffer_range<scalar>;
@@ -28,13 +33,6 @@ namespace neu {
 	}
 }// namespace neu
 namespace neu_range_traits {
-	template<typename T>
-	class size<neu::gpu_buffer_range<T>> {
-	public:
-		static decltype(auto) call(neu::gpu_buffer_range<T> const& range) {
-			return range.end().get_index()-range.begin().get_index();
-		}
-	};
 	template<typename T>
 	class get_buffer<neu::gpu_buffer_range<T>> {
 	public:

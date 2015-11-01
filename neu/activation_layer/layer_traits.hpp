@@ -5,15 +5,6 @@
 #include <neu/activation_layer/impl.hpp>
 namespace neu_layer_traits {
 	template<typename ActivationFunc, typename DiffActivationFunc>
-	class test_forward<neu::activation_layer<ActivationFunc, DiffActivationFunc>> {
-	public:
-		static decltype(auto) call(
-				neu::activation_layer<ActivationFunc, DiffActivationFunc>& l,
-				neu::gpu_vector const& input) {
-			l.forward(input);
-		}
-	};
-	template<typename ActivationFunc, typename DiffActivationFunc>
 	class should_update<neu::activation_layer<ActivationFunc, DiffActivationFunc>> {
 	public:
 		static decltype(auto) call(
