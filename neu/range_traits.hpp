@@ -37,6 +37,9 @@ namespace neu_range_traits {
 		static decltype(auto) call(Range const& range) {
 			return range.begin();
 		}
+		static decltype(auto) call(Range& range) {
+			return range.begin();
+		}
 	};
 	template<typename Range>
 	class end {
@@ -44,12 +47,24 @@ namespace neu_range_traits {
 		static decltype(auto) call(Range const& range) {
 			return range.end();
 		}
+		static decltype(auto) call(Range& range) {
+			return range.end();
+		}
 	};
 }
 namespace neu {
 	template<typename Range>
+	decltype(auto) range_begin(Range& range) {
+		return neu_range_traits::begin<std::decay_t<Range>>::call(range);
+	}
+	template<typename Range>
 	decltype(auto) range_begin(Range const& range) {
 		return neu_range_traits::begin<std::decay_t<Range>>::call(range);
+	}
+
+	template<typename Range>
+	decltype(auto) range_end(Range& range) {
+		return neu_range_traits::end<std::decay_t<Range>>::call(range);
 	}
 	template<typename Range>
 	decltype(auto) range_end(Range const& range) {
