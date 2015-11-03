@@ -26,22 +26,22 @@ namespace neu {
 			gpu_vector_range const& input,
 			gpu_vector& input_buffer, gpu_vector& output_buffer) {
 		neu::range_copy(input, input_buffer);
-		neu::gpu_vector_range input_range(input_buffer.begin(),
-			neu::range_distance(input));
-		neu::gpu_vector_range output_range;
 		auto i = 0u;
 		boost::timer timer;
 		for(auto& l : layers) {
-			auto output_size = l.output_dim()*l.batch_size();
-			output_range = neu::gpu_vector_range(output_buffer.begin(), output_size);
+			neu::gpu_vector_range input_range(input_buffer.begin(),
+				neu::layer_input_dim(l)*neu::layer_batch_size(l));
+			neu::gpu_vector_range output_range(output_buffer.begin(),
+				neu::layer_output_dim(l)*neu::layer_batch_size(l));
 			std::cout << "forward layer " << i << "------" << std::endl;
 			timer.restart();
 			l.forward(input_range, output_range);
 			std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
 			input_buffer.swap(output_buffer);
-			input_range = neu::gpu_vector_range(input_buffer.begin(), output_size);
 			++i;
 		}
+		neu::gpu_vector_range output_range(output_buffer.begin(),
+			neu::layer_output_dim(layers.back())*neu::layer_batch_size(layers.back()));
 		return output_range;
 	}
 
@@ -52,7 +52,7 @@ namespace neu {
 		neu::gpu_vector_range delta_range(delta_buffer.begin(),
 			neu::range_distance(delta));
 		neu::gpu_vector_range prev_delta_range;
-		auto i = 0u;
+		auto i = layers.size()-1;
 		boost::timer timer;
 		for(auto first = layers.rbegin(); first != layers.rend(); ++first) {
 			auto& l = *first;
@@ -65,7 +65,7 @@ namespace neu {
 			std::cout << "this layer consumed: " << timer.elapsed() << " secs" << std::endl;
 			delta_buffer.swap(prev_delta_buffer);
 			delta_range = neu::gpu_vector_range(delta_buffer.begin(), prev_delta_size);
-			++i;
+			--i;
 		}
 		return prev_delta_range;
 	}
@@ -104,25 +104,41 @@ namespace neu {
 		return sum/error.size();
 	}
 
-	decltype(auto) mean_square_error(gpu_vector error) {
-		boost::compute::transform(error.begin(), error.end(),
-			error.begin(), error.begin(), boost::compute::multiplies<scalar>());
+	template<typename Range>
+	decltype(auto) mean_square_error(Range const& error) {
+		neu::range_transform(error, error, error, boost::compute::multiplies<scalar>());
 		scalar sum = 0.f;
-		boost::compute::reduce(error.begin(), error.end(), &sum);
-		return sum/error.size();
+		boost::compute::reduce(neu::range_begin(error), neu::range_end(error), &sum);
+		return sum/neu::range_distance(error);
 	}
 
+	template<typename Range1, typename Range2>
 	decltype(auto) cross_entropy_loss(
-			gpu_vector const& last_output, gpu_vector const& teach) {
+			Range1 const& last_output, Range2 const& teach, gpu_vector& buffer) {
 		static BOOST_COMPUTE_FUNCTION(float, cross_entropy_kernel, (float d, float y), {
 			return -d*log(y+0.00001);
 		});
-		gpu_vector cross_entropy(last_output.size());
-		boost::compute::transform(teach.begin(), teach.end(),
-			last_output.begin(), cross_entropy.begin(), cross_entropy_kernel);
+		auto end = neu::range_transform(last_output, teach, buffer, cross_entropy_kernel);
 		scalar sum = 0.f;
-		boost::compute::reduce(cross_entropy.begin(), cross_entropy.end(), &sum);
+		boost::compute::reduce(buffer.begin(), end, &sum);
 		return sum;
+	}
+
+	decltype(auto) accuracy(std::size_t input_dim, std::size_t batch_size,
+			gpu_vector const& last_output, gpu_vector const& teach) {
+		NEU_ASSERT(teach.size() == last_output.size());
+		NEU_ASSERT(input_dim*batch_size == last_output.size());
+		scalar sum = 0.f;
+		for(auto b = 0u; b < batch_size; ++b) {
+			auto max_iter = boost::compute::
+				max_element(last_output.begin()+b*input_dim,
+					last_output.begin()+b*input_dim+input_dim);
+			auto index = std::distance(max_iter, teach.begin()+b*input_dim);
+			if(teach[index]) {
+				sum += 1.f;
+			}
+		}
+		return sum/batch_size;
 	}
 }// namespace neu
 

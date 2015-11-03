@@ -2,6 +2,85 @@
 #define NEU_LAYER_TRAITS_HPP
 //20151025
 #include <type_traits>
+#include <boost/tti/has_type.hpp>
+
+namespace neu {
+	class layer_tag {};
+	class fully_connected_like_layer_tag : public layer_tag {};
+	class convolution_like_layer_tag : public layer_tag {};
+}
+namespace neu_layer_traits {
+	BOOST_TTI_TRAIT_HAS_TYPE(layer_has_layer_category, layer_category);
+	
+	template<typename, bool>
+	class category_impl {};
+	template<typename Layer>
+	class category_impl<Layer, true> {
+	public:
+		using type = typename Layer::layer_category;
+	};
+	template<typename Layer>
+	class category_impl<Layer, false> {
+	public:
+		using type = neu::layer_tag;
+	};
+
+	template<typename Layer>
+	class category {
+	public:
+		using type = typename neu_layer_traits::category_impl<Layer,
+			neu_layer_traits::layer_has_layer_category<Layer>::value>::type;
+	};
+}
+namespace neu {
+	template<typename Layer>
+	using layer_category_t = typename neu_layer_traits::category<Layer>::type;
+}
+
+//
+// layer_input_width
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class input_width {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			static_assert(std::is_same<
+				neu::layer_category_t<Layer>, neu::convolution_like_layer_tag>::value, "");
+			return l.input_width();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_input_width(Layer const& l) {
+		return neu_layer_traits::input_width<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
+// layer_input_channel_num
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class input_channel_num {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			static_assert(std::is_same<
+				neu::layer_category_t<Layer>, neu::convolution_like_layer_tag>::value, "");
+			return l.input_channel_num();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_input_channel_num(Layer const& l) {
+		return neu_layer_traits::input_channel_num<std::decay_t<Layer>>::call(l);
+	}
+}
+
 //
 // layer_input_dim
 //
@@ -11,6 +90,14 @@ namespace neu_layer_traits {
 	class input_dim {
 	public:
 		static decltype(auto) call(Layer const& l) {
+			return call_impl(l, neu::layer_category_t<Layer>());
+		}
+	private:
+		static decltype(auto) call_impl(Layer const& l, neu::convolution_like_layer_tag) {
+			return neu::layer_input_width(l)*neu::layer_input_width(l)
+				*neu::layer_input_channel_num(l);
+		}
+		static decltype(auto) call_impl(Layer const& l, neu::layer_tag) {
 			return l.input_dim();
 		}
 	};
@@ -23,6 +110,50 @@ namespace neu {
 }
 
 //
+// layer_output_width
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class output_width {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			static_assert(std::is_same<
+				neu::layer_category_t<Layer>, neu::convolution_like_layer_tag>::value, "");
+			return l.output_width();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_output_width(Layer const& l) {
+		return neu_layer_traits::output_width<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
+// layer_output_channel_num
+//
+namespace neu_layer_traits {
+	// default implementation (call member function)
+	template<typename Layer>
+	class output_channel_num {
+	public:
+		static decltype(auto) call(Layer const& l) {
+			static_assert(std::is_same<
+				neu::layer_category_t<Layer>, neu::convolution_like_layer_tag>::value, "");
+			return l.output_channel_num();
+		}
+	};
+}
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_output_channel_num(Layer const& l) {
+		return neu_layer_traits::output_channel_num<std::decay_t<Layer>>::call(l);
+	}
+}
+
+//
 // layer_output_dim
 //
 namespace neu_layer_traits {
@@ -31,6 +162,14 @@ namespace neu_layer_traits {
 	class output_dim {
 	public:
 		static decltype(auto) call(Layer const& l) {
+			return call_impl(l, neu::layer_category_t<Layer>());
+		}
+	private:
+		static decltype(auto) call_impl(Layer const& l, neu::convolution_like_layer_tag) {
+			return neu::layer_output_width(l)*neu::layer_output_width(l)
+				*neu::layer_output_channel_num(l);
+		}
+		static decltype(auto) call_impl(Layer const& l, neu::layer_tag) {
 			return l.output_dim();
 		}
 	};
