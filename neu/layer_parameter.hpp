@@ -13,7 +13,7 @@
 			return *this; \
 		} \
 		decltype(auto) name() const { \
-			if(!is_##name##_set_) { throw std::runtime_error("param is not set"); } \
+			if(!is_##name##_set_) { throw std::runtime_error("param \""#name"\" is not set"); } \
 			return name##_; \
 		} \
 		decltype(auto) name##_opt() const { return name##_; } \
