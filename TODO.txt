@@ -1,4 +1,11 @@
 - integrate the caliculation of output_width from input_width, stride and pad
+- max pooling without indices
+- average pooling without indices
+- bias layer
+- enrich data_set function
+- accuracy
+- adopt layers to layer_traits
+- rename DiffActivationFunc Derivative one
 - error functions
 - output layer state
 - zca whitening
@@ -8,6 +15,8 @@
 - weight regularization
 - the fewer bias part in convolution_layer
 - avoid the calculation of delta of top layer
+- CMake function
+- Boost.Test
 DONE
 - change the keyword "differential" to "derivative"
 - weight decay
