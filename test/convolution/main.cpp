@@ -70,17 +70,22 @@ int main() {
 	{
 		neu::gpu_vector output(batch_size*output_channel_num*output_width*output_width);
 		auto convolution_kernel = 
-			neu::make_kernel(neu::convolution_kernel_source_float4, "convolution");
+			neu::make_kernel(neu::convolution_kernel_source, "convolution");
 		auto ow = static_cast<decltype(batch_size)>(output_width);
-		neu::execute_nd_range_kernel<3>(convolution_kernel,
+		auto event = neu::enqueue_nd_range_kernel<3>(convolution_kernel,
 			{0, 0, 0}, {ow, ow, batch_size},
 			static_cast<int>(input_width), static_cast<int>(output_width),
 			static_cast<int>(filter_width),
 			static_cast<int>(input_channel_num), static_cast<int>(output_channel_num),
 			static_cast<int>(stride), static_cast<int>(pad),
-			input, output, filter, bias);
+			neu::range_get_buffer(input),
+			static_cast<int>(neu::range_get_begin_index(input)),
+			neu::range_get_buffer(output),
+			static_cast<int>(neu::range_get_begin_index(output)),
+			filter, bias);
+		event.wait();
 		neu::save_image_vector_as_images(neu::to_cpu_vector(output),
-			output_width, output_channel_num, batch_size, "output_float4.bmp", 255.f);
+			output_width, output_channel_num, batch_size, "output.bmp", 255.f);
 	}
 	/*
 	{

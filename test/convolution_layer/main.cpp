@@ -1,14 +1,12 @@
-#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #include <iostream>
 #include <neu/convolution_layer.hpp>
-//#include <neu/learning_rate_gen/fixed_learning_rate_gen.hpp>
 #include <neu/learning_rate_gen/weight_decay_and_momentum.hpp>
 #include <neu/image.hpp>
 #include <neu/kernel.hpp>
 
 int main() {
 	std::cout << "hello world" << std::endl;
-	//std::random_device rand{};
+	//std::random_device engine; std::mt19937 rand(engine());
 	std::mt19937 rand(0);
 	auto batch_size = 1u;
 	neu::gpu_vector input;
@@ -46,12 +44,16 @@ int main() {
 		input_channel_num, output_channel_num,
 		stride, pad, batch_size,
 		initial_filters, initial_bias,
-		neu::weight_decay_and_momentum(base_lr, momentum, weight_decay,
+		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			filter_width*filter_width*input_channel_num*output_channel_num,
 			filter_width*filter_width*output_channel_num)
 	);
 
+	auto output_size = neu::layer_output_dim(conv)*neu::layer_batch_size(conv);
+	neu::gpu_vector output(output_size);
 	for(auto i = 0u; i < 10000u; ++i) {
+		conv.forward(input, output);
+		/*
 		auto filters = conv.get_filters();
 		conv.forward(input);
 		auto next_input = conv.get_next_input();
@@ -79,6 +81,7 @@ int main() {
 				output_width, output_channel_num, batch_size,
 				"output"+std::to_string(i)+".bmp");
 		}
+		*/
 		/*
 		neu::save_image_vector_as_images(neu::to_cpu_vector(prev_delta),
 			input_width, input_channel_num, batch_size,

@@ -18,28 +18,29 @@ int main() {
 	auto channel_num = 3u;
 	auto filter_width = 3u;
 	auto stride = 2u;
-	auto output_width = input_width/stride;
+	//auto output_width = input_width/stride;
 
-	neu::max_pooling_layer_parameters params;
+	neu::max_pooling_layer_parameter params;
 	params
 	.input_width(512)
 	.filter_width(3)
-	.channel_num(3)
+	.input_channel_num(3)
 	.stride(2)
+	.pad(1)
 	.batch_size(1)
 	;
+	std::cout << params.output_width() << std::endl;
 	auto pool = neu::make_max_pooling_layer(params);
-
+	std::cout << neu::layer_output_width(pool) << std::endl;
+	std::cout << pool.output_width() << std::endl;
+	neu::gpu_vector output(neu::layer_output_dim(pool)*neu::layer_batch_size(pool));
+	neu::layer_forward(pool, input, output);
+	neu::save_image_vector_as_images(neu::to_cpu_vector(output),
+		neu::layer_output_width(pool), channel_num, batch_size, "output.bmp", 255);
 	/*
-	auto pool = neu::make_max_pooling_layer(
-		input_width, filter_width, channel_num, stride, batch_size);
-	*/
-	pool.forward(input);
-	auto next_input = pool.get_next_input();
-	pool.backward(neu::cpu_vector(next_input.size(), 1));
+	pool.backward(neu::cpu_vector(output.size(), 1));
 	auto prev_delta = pool.get_prev_delta();
-	neu::save_image_vector_as_images(neu::to_cpu_vector(next_input),
-		output_width, channel_num, batch_size, "output.bmp");
 	neu::save_image_vector_as_images(neu::to_cpu_vector(prev_delta),
 		input_width, channel_num, batch_size, "prev_delta.bmp");
+	*/
 }
