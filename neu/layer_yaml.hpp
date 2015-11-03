@@ -19,7 +19,11 @@ namespace neu {
 	decltype(auto) save_to_yaml(YAML::Emitter& out, T const& t) {
 		return neu_yaml_io_traits::save_to_yaml<T>::call(out, t);
 	}
-	using neu_yaml_io_traits::load_from_yaml;
+	template<typename T>
+	decltype(auto) load_from_yaml(YAML::Node const& in) {
+		return neu_yaml_io_traits::load_from_yaml<T>::call(in);
+	}
+	//using neu_yaml_io_traits::load_from_yaml;
 }
 namespace neu_yaml_io_traits {
 	template<>
@@ -81,9 +85,9 @@ namespace neu_yaml_io_traits {
 			auto momentum_rate = in["param"]["momentum_rate"].as<float>();
 			auto decay_rate = in["param"]["decay_rate"].as<float>();
 			auto delta_weight =
-				neu::load_from_yaml<neu::cpu_vector>::call(in["param"]["delta_weight"]);
+				neu::load_from_yaml<neu::cpu_vector>(in["param"]["delta_weight"]);
 			auto delta_bias =
-				neu::load_from_yaml<neu::cpu_vector>::call(in["param"]["delta_bias"]);
+				neu::load_from_yaml<neu::cpu_vector>(in["param"]["delta_bias"]);
 			return neu::weight_decay_and_momentum(
 				learning_rate, momentum_rate, decay_rate, delta_weight, delta_bias);
 		}
@@ -93,8 +97,8 @@ namespace neu_yaml_io_traits {
 	class save_to_yaml<neu::learning_rate_gen> {
 	public:
 		static decltype(auto) call(YAML::Emitter& out, neu::learning_rate_gen const& lrg) {
-			std::cout << "layer as yaml!!!" << std::endl;
 			if(auto* wd_m = lrg.target<neu::weight_decay_and_momentum>()) {
+				out << YAML::Comment("wrapped by learning_rate_gen");
 				neu::save_to_yaml(out, *wd_m);
 			}
 			else {
@@ -155,7 +159,7 @@ namespace neu_yaml_io_traits {
 			neu::convolution_layer<LearningRateGen> const& conv
 		) {
 			out << YAML::BeginMap;
-				out << YAML::Key << "layer" << YAML::Value << "convolution";
+				out << YAML::Key << "type" << YAML::Value << "convolution";
 
 				out << YAML::Key << "param" << YAML::Value;
 				out << YAML::BeginMap;
@@ -181,7 +185,8 @@ namespace neu_yaml_io_traits {
 							neu::save_to_yaml(out, conv.bias());
 						out << YAML::EndMap;
 					out << YAML::EndMap;
-					//<< YAML::Key << "learning_rate_gen" << YAML::Value << fc.learning_rate_gen()
+					out << YAML::Key << "learning_rate_gen" << YAML::Value;
+					neu::save_to_yaml(out, conv.learning_rate_gen());
 				out << YAML::EndMap;
 			out << YAML::EndMap;
 			return (out);
@@ -191,8 +196,8 @@ namespace neu_yaml_io_traits {
 	class save_to_yaml<neu::layer> {
 	public:
 		static decltype(auto) call(YAML::Emitter& out, neu::layer const& l) {
-			std::cout << "layer as yaml!!!" << std::endl;
 			if(auto* fc = l.target<neu::fully_connected_layer<>>()) {
+				out << YAML::Comment("wrapped by layer");
 				neu::save_to_yaml(out, *fc);
 			}
 			else {
