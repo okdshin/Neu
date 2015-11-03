@@ -40,11 +40,16 @@ int main(int argc, char** argv) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10), "set number of data per label for Batch SGD")
-		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), "set base learning rate")
-		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), "set momentum rate")
-		("weight_decay", po::value<neu::scalar>(&weight_decay)->default_value(0.), "set weight decay rate")
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
+		 "set number of data per label for Batch SGD")
+		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), 
+		 "set training iteration limit")
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), 
+		 "set base learning rate")
+		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
+		 "set momentum rate")
+		("weight_decay", po::value<neu::scalar>(&weight_decay)->default_value(0.), 
+		 "set weight decay rate")
 		;
 
 	po::variables_map vm;
@@ -57,7 +62,8 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	std::cout << "data_num_per_label was set to " << data_num_per_label << ".";
-	std::cout << "(so batch_size was set to 10*" << data_num_per_label << "=" << batch_size << ".)\n";
+	std::cout << "(so batch_size was set to 10*" << data_num_per_label 
+		<< "=" << batch_size << ".)\n";
 	std::cout << "iteration_limit was set to " << iteration_limit << ".\n";
 	std::cout << "base_lr was set to " << base_lr << ".\n";
 	std::cout << "momentum was set to " << momentum << ".\n";
@@ -198,21 +204,24 @@ int main(int argc, char** argv) {
 		std::cout << "cross entropy loss: " << cel << std::endl;
 		std::cout << "error calculation finished" << timer.elapsed() << std::endl;
 
+		/*
 		if(i%100 == 0) {
 			auto test_batch = test_ds.get_batch();
 			const auto test_input = batch.train_data;
 			const auto test_teach = batch.teach_data;
 			std::cout << "test forward..." << std::endl;
-			neu::layers_forward(layers, test_input);
+			neu::layers_test_forward(layers, test_input);
 			std::cout << "test forward finished " << timer.elapsed() << std::endl;
 			auto test_output = layers.back().get_next_input();
 			auto test_cel = neu::cross_entropy_loss(test_output, test_teach);
 			test_cel_log << i << "\t" << test_cel << std::endl;
 			std::cout << "test cross entropy loss: " << test_cel << std::endl;
 			std::cout << "test error calculation finished" << timer.elapsed() << std::endl;
-			test_accuracy_log << neu::accuracy(
-				label_num, test_data_num_per_label*label_num, test_output, test_teach) << std::endl;
+			std::cout << test_output.size() << std::endl;
+			//test_accuracy_log << neu::accuracy(
+			//	label_num, test_data_num_per_label*label_num, test_output, test_teach) << std::endl;
 		}
+		*/
 
 		make_next_batch_future.wait();
 	}
