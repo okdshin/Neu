@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/progress.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
@@ -67,27 +68,29 @@ int main(int argc, char** argv) {
 		std::ref(fc2),
 		softmax_loss
 	};
-	std::ofstream error_log("error.txt");
+	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream output_log("output.txt");
 
-	auto buffer_size = neu::max_inoutput_size(layers);
-	neu::gpu_vector buffer1(buffer_size);
-	neu::gpu_vector buffer2(buffer_size);
-	for(auto i = 0u; i < 100u; ++i) {
-		auto output_range = neu::layers_forward(layers,
-			neu::to_range(input), buffer1, buffer2);
-		neu::print(output_log, output_range, output_dim);
-		neu::print(std::cout, output_range, output_dim);
-		auto error_range = output_range;
-		neu::calc_last_layer_delta(output_range, teach, error_range);
-		neu::print(error_log, error_range, output_dim);
-		auto prev_delta_range = neu::layers_backward(layers,
-			error_range, buffer1, buffer2);
+	neu::gpu_vector output;
+	neu::gpu_vector prev_delta;
+	auto iteration_limit = 500u;
+	boost::progress_display progress(iteration_limit);
+	boost::timer timer;
+	for(auto i = 0u; i < iteration_limit; ++i) {
+		neu::layers_forward(layers, input, output);
+		{
+			neu::print(output_log, output, output_dim);
+			auto queue = boost::compute::system::default_queue();
+			auto mse = neu::mean_square_error(output, teach, queue);
+			mse_error_log << i << " " << mse << std::endl;
+		}
+		neu::gpu_vector error(output.size());
+		neu::calc_last_layer_delta(output, teach, error);
+		neu::layers_backward(layers, error, prev_delta);
 		neu::layers_update(layers);
+		++progress;
 	}
-	auto output_range = neu::layers_forward(layers,
-		neu::to_range(input), buffer1, buffer2);
-	neu::print(teach); std::cout << "\n";
-	neu::print(std::cout, output_range, output_dim);
+	std::cout << timer.elapsed() << " sec" << std::endl;
+	neu::print(std::cout, output, output_dim);
 	boost::compute::system::finish();
 }

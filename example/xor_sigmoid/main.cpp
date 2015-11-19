@@ -1,9 +1,13 @@
+//#define NEU_DISABLE_ASSERTION
 #include <iostream>
+#include <boost/timer.hpp>
+#include <boost/progress.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
 #include <neu/activation_func/sigmoid_loss.hpp>
 #include <neu/activation_func/rectifier.hpp>
+#include <neu/activation_func/sigmoid.hpp>
 #include <neu/activation_layer.hpp>
 //#include <neu/learning_rate_gen/fixed_learning_rate_gen.hpp>
 #include <neu/learning_rate_gen/weight_decay_and_momentum.hpp>
@@ -68,26 +72,33 @@ int main(int argc, char** argv) {
 		std::ref(fc2),
 		sigmoid_loss
 	};
-	std::ofstream error_log("error.txt");
+	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");
+	std::ofstream del_weight_log("del_weight.txt");
 
-	auto buffer_size = neu::max_inoutput_size(layers);
-	neu::gpu_vector buffer1(buffer_size);
-	neu::gpu_vector buffer2(buffer_size);
-	for(auto i = 0u; i < 100u; ++i) {
-		auto output_range = neu::layers_forward(layers,
-			neu::to_range(input), buffer1, buffer2);
-		neu::print(output_log, output_range, output_dim);
-		auto error_range = output_range;
-		neu::calc_last_layer_delta(output_range, teach, error_range);
-		neu::print(error_log, error_range, output_dim);
-		auto prev_delta_range = neu::layers_backward(layers,
-			error_range, buffer1, buffer2);
+	neu::gpu_vector output;
+	neu::gpu_vector prev_delta;
+	auto iteration_limit = 100u;
+	boost::progress_display progress(iteration_limit);
+	boost::timer timer;
+	for(auto i = 0u; i < iteration_limit; ++i) {
+		neu::layers_forward(layers, input, output);
+		{
+			neu::print(output_log, output, output_dim);
+			auto cel = neu::cross_entropy_loss(output, teach);
+			cel_error_log << i << " " << cel << std::endl;
+		}
+		neu::gpu_vector error(output.size());
+		neu::calc_last_layer_delta(output, teach, error);
+		neu::layers_backward(layers, error, prev_delta);
 		neu::layers_update(layers);
+		{
+			//neu::print(del_weight_log, fc1.del_weight(), input_dim);
+			del_weight_log << i << " " << neu::range_sum(fc1.del_weight()) << std::endl;
+		}
+		++progress;
 	}
-	auto output_range = neu::layers_forward(layers,
-		neu::to_range(input), buffer1, buffer2);
-	neu::print(teach); std::cout << "\n";
-	neu::print(std::cout, output_range, output_dim);
+	std::cout << timer.elapsed() << " sec" << std::endl;
+	neu::print(std::cout, output, output_dim);
 	boost::compute::system::finish();
 }
