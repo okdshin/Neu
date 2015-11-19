@@ -40,37 +40,16 @@ int main() {
 	neu::gpu_vector bias(filter_width*filter_width*output_channel_num);
 	boost::compute::fill(bias.begin(), bias.end(), 0.f);
 
-	/*
-	std::cout << "finished" << std::endl;
-	{
-		auto indices_range_list = neu::to_gpu_indices(
-			neu::make_range_list(std::get<0>(indices_tuple)));
-		auto input_indices_list = neu::to_gpu_indices(
-			neu::concat_indices(std::get<0>(indices_tuple)));
-		auto filter_indices_list = neu::to_gpu_indices(
-			neu::concat_indices(std::get<1>(indices_tuple)));
-		neu::gpu_vector output(batch_size*output_channel_num*output_width*output_width);
-		auto convolution_kernel = 
-			neu::make_kernel(neu::convolution_kernel_source, "convolution");
-		neu::execute_nd_range_kernel<2>(convolution_kernel,
-			{0, 0},
-			{static_cast<decltype(batch_size)>(output_width*output_width), batch_size},
-			indices_range_list, input_indices_list, filter_indices_list,
-			static_cast<int>(input_width), static_cast<int>(output_width),
-			static_cast<int>(filter_width),
-			static_cast<int>(input_channel_num), static_cast<int>(output_channel_num),
-			input, output, filter, bias);
-		neu::save_image_vector_as_images(neu::to_cpu_vector(output),
-			output_width, output_channel_num, batch_size, "output.bmp", 255.f);
-	}
-	*/
 	// Forward
 	{
 		neu::gpu_vector output(batch_size*output_channel_num*output_width*output_width);
-		auto convolution_kernel = 
-			neu::make_kernel(neu::convolution_kernel_source, "convolution");
+		auto convolution_kernel = neu::make_kernel(
+			neu::convolution_kernel_source, "convolution",
+			boost::compute::system::default_context());
 		auto ow = static_cast<decltype(batch_size)>(output_width);
-		auto event = neu::enqueue_nd_range_kernel<3>(convolution_kernel,
+		auto event = neu::enqueue_nd_range_kernel<3>(
+			boost::compute::system::default_queue(),
+			convolution_kernel,
 			{0, 0, 0}, {ow, ow, batch_size},
 			static_cast<int>(input_width), static_cast<int>(output_width),
 			static_cast<int>(filter_width),
@@ -92,18 +71,21 @@ int main() {
 		auto indices_tuple = neu::calc_convolution_indices(
 			input_width, output_width, filter_width, stride, pad);
 		auto indices_range_list = neu::to_gpu_indices(
-			neu::make_range_list(std::get<2>(indices_tuple)));
+			neu::make_range_list(std::get<0>(indices_tuple)));
 		auto output_indices_list = neu::to_gpu_indices(
-			neu::concat_indices(std::get<2>(indices_tuple)));
+			neu::concat_indices(std::get<0>(indices_tuple)));
 		auto filter_indices_list = neu::to_gpu_indices(
-			neu::concat_indices(std::get<3>(indices_tuple)));
+			neu::concat_indices(std::get<1>(indices_tuple)));
 		neu::gpu_vector error(batch_size*output_channel_num*output_width*output_width);
 		boost::compute::fill(error.begin(), error.end(), 1.);
 
 		neu::gpu_vector delta(batch_size*input_channel_num*input_width*input_width);
-		auto convolution_back_kernel = 
-			neu::make_kernel(neu::convolution_back_kernel_source, "convolution_back");
-		auto event = neu::enqueue_nd_range_kernel<2>(convolution_back_kernel,
+		auto convolution_back_kernel = neu::make_kernel(
+			neu::convolution_back_kernel_source, "convolution_back",
+			boost::compute::system::default_context());
+		auto event = neu::enqueue_nd_range_kernel<2>(
+			boost::compute::system::default_queue(),
+			convolution_back_kernel,
 			{0, 0}, 
 			{static_cast<decltype(batch_size)>(input_width*input_width), batch_size},
 			indices_range_list, output_indices_list, filter_indices_list,

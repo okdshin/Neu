@@ -59,7 +59,6 @@ int main(int argc, char** argv) {
 	auto conv1 = neu::make_convolution_layer(conv1_param, g, g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
-	conv1.print_indices(std::cout);
 	auto pool1 = neu::make_max_pooling_layer(pool1_param);
 	auto conv2 = neu::make_convolution_layer(conv2_param, g, g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,

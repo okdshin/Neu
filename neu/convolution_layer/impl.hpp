@@ -57,12 +57,6 @@ namespace neu {
 		decltype(auto) get_del_filters() const { return (del_filters_); }
 		decltype(auto) get_del_bias() const { return (del_bias_); }
 
-		decltype(auto) print_indices(std::ostream& os) {
-			print(os, indices_.indices_range_list_for_input, indices_.indices_range_list_for_input.size());
-			print(os, indices_.output_indices_list_for_input, indices_.output_indices_list_for_input.size());
-			print(os, indices_.filter_indices_list_for_input, indices_.filter_indices_list_for_input.size());
-		}
-
 		template<typename InputRange, typename OutputRange>
 		decltype(auto) test_forward(std::size_t test_batch_size,
 				InputRange const& input, OutputRange const& output,
