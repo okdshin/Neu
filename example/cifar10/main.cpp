@@ -1,18 +1,15 @@
-#define NEU_DISABLE_ASSERT
+//#define NEU_DISABLE_ASSERTION
 //#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
+#include <boost/progress.hpp>
 #include <boost/program_options.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
-//#include <neu/learning_rate_gen/subtract_delta_weight.hpp>
-//#include <neu/learning_rate_gen/fixed_learning_rate_gen.hpp>
-//#include <neu/learning_rate_gen/weight_decay.hpp>
 #include <neu/learning_rate_gen/weight_decay_and_momentum.hpp>
 #include <neu/activation_func/sigmoid.hpp>
 #include <neu/activation_func/rectifier.hpp>
-#include <neu/activation_func/identity.hpp>
 #include <neu/activation_func/softmax_loss.hpp>
 #include <neu/activation_layer.hpp>
 #include <neu/convolution_layer.hpp>
@@ -127,16 +124,16 @@ int main(int argc, char** argv) {
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
 	auto pool1 = neu::make_max_pooling_layer(pool1_param);
-	auto relu1 = neu::make_activation_layer<neu::rectifier>(relu1_param);
+	auto relu1 = neu::make_activation_layer(relu1_param, neu::rectifier());
 	auto conv2 = neu::make_convolution_layer(conv2_param, conv23_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv2_param.weight_dim(), conv2_param.bias_dim()));
-	auto relu2 = neu::make_activation_layer<neu::rectifier>(relu2_param);
+	auto relu2 = neu::make_activation_layer(relu2_param, neu::rectifier());
 	auto pool2 = neu::make_uniform_average_pooling_layer(pool2_param);
 	auto conv3 = neu::make_convolution_layer(conv3_param, conv23_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv3_param.weight_dim(), conv3_param.bias_dim()));
-	auto relu3 = neu::make_activation_layer<neu::rectifier>(relu3_param);
+	auto relu3 = neu::make_activation_layer(relu3_param, neu::rectifier());
 	auto pool3 = neu::make_uniform_average_pooling_layer(pool3_param);
 	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
@@ -144,8 +141,8 @@ int main(int argc, char** argv) {
 	auto fc2 = neu::make_fully_connected_layer(fc2_param, fc12_g, constant_g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			fc2_param.weight_dim(), fc2_param.bias_dim()));
-	std::cout << "fc2 output dim directly: " << fc2.get_next_input().size() << std::endl;
-	auto softmax_loss = neu::make_activation_layer<neu::softmax_loss>(softmax_loss_param);
+	auto softmax_loss = neu::make_activation_layer(softmax_loss_param,
+		neu::softmax_loss(label_num, batch_size));
 
 	auto layers = std::vector<neu::layer>{
 		std::ref(conv1),
@@ -161,68 +158,43 @@ int main(int argc, char** argv) {
 		std::ref(fc2),
 		softmax_loss
 	};
+	/*
 	std::ofstream mse_log("mean_square_error.txt");
 	std::ofstream cel_log("cross_entropy_loss.txt");
 	std::ofstream test_accuracy_log("test_accuracy.txt");
 	std::ofstream test_cel_log("test_cross_entropy_loss.txt"); std::ofstream log("log.txt");
+	*/
+	std::ofstream mse_error_log("mse_error.txt");
+	std::ofstream cel_error_log("cel_error.txt");
+	std::ofstream output_log("output.txt");
 	make_next_batch(train_ds);
 	make_next_batch(test_ds);
+	neu::gpu_vector output;
+	neu::gpu_vector prev_delta;
+	boost::progress_display progress(iteration_limit);
 	boost::timer timer;
-	boost::timer update_timer;
 	for(auto i = 0; i < iteration_limit; ++i) {
-		timer.restart();
 		auto batch = train_ds.get_batch();
 		const auto input = batch.train_data;
 		const auto teach = batch.teach_data;
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 
-		std::cout << "forward..." << std::endl;
-		neu::layers_forward(layers, input);
-		std::cout << "forward finished " << timer.elapsed() << std::endl;
-
-		auto output = layers.back().get_next_input();
-		auto error = neu::calc_last_layer_delta(output, teach);
-
-		std::cout << "backward..." << std::endl;
-		timer.restart();
-		neu::layers_backward(layers, error);
-		std::cout << "backward finished" << timer.elapsed() << std::endl;
-
-		std::cout << "update..." << std::endl;
-		timer.restart();
-		neu::layers_update(layers);
-		std::cout << "update finished" << timer.elapsed() << std::endl;
-
-		std::cout << "calc error..." << std::endl;
-		timer.restart();
-		auto mse = neu::mean_square_error(error);
-		std::cout << i << ":mean square error: " << mse << std::endl;
-		mse_log << i << "\t" << mse << std::endl;
-
-		auto cel = neu::cross_entropy_loss(output, teach);
-		cel_log << i << "\t" << cel << std::endl;
-		std::cout << "cross entropy loss: " << cel << std::endl;
-		std::cout << "error calculation finished" << timer.elapsed() << std::endl;
-
-		/*
-		if(i%100 == 0) {
-			auto test_batch = test_ds.get_batch();
-			const auto test_input = batch.train_data;
-			const auto test_teach = batch.teach_data;
-			std::cout << "test forward..." << std::endl;
-			neu::layers_test_forward(layers, test_input);
-			std::cout << "test forward finished " << timer.elapsed() << std::endl;
-			auto test_output = layers.back().get_next_input();
-			auto test_cel = neu::cross_entropy_loss(test_output, test_teach);
-			test_cel_log << i << "\t" << test_cel << std::endl;
-			std::cout << "test cross entropy loss: " << test_cel << std::endl;
-			std::cout << "test error calculation finished" << timer.elapsed() << std::endl;
-			std::cout << test_output.size() << std::endl;
-			//test_accuracy_log << neu::accuracy(
-			//	label_num, test_data_num_per_label*label_num, test_output, test_teach) << std::endl;
+		neu::layers_forward(layers, input, output);
+		{
+			neu::print(output_log, output, label_num);
+			auto mse = neu::mean_square_error(output, teach);
+			mse_error_log << i << " " << mse << std::endl;
+			auto cel = neu::cross_entropy_loss(output, teach);
+			cel_error_log << i << " " << cel << std::endl;
 		}
-		*/
+
+		neu::gpu_vector error(output.size());
+		neu::calc_last_layer_delta(output, teach, error);
+		neu::layers_backward(layers, error, prev_delta);
+		neu::layers_update(layers);
 
 		make_next_batch_future.wait();
+		++progress;
 	}
+	std::cout << timer.elapsed() << " secs" << std::endl;
 }
