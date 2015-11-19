@@ -5,9 +5,9 @@
 #include <boost/compute/kernel.hpp>
 namespace neu {
 	using kernel = boost::compute::kernel;
-	decltype(auto) make_kernel(const char* source, std::string const& name) {
-		auto program = boost::compute::program::create_with_source(
-			source, boost::compute::system::default_context());
+	decltype(auto) make_kernel(const char* source, std::string const& name,
+			boost::compute::context const& context) {
+		auto program = boost::compute::program::create_with_source(source, context);
 		try {
 			program.build();
 		}
@@ -18,13 +18,14 @@ namespace neu {
 	}
 	template<std::size_t Dim, typename... Args>
 	decltype(auto) enqueue_nd_range_kernel(
+		boost::compute::command_queue& queue,
 		kernel& kernel,
 		std::array<std::size_t, Dim> const& origin,
 		std::array<std::size_t, Dim> const& region,
 		Args&&... args
 	) {
 		kernel.set_args(std::forward<Args>(args)...);
-		return boost::compute::system::default_queue().enqueue_nd_range_kernel(
+		return queue.enqueue_nd_range_kernel(
 			kernel, Dim, origin.data(), region.data(), nullptr);
 	}
 }// namespace neu

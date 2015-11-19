@@ -6,19 +6,16 @@
 #include <neu/activation_func/derivative.hpp>
 #include <neu/range_algorithm.hpp>
 namespace neu {
-	BOOST_COMPUTE_FUNCTION(float, sigmoid_kernel, (float x), {
-		return 1./(1.+exp(-x));
-	});
-	BOOST_COMPUTE_FUNCTION(float, derivative_sigmoid_kernel, (float x), {
-		const float sigma = 1./(1.+exp(-x));
-		return sigma*(1.-sigma);
-	});
 	class sigmoid {
 	public:
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
+			static BOOST_COMPUTE_FUNCTION(float, sigmoid_kernel, (float x), {
+				return 1./(1.+exp(-x));
+			});
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, sigmoid_kernel);
+			neu::range_transform(input, output, sigmoid_kernel, queue);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
 	};
@@ -26,9 +23,14 @@ namespace neu {
 	class derivative<sigmoid> {
 	public:
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
+			static BOOST_COMPUTE_FUNCTION(float, derivative_sigmoid_kernel, (float x), {
+				const float sigma = 1./(1.+exp(-x));
+				return sigma*(1.-sigma);
+			});
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, neu::derivative_sigmoid_kernel);
+			neu::range_transform(input, output, derivative_sigmoid_kernel, queue);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
 		}
 	};

@@ -40,29 +40,33 @@ namespace neu {
 	
 	class softmax_loss {
 	public:
-		softmax_loss(std::size_t input_dim, std::size_t batch_size) :
+		softmax_loss(std::size_t input_dim, std::size_t batch_size,
+				boost::compute::context const& context
+					=boost::compute::system::default_context()) :
 			input_dim_(input_dim), batch_size_(batch_size),
-			softmax_loss_kernel_(make_kernel(softmax_loss_kernel_source, "softmax_loss")) {}
+			softmax_loss_kernel_(
+				make_kernel(softmax_loss_kernel_source, "softmax_loss", context)) {}
 
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 			NEU_ASSERT(neu::range_distance(output) == neu::range_distance(input));
-			auto event = enqueue_nd_range_kernel<1>(softmax_loss_kernel_,
+			enqueue_nd_range_kernel<1>(queue, softmax_loss_kernel_,
 				{0}, {batch_size_},
 				neu::range_get_buffer(input),
-				static_cast<int>(neu::range_get_begin_index(input)),
+				static_cast<cl_int>(neu::range_get_begin_index(input)),
 				neu::range_get_buffer(output),
-				static_cast<int>(neu::range_get_begin_index(output)),
-				static_cast<int>(input_dim_));
-			event.wait();
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+				static_cast<cl_int>(neu::range_get_begin_index(output)),
+				static_cast<cl_int>(input_dim_));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION( //TODO
 				boost::compute::all_of(neu::range_begin(output), neu::range_end(output),
-				0.f <= boost::compute::lambda::_1));
+				0.f <= boost::compute::lambda::_1, queue));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION( //TODO
 				boost::compute::all_of(neu::range_begin(output), neu::range_end(output),
-				boost::compute::lambda::_1 <= 1.f));
+				boost::compute::lambda::_1 <= 1.f, queue));
 		}
 
 	private:

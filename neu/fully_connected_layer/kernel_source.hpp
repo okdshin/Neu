@@ -43,17 +43,17 @@ namespace neu {
 			__global float* del_weight, __global float* del_bias,
 			const int input_dim, const int output_dim, const int batch_size)
 		{
-			const int gr = get_global_id(1);
-			const int gc = get_global_id(0);
+			const int o = get_global_id(1);
+			const int i = get_global_id(0);
 
 			float weight_sum = 0.0;
 			float bias_sum = 0.0;
 			for(int b = 0; b < batch_size; ++b) {
-				weight_sum += delta[gr+output_dim*b]*input[gc+input_dim*b];
-				bias_sum += delta[gr+output_dim*b];
+				weight_sum += delta[o+output_dim*b]*input[i+input_dim*b];
+				bias_sum += delta[o+output_dim*b];
 			}
-			del_weight[gc+input_dim*gr] = weight_sum/batch_size;
-			del_bias[gr] = bias_sum/batch_size;
+			del_weight[i+input_dim*o] = weight_sum/batch_size;
+			if(i==0) { del_bias[o] = bias_sum/batch_size; }
 		}
 	);
 }// namespace neu

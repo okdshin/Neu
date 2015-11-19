@@ -26,22 +26,26 @@ namespace neu {
 	template<typename LearningRateGen>
 	decltype(auto) make_fully_connected_layer(
 			fully_connected_layer_parameter const& param,
-			gpu_vector const& weight, gpu_vector const& bias,
-			LearningRateGen const& learning_rate_gen) {
+			cpu_vector const& weight, cpu_vector const& bias,
+			LearningRateGen const& learning_rate_gen,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
 		return make_fully_connected_layer(
 			param.input_dim(), param.output_dim(), param.batch_size(),
-			weight, bias, learning_rate_gen);
+			weight, bias, learning_rate_gen, queue);
 	}
 	template<typename WeightGen, typename BiasGen, typename LearningRateGen>
 	decltype(auto) make_fully_connected_layer(
 			fully_connected_layer_parameter const& param,
 			WeightGen const& wg, BiasGen const& bg,
-			LearningRateGen const& learning_rate_gen) {
-		return make_fully_connected_layer(
-			param,
-			neu::make_random_gpu_vector(param.weight_dim(), wg),
-			neu::make_random_gpu_vector(param.bias_dim(), bg),
-			learning_rate_gen);
+			LearningRateGen const& learning_rate_gen,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
+		cpu_vector weight(param.weight_dim());
+		std::generate(weight.begin(), weight.end(), wg);
+		cpu_vector bias(param.bias_dim());
+		std::generate(bias.begin(), bias.end(), bg);
+		return make_fully_connected_layer(param, weight, bias, learning_rate_gen, queue);
 	}
 }// namespace neu
 

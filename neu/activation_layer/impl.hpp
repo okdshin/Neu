@@ -25,29 +25,32 @@ namespace neu {
 
 		template<typename InputRange, typename OutputRange>
 		decltype(auto) test_forward(std::size_t batch_size,
-				InputRange const& input, OutputRange const& output) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input));
-			activation_func_(input, output);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(output));
+				InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input, queue));
+			activation_func_(input, output, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(output, queue));
 		}
 
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) forward(InputRange const& input, OutputRange const& output) {
+		decltype(auto) forward(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
 			NEU_ASSERT(neu::range_distance(input) == neu::range_distance(output));
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input));
-			neu::range_copy(input, input_);
-			activation_func_(input, output);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(output));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input, queue));
+			neu::range_copy(input, input_, queue); //TODO
+			activation_func_(input, output, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(output, queue));
 		}
 
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) backward(InputRange const& delta, OutputRange const& prev_delta) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta));
-			diff_activation_func_(input_, df_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(df_));
+		decltype(auto) backward(InputRange const& delta, OutputRange const& prev_delta,
+				boost::compute::command_queue& queue) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
+			diff_activation_func_(input_, df_, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(df_, queue));
 			neu::range_transform(df_, delta, prev_delta,
-				boost::compute::multiplies<scalar>());
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(prev_delta));
+				boost::compute::multiplies<scalar>(), queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(prev_delta, queue));
 		}
 
 	private:

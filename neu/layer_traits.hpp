@@ -211,17 +211,20 @@ namespace neu_layer_traits {
 	public:
 		template<typename InputRange, typename OutputRange>
 		static decltype(auto) call(Layer& l, std::size_t batch_size,
-				InputRange const& input, OutputRange const& output) {
-			l.test_forward(batch_size, input, output);
+				InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
+			l.test_forward(batch_size, input, output, queue);
 		}
 	};
 }
 namespace neu {
 	template<typename Layer, typename InputRange, typename OutputRange>
 	decltype(auto) layer_test_forward(Layer& l, std::size_t batch_size,
-			InputRange const& input, OutputRange const& output) {
-		neu_layer_traits::test_forward<std::decay_t<Layer>>::
-			call(l, batch_size, input, output);
+			InputRange const& input, OutputRange const& output,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
+		neu_layer_traits::test_forward<std::decay_t<Layer>>::call(
+			l, batch_size, input, output, queue);
 	}
 }
 
@@ -235,16 +238,19 @@ namespace neu_layer_traits {
 	public:
 		template<typename InputRange, typename OutputRange>
 		static decltype(auto) call(Layer& l,
-				InputRange const& input, OutputRange const& output) {
-			l.forward(input, output);
+				InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue) {
+			l.forward(input, output, queue);
 		}
 	};
 }
 namespace neu {
 	template<typename Layer, typename InputRange, typename OutputRange>
 	decltype(auto) layer_forward(Layer& l,
-			InputRange const& input, OutputRange const& output) {
-		neu_layer_traits::forward<std::decay_t<Layer>>::call(l, input, output);
+			InputRange const& input, OutputRange const& output,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
+		neu_layer_traits::forward<std::decay_t<Layer>>::call(l, input, output, queue);
 	}
 }
 
@@ -258,16 +264,20 @@ namespace neu_layer_traits {
 	public:
 		template<typename InputRange, typename OutputRange>
 		static decltype(auto) call(Layer& l,
-				InputRange const& delta, OutputRange const& prev_delta) {
-			l.backward(delta, prev_delta);
+				InputRange const& delta, OutputRange const& prev_delta,
+				boost::compute::command_queue& queue) {
+			l.backward(delta, prev_delta, queue);
 		}
 	};
 }
 namespace neu {
 	template<typename Layer, typename InputRange, typename OutputRange>
 	decltype(auto) layer_backward(Layer& l,
-			InputRange const& delta, OutputRange const& prev_delta) {
-		neu_layer_traits::backward<std::decay_t<Layer>>::call(l, delta, prev_delta);
+			InputRange const& delta, OutputRange const& prev_delta,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
+		neu_layer_traits::backward<std::decay_t<Layer>>::call(
+			l, delta, prev_delta, queue);
 	}
 }
 
@@ -299,15 +309,17 @@ namespace neu_layer_traits {
 	template<typename Layer>
 	class update {
 	public:
-		static decltype(auto) call(Layer& l) {
+		static decltype(auto) call(Layer& l, boost::compute::command_queue& queue) {
 			assert(!"you should specialize neu_layer_traits::update"); //TODO
 		}
 	};
 }
 namespace neu {
 	template<typename Layer>
-	decltype(auto) layer_update(Layer& l) {
-		neu_layer_traits::update<std::decay_t<Layer>>::call(l);
+	decltype(auto) layer_update(Layer& l,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
+		neu_layer_traits::update<std::decay_t<Layer>>::call(l, queue);
 	}
 }
 #endif //NEU_LAYER_TRAITS_HPP

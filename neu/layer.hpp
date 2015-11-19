@@ -30,15 +30,18 @@ namespace neu {
 			virtual std::size_t batch_size() const = 0;
 
 			virtual void test_forward(std::size_t batch_size,
-				gpu_vector_range const& input, gpu_vector_range const& output) = 0;
+				gpu_vector_range const& input, gpu_vector_range const& output,
+				boost::compute::command_queue& queue) = 0;
 			virtual void forward(gpu_vector_range const& input,
-				gpu_vector_range const& output) = 0;
+				gpu_vector_range const& output,
+				boost::compute::command_queue& queue) = 0;
 
 			virtual void backward(gpu_vector_range const& delta,
-				gpu_vector_range const& prev_delta) = 0;
+				gpu_vector_range const& prev_delta,
+				boost::compute::command_queue& queue) = 0;
 
 			virtual bool should_update() const = 0;
-			virtual void update() = 0;
+			virtual void update(boost::compute::command_queue& queue) = 0;
 
 		};
 		template<typename Layer>
@@ -97,24 +100,27 @@ namespace neu {
 			}
 
 			void test_forward(std::size_t batch_size, gpu_vector_range const& input,
-					gpu_vector_range const& output) override {
-				neu::layer_test_forward(unwrap(l_), batch_size, input, output);
+					gpu_vector_range const& output,
+					boost::compute::command_queue& queue) override {
+				neu::layer_test_forward(unwrap(l_), batch_size, input, output, queue);
 			}
 			void forward(gpu_vector_range const& input,
-					gpu_vector_range const& output) override {
-				neu::layer_forward(unwrap(l_), input, output);
+					gpu_vector_range const& output,
+					boost::compute::command_queue& queue) override {
+				neu::layer_forward(unwrap(l_), input, output, queue);
 			}
 
 			void backward(gpu_vector_range const& delta,
-					gpu_vector_range const& prev_delta) override {
-				neu::layer_backward(unwrap(l_), delta, prev_delta);
+					gpu_vector_range const& prev_delta,
+					boost::compute::command_queue& queue) override {
+				neu::layer_backward(unwrap(l_), delta, prev_delta, queue);
 			}
 
 			bool should_update() const override {
 				return layer_should_update(unwrap(l_));
 			}
-			void update() override {
-				neu::layer_update(unwrap(l_));
+			void update(boost::compute::command_queue& queue) override {
+				neu::layer_update(unwrap(l_), queue);
 			}
 			
 		private:
@@ -164,24 +170,32 @@ namespace neu {
 		std::size_t batch_size() const { return holder_->batch_size(); }
 
 		void test_forward(std::size_t batch_size, gpu_vector_range const& input,
-				gpu_vector_range const& output) {
-			holder_->test_forward(batch_size, input, output);
+				gpu_vector_range const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			holder_->test_forward(batch_size, input, output, queue);
 		}
 		void forward(gpu_vector_range const& input,
-				gpu_vector_range const& output) {
-			holder_->forward(input, output);
+				gpu_vector_range const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			holder_->forward(input, output, queue);
 		}
 
 		void backward(gpu_vector_range const& delta,
-				gpu_vector_range const& prev_delta) {
-			holder_->backward(delta, prev_delta);
+				gpu_vector_range const& prev_delta,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			holder_->backward(delta, prev_delta, queue);
 		}
 
 		bool should_update() const {
 			return holder_->should_update();
 		}
-		void update() {
-			holder_->update();
+		void update(
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			holder_->update(queue);
 		}
 
 	private:

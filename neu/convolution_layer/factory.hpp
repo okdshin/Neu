@@ -13,21 +13,34 @@ namespace neu {
 		std::size_t filter_width,
 		std::size_t input_channel_num, std::size_t output_channel_num,
 		std::size_t stride, std::size_t pad, std::size_t batch_size,
-		gpu_vector const& filters, gpu_vector const& bias,
-		LearningRateGen const& learning_rate_gen
+		cpu_vector const& filters, cpu_vector const& bias,
+		LearningRateGen const& learning_rate_gen,
+		boost::compute::command_queue& queue
+			=boost::compute::system::default_queue()
 	) {
-		auto indices =
-			make_convolution_indices(input_width, output_width, filter_width, stride, pad);
-		auto conv_kernel = make_kernel(convolution_kernel_source, "convolution");
-		auto conv_back_kernel =
-			make_kernel(convolution_back_kernel_source, "convolution_back");
-		auto update_delta_filters_kernel
-			= make_kernel(update_delta_filters_kernel_source, "update_delta_filters");
+		auto indices = make_convolution_indices(
+			input_width, output_width, filter_width, stride, pad);
+		auto conv_kernel = make_kernel(convolution_kernel_source,
+			"convolution", queue.get_context());
+		auto conv_back_kernel = make_kernel(convolution_back_kernel_source,
+			"convolution_back", queue.get_context());
+		auto update_delta_filters_kernel = make_kernel(
+			update_delta_filters_kernel_source, 
+			"update_delta_filters", queue.get_context());
+		auto filters_copy_queue = queue;
+		gpu_vector f(filters.begin(), filters.end(), filters_copy_queue);
+		auto bias_copy_queue = queue;
+		gpu_vector b(bias.begin(), bias.end(), bias_copy_queue);
+		filters_copy_queue.finish();
+		bias_copy_queue.finish();
 		return convolution_layer<LearningRateGen>(
 			input_width, output_width, filter_width,
 			input_channel_num, output_channel_num,
-			stride, pad, batch_size, filters, bias, learning_rate_gen, indices,
-			conv_kernel, conv_back_kernel, update_delta_filters_kernel);
+			stride, pad, batch_size,
+			std::move(f), std::move(b),
+			learning_rate_gen, indices,
+			conv_kernel, conv_back_kernel, update_delta_filters_kernel,
+			queue.get_context());
 	}
 }// namespace neu
 

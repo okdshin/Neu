@@ -1,6 +1,7 @@
 #ifndef NEU_ACTIVATION_FUNC_RECTIFIER_HPP
 #define NEU_ACTIVATION_FUNC_RECTIFIER_HPP
 //20150528
+#include <boost/compute/command_queue.hpp>
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
 #include <neu/range_traits.hpp>
@@ -16,20 +17,24 @@ namespace neu {
 	class rectifier {
 	public:
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, rectifier_kernel);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+			neu::range_transform(input, output, rectifier_kernel, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
 	template<>
 	class derivative<rectifier> {
 	public:
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, neu::derivative_rectifier_kernel);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+			neu::range_transform(input, output, neu::derivative_rectifier_kernel, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
 }// namespace neu

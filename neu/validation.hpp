@@ -26,9 +26,10 @@ namespace neu {
 		return isfinite(x);
 	});
 	template<typename Range>
-	decltype(auto) is_all_of_finite(Range const& range) {
+	decltype(auto) is_all_of_finite(Range const& range,
+			boost::compute::command_queue& queue) {
 		return boost::compute::all_of(
-			neu::range_begin(range), neu::range_end(range), isfinite_kernel); 
+			neu::range_begin(range), neu::range_end(range), isfinite_kernel, queue); 
 	}
 
 	decltype(auto) l2_norm(gpu_vector const& x) {

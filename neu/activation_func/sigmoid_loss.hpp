@@ -14,10 +14,12 @@ namespace neu {
 	class sigmoid_loss {
 	public:
 		template<typename InputRange, typename OutputRange>
-		decltype(auto) operator()(InputRange const& input, OutputRange const& output) {
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, sigmoid_loss_kernel);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
+				boost::compute::command_queue& queue
+					=boost::compute::system::default_queue()) {
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+			neu::range_transform(input, output, sigmoid_loss_kernel, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
 	template<>

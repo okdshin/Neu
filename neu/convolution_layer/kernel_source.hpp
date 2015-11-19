@@ -73,15 +73,13 @@ namespace neu {
 					for(int j = indices_begin; j < indices_end; ++j) {
 						const int filter_index = index(filter_indices_list_for_input[j],
 							k, m, filter_width, input_channel_num);
-						const int output_index =
-							output_offset+index(output_indices_list_for_input[j],
+						const int output_index = index(output_indices_list_for_input[j],
 							m, b, output_width, output_channel_num);
-						sum += filter[filter_index]*output[output_index];
+						sum += filter[filter_index]*output[output_index+output_offset];
 					}
 				}
-				const int input_index =
-					input_offset+index(i, k, b, input_width, input_channel_num);
-				input[input_index] = sum;
+				const int input_index = index(i, k, b, input_width, input_channel_num);
+				input[input_index+input_offset] = sum;
 			}
 		}
 	);

@@ -27,22 +27,25 @@ namespace neu {
 			std::ostream_iterator<std::size_t>(std::cout, ", "));
 		std::cout << ")" << std::endl;
 	}
-	decltype(auto) print(gpu_indices const& x) {
+	decltype(auto) print(gpu_indices const& x, boost::compute::command_queue& queue) {
 		std::cout << "[";
 		boost::compute::copy(x.begin(), x.end(),
-			std::ostream_iterator<scalar>(std::cout, ", "));
+			std::ostream_iterator<scalar>(std::cout, ", "), queue);
 		std::cout << "]" << std::endl;
 	}
 
 	template<typename Range>
-	decltype(auto) print(std::ostream& os, Range const& range, std::size_t dim) {
+	decltype(auto) print(std::ostream& os, Range const& range, std::size_t dim,
+			boost::compute::command_queue& queue
+				=boost::compute::system::default_queue()) {
 		NEU_ASSERT(neu::range_distance(range)%dim == 0);
 		auto line_num = neu::range_distance(range)/dim;
 		auto first = neu::range_begin(range);
 		os << "size: " << neu::range_distance(range) << std::endl;
 		for(auto i = 0u; i < line_num; ++i) {
 			os << "(";
-			boost::compute::copy(first, first+dim, std::ostream_iterator<float>(os, ", "));
+			boost::compute::copy(first, first+dim,
+				std::ostream_iterator<float>(os, ", "), queue);
 			os << ")" << std::endl;
 			first += dim;
 		}
