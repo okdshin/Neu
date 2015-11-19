@@ -1,5 +1,7 @@
+//#define NEU_DISABLE_ASSERTION
 #include <iostream>
 #include <boost/timer.hpp>
+#include <boost/progress.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
@@ -42,13 +44,13 @@ int main(int argc, char** argv) {
 	auto conv2_param = neu::make_convolution_layer_parameter(pool1_param)
 		.filter_width(5).stride(1).pad(2).output_channel_num(50);
 	auto fc1_param = neu::make_fully_connected_layer_parameter(conv2_param)
-		.output_dim(500);
+		.output_dim(50);
 	auto relu1_param = neu::make_activation_layer_parameter(fc1_param);
 	auto fc2_param = neu::make_fully_connected_layer_parameter(relu1_param)
 		.output_dim(label_num);
 	auto softmax_loss_param = neu::make_activation_layer_parameter(fc2_param);
 
-	auto g = [&rand, dist=std::uniform_real_distribution<>(-0.01f, 0.01f)]
+	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
 		() mutable { return dist(rand); };
 
 	neu::scalar base_lr = 0.001;
@@ -57,6 +59,7 @@ int main(int argc, char** argv) {
 	auto conv1 = neu::make_convolution_layer(conv1_param, g, g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
 			conv1_param.weight_dim(), conv1_param.bias_dim()));
+	conv1.print_indices(std::cout);
 	auto pool1 = neu::make_max_pooling_layer(pool1_param);
 	auto conv2 = neu::make_convolution_layer(conv2_param, g, g,
 		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
@@ -80,35 +83,40 @@ int main(int argc, char** argv) {
 		std::ref(fc2),
 		softmax_loss
 	};
-	std::ofstream error_log("error.txt");
+	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");
 	make_next_batch(ds);
+	neu::gpu_vector output;
+	neu::gpu_vector prev_delta;
+	auto iteration_limit = 10000u;
+	boost::progress_display progress(iteration_limit);
 	boost::timer timer;
-	auto buffer_size = neu::max_inoutput_size(layers);
-	neu::gpu_vector buffer1(buffer_size);
-	neu::gpu_vector buffer2(buffer_size);
-	neu::gpu_vector buffer3(buffer_size);
-	for(auto i = 0u; i < 10000u; ++i) {
-		std::cout << "iteration: " << i << std::endl;
-		timer.restart();
+	for(auto i = 0u; i < iteration_limit; ++i) {
 		auto batch = ds.get_batch();
 		auto input = batch.train_data;
 		auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
-		auto output_range = neu::layers_forward(layers,
-			neu::to_range(input), buffer1, buffer2);
-		//auto cel = neu::cross_entropy_loss(output_range, teach, buffer3);
-		//error_log << i << " " << cel << std::endl;
-		neu::print(output_log, output_range, label_num);
-		auto error_range = output_range;
-		neu::calc_last_layer_delta(output_range, teach, error_range);
-		auto mse = neu::mean_square_error(error_range);
-		error_log << i << " " << mse << std::endl;
-		//neu::print(error_log, error_range, label_num);
-		auto prev_delta_range = neu::layers_backward(layers,
-			error_range, buffer1, buffer2);
+		neu::layers_forward(layers, input, output);
+		{
+			neu::print(output_log << i, output, label_num);
+			auto cel = neu::cross_entropy_loss(output, teach);
+			cel_error_log << i << " " << cel << std::endl;
+		}
+		neu::gpu_vector error(output.size());
+		neu::calc_last_layer_delta(output, teach, error);
+		neu::layers_backward(layers, error, prev_delta);
 		neu::layers_update(layers);
+		
+		/*
+		conv1.update(boost::compute::system::default_queue());
+		conv2.update(boost::compute::system::default_queue());
+		fc1.update(boost::compute::system::default_queue());
+		fc2.update(boost::compute::system::default_queue());
+		*/
+
 		make_next_batch_future.wait();
-		std::cout << "iteration consumed " << timer.elapsed() << "secs" << std::endl;
+		++progress;
 	}
+	std::cout << timer.elapsed() << " secs" << std::endl;
+	boost::compute::system::finish();
 }
