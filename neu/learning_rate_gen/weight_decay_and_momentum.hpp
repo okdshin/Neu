@@ -1,6 +1,8 @@
 #ifndef NEU_WEIGHT_DECAY_AND_MOMENTUM_HPP
 #define NEU_WEIGHT_DECAY_AND_MOMENTUM_HPP
 //20150830
+
+//#define NEU_DISABLE_ASSERTION
 #include <boost/compute/lambda.hpp>
 #include <boost/compute/algorithm/transform.hpp>
 #include <neu/basic_type.hpp>
