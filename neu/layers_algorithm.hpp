@@ -1,7 +1,6 @@
 #ifndef NEU_LAYERS_ALGORITHM_HPP
 #define NEU_LAYERS_ALGORITHM_HPP
 //20150914
-#include <boost/timer.hpp>
 #include <neu/basic_type.hpp>
 #include <neu/range_algorithm.hpp>
 #include <neu/gpu_buffer_range.hpp>
