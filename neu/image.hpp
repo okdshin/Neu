@@ -100,21 +100,22 @@ decltype(auto) save_image_vector_as_images(
 template<typename Iter>
 decltype(auto) save_3ch_image_vector_as_rgb_image(Iter first, Iter const& last,
 		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+	constexpr auto channel_num = 3u;
+	NEU_ASSERT(std::distance(first, last) == static_cast<decltype(std::distance(first, last))>(width*width*channel_num));
 	auto image = fipImage{FIT_BITMAP,
 		static_cast<unsigned int>(width), static_cast<unsigned int>(width), 32};
 	// coordinate system of freeimage is upside down.
 	for(auto y = static_cast<int>(width)-1; y >= 0; --y) {
 		BYTE* row = image.getScanLine(y);
 		for(auto x = 0u; x < width; ++x) {
-			assert(first != last);
-			*(row+x*4) = ratio*(*(first+2*width*width));
-			*(row+x*4+1) = ratio*(*(first+width*width));
-			*(row+x*4+2) = ratio*(*first);
+			NEU_ASSERT(first != last);
+			*(row+x*4+0) = ratio*(*(first+0*width*width));
+			*(row+x*4+1) = ratio*(*(first+1*width*width));
+			*(row+x*4+2) = ratio*(*(first+2*width*width));
 			++first;
 		}
 	}
 	image.save(filepath.string().c_str());
-	assert(first == last);
 }
 decltype(auto) save_3ch_image_vector_as_rgb_image(
 		neu::cpu_vector const& image_vector,
