@@ -38,10 +38,10 @@ BOOST_AUTO_TEST_CASE(forward) {
 	auto ac = neu::make_activation_layer(ac_param,
 		neu::softmax_loss(input_dim, batch_size));
 
-	neu::gpu_vector output(output_dim*batch_size);
-	ac.test_forward(input, output);
+	neu::gpu_vector output(output_dim*batch_size, context);
+	ac.test_forward(batch_size, input, output, queue);
 	neu::print(output);
-	ac.backward(output, input);
+	ac.backward(output, input, queue);
 	neu::print(input);
 	//TODO
 }
