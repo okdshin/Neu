@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(forward) {
 		neu::softmax_loss(input_dim, batch_size));
 
 	neu::gpu_vector output(output_dim*batch_size);
-	ac.forward(input, output);
+	ac.test_forward(input, output);
 	neu::print(output);
 	ac.backward(output, input);
 	neu::print(input);
