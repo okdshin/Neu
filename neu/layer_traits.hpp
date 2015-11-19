@@ -202,6 +202,26 @@ namespace neu {
 }
 
 //
+// layer_output_size
+//
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_output_size(Layer const& l) {
+		return neu::layer_output_dim(l)*neu::layer_batch_size(l);
+	}
+}
+
+//
+// layer_input_size
+//
+namespace neu {
+	template<typename Layer>
+	decltype(auto) layer_input_size(Layer const& l) {
+		return neu::layer_input_dim(l)*neu::layer_batch_size(l);
+	}
+}
+
+//
 // layer_test_forward
 //
 namespace neu_layer_traits {
