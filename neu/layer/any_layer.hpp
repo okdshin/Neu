@@ -20,7 +20,8 @@ namespace neu {
 				any_layer_holder_base& operator=(any_layer_holder_base&&) = default;
 				virtual ~any_layer_holder_base() noexcept = default;
 
-				virtual bool operator==(any_layer_holder_base const& other) const noexcept  = 0;
+				virtual bool operator==(
+					any_layer_holder_base const& other) const noexcept  = 0;
 
 				virtual std::type_info const& target_type() const = 0;
 				virtual void* get() = 0;
@@ -83,7 +84,8 @@ namespace neu {
 				any_layer_holder& operator=(any_layer_holder&&) = default;
 				~any_layer_holder() noexcept = default;
 
-				virtual bool operator==(any_layer_holder_base const& other) const noexcept {
+				virtual bool operator==(
+						any_layer_holder_base const& other) const noexcept override {
 					if(target_type() != other.target_type()) {
 						return false;
 					}
@@ -163,11 +165,12 @@ namespace neu {
 			~any_layer() noexcept = default;
 
 			template<typename Layer,
-				typename = std::enable_if_t<!std::is_same<any_layer, std::decay_t<Layer>>::value>
+				typename = std::enable_if_t<
+					!std::is_same<any_layer, std::decay_t<Layer>>::value>
 			>
 			any_layer(Layer&& l)
-			: holder_(std::make_unique<any_layer_impl::any_layer_holder<std::decay_t<Layer>>>(
-						std::forward<Layer>(l))) {}
+			: holder_(std::make_unique<any_layer_impl::any_layer_holder<
+				std::decay_t<Layer>>>(std::forward<Layer>(l))) {}
 
 			std::type_info const& target_type() const {
 				return holder_->target_type();
