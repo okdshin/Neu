@@ -64,18 +64,23 @@ namespace neu {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(output, queue));
 			}
 
+			template<typename InputRange>
+			decltype(auto) backward_top(
+					InputRange const& delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
+				/* do nithing */
+			}
+
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
 					InputRange const& delta, OutputRange const& prev_delta,
-					bool is_top,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
 				derivative_activation_func_(input_, df_, queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(df_, queue));
-				if(!is_top) {
-					range::transform(df_, delta, prev_delta,
-						boost::compute::multiplies<scalar>(), queue);
-				}
+				range::transform(df_, delta, prev_delta,
+					boost::compute::multiplies<scalar>(), queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(
 					neu::is_all_of_finite(prev_delta, queue));
 			}
