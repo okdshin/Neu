@@ -41,6 +41,8 @@ namespace neu {
 			decltype(auto) input_dim() const { return input_dim_; }
 			decltype(auto) output_dim() const { return input_dim_; }
 			decltype(auto) batch_size() const { return batch_size_; }
+			
+			decltype(auto) activation_func() const { return activation_func_; }
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) test_forward(std::size_t batch_size,
@@ -86,12 +88,20 @@ namespace neu {
 			derivative_activation_func_type derivative_activation_func_;
 			gpu_vector input_, df_;
 		};
+		template<typename ActivationFunc, typename DerivativeActivationFunc>
+		decltype(auto) make_activation(
+				std::size_t input_dim, std::size_t batch_size,
+				ActivationFunc const& activation_func,
+				DerivativeActivationFunc const& derivative_activation_func) {
+			return activation<ActivationFunc, DerivativeActivationFunc>(
+				input_dim, batch_size, activation_func, derivative_activation_func);
+		}
 		template<typename ActivationFunc>
 		decltype(auto) make_activation(
 				std::size_t input_dim, std::size_t batch_size,
 				ActivationFunc const& activation_func) {
-			return activation<ActivationFunc, neu::derivative<ActivationFunc>>(
-				input_dim, batch_size, activation_func, neu::derivative<ActivationFunc>());
+			return make_activation(input_dim, batch_size,
+				activation_func, neu::derivative<ActivationFunc>());
 		}
 	}
 }// namespace neu

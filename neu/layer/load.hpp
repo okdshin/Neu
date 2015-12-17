@@ -37,6 +37,9 @@ namespace neu {
 			if(lt == "rectifier") {
 				return static_cast<any_layer>(load_rectifier(node, queue));
 			} else
+			if(lt == "leaky_rectifier") {
+				return static_cast<any_layer>(load_leaky_rectifier(node, queue));
+			} else
 			if(lt == "sigmoid_loss") {
 				return static_cast<any_layer>(load_sigmoid_loss(node, queue));
 			} else
