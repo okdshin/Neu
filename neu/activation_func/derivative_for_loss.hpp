@@ -2,7 +2,7 @@
 #define NEU_ACTIVATION_FUNC_DERIVATIVE_FOR_LOSS_HPP
 //20151031
 #include <neu/basic_type.hpp>
-#include <neu/range_algorithm.hpp>
+#include <neu/range/algorithm.hpp>
 namespace neu {
 	class derivative_for_loss {
 	public:
@@ -10,7 +10,7 @@ namespace neu {
 		decltype(auto) operator()(InputRange const& input, OutputRange const& output,
 				boost::compute::command_queue& queue
 					=boost::compute::system::default_queue()) {
-			return neu::range_fill(output, 1.f, queue);
+			return range::fill(output, 1.f, queue);
 		}
 	};
 }// namespace neu

@@ -4,8 +4,8 @@
 #include <boost/compute/command_queue.hpp>
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
-#include <neu/range_traits.hpp>
-#include <neu/range_algorithm.hpp>
+#include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
 #include <neu/activation_func/derivative.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, rectifier_kernel, (float x), {
@@ -21,7 +21,7 @@ namespace neu {
 				boost::compute::command_queue& queue
 					=boost::compute::system::default_queue()) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			neu::range_transform(input, output, rectifier_kernel, queue);
+			range::transform(input, output, rectifier_kernel, queue);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
@@ -33,7 +33,7 @@ namespace neu {
 				boost::compute::command_queue& queue
 					=boost::compute::system::default_queue()) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			neu::range_transform(input, output, neu::derivative_rectifier_kernel, queue);
+			range::transform(input, output, neu::derivative_rectifier_kernel, queue);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};

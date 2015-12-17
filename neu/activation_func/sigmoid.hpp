@@ -4,7 +4,7 @@
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
 #include <neu/activation_func/derivative.hpp>
-#include <neu/range_algorithm.hpp>
+#include <neu/range/algorithm.hpp>
 namespace neu {
 	class sigmoid {
 	public:
@@ -14,9 +14,9 @@ namespace neu {
 			static BOOST_COMPUTE_FUNCTION(float, sigmoid_kernel, (float x), {
 				return 1./(1.+exp(-x));
 			});
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, sigmoid_kernel, queue);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+			range::transform(input, output, sigmoid_kernel, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
 	template<>
@@ -29,9 +29,9 @@ namespace neu {
 				const float sigma = 1./(1.+exp(-x));
 				return sigma*(1.-sigma);
 			});
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
-			neu::range_transform(input, output, derivative_sigmoid_kernel, queue);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output));
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+			range::transform(input, output, derivative_sigmoid_kernel, queue);
+			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};
 }// namespace neu

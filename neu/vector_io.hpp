@@ -6,9 +6,10 @@
 #include <algorithm>
 #include <neu/assert.hpp>
 #include<neu/basic_type.hpp>
-#include<neu/range_traits.hpp>
+#include<neu/range/traits.hpp>
 
 namespace neu {
+	/*
 	decltype(auto) print(cpu_vector const& x) {
 		std::cout << "(";
 		std::copy(x.begin(), x.end(),
@@ -33,15 +34,16 @@ namespace neu {
 			std::ostream_iterator<scalar>(std::cout, ", "), queue);
 		std::cout << "]" << std::endl;
 	}
+	*/
 
 	template<typename Range>
 	decltype(auto) print(std::ostream& os, Range const& range, std::size_t dim,
 			boost::compute::command_queue& queue
 				=boost::compute::system::default_queue()) {
-		NEU_ASSERT(neu::range_distance(range)%dim == 0);
-		auto line_num = neu::range_distance(range)/dim;
-		auto first = neu::range_begin(range);
-		os << "size: " << neu::range_distance(range) << std::endl;
+		NEU_ASSERT(neu::range::distance(range)%dim == 0);
+		auto line_num = neu::range::distance(range)/dim;
+		auto first = neu::range::begin(range);
+		os << "size: " << neu::range::distance(range) << std::endl;
 		for(auto i = 0u; i < line_num; ++i) {
 			os << "(";
 			boost::compute::copy(first, first+dim,

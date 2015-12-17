@@ -3,8 +3,8 @@
 //20150528
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
-#include <neu/range_traits.hpp>
-#include <neu/range_algorithm.hpp>
+#include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
 #include <neu/activation_func/derivative.hpp>
 #include <neu/activation_func/derivative_for_loss.hpp>
 namespace neu {
@@ -18,7 +18,7 @@ namespace neu {
 				boost::compute::command_queue& queue
 					=boost::compute::system::default_queue()) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			neu::range_transform(input, output, sigmoid_loss_kernel, queue);
+			range::transform(input, output, sigmoid_loss_kernel, queue);
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 		}
 	};

@@ -1,7 +1,7 @@
 #ifndef NEU_VALIDATION_HPP
 #define NEU_VALIDATION_HPP
 //20151010
-#include <neu/gpu_buffer_range.hpp>
+#include <neu/range/gpu_buffer_range.hpp>
 #include <boost/compute/algorithm/all_of.hpp>
 namespace neu {
 	BOOST_COMPUTE_FUNCTION(float, isinf_kernel, (float x), {
@@ -10,7 +10,7 @@ namespace neu {
 	template<typename Range>
 	decltype(auto) is_any_of_inf(Range const& range) {
 		return boost::compute::any_of(
-			neu::range_begin(range), neu::range_end(range), isinf_kernel); 
+			range::begin(range), range::end(range), isinf_kernel); 
 	}
 
 	BOOST_COMPUTE_FUNCTION(float, isnan_kernel, (float x), {
@@ -19,7 +19,7 @@ namespace neu {
 	template<typename Range>
 	decltype(auto) is_any_of_nan(Range const& range) {
 		return boost::compute::any_of(
-			neu::range_begin(range), neu::range_end(range), isnan_kernel); 
+			range::begin(range), range::end(range), isnan_kernel); 
 	}
 
 	BOOST_COMPUTE_FUNCTION(float, isfinite_kernel, (float x), {
@@ -29,7 +29,7 @@ namespace neu {
 	decltype(auto) is_all_of_finite(Range const& range,
 			boost::compute::command_queue& queue) {
 		return boost::compute::all_of(
-			neu::range_begin(range), neu::range_end(range), isfinite_kernel, queue); 
+			range::begin(range), range::end(range), isfinite_kernel, queue); 
 	}
 
 	decltype(auto) l2_norm(gpu_vector const& x) {

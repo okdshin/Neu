@@ -3,8 +3,8 @@
 //20150528
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
-#include <neu/range_traits.hpp>
-#include <neu/range_algorithm.hpp>
+#include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
 #include <neu/activation_func/derivative.hpp>
 #include <neu/activation_func/derivative_for_loss.hpp>
 #include <neu/kernel.hpp>
@@ -52,20 +52,20 @@ namespace neu {
 				boost::compute::command_queue& queue
 					=boost::compute::system::default_queue()) {
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			NEU_ASSERT(neu::range_distance(output) == neu::range_distance(input));
+			NEU_ASSERT(neu::range::distance(output) == neu::range::distance(input));
 			enqueue_nd_range_kernel<1>(queue, softmax_loss_kernel_,
 				{0}, {batch_size_},
-				neu::range_get_buffer(input),
-				static_cast<cl_int>(neu::range_get_begin_index(input)),
-				neu::range_get_buffer(output),
-				static_cast<cl_int>(neu::range_get_begin_index(output)),
+				neu::range::get_buffer(input),
+				static_cast<cl_int>(neu::range::get_begin_index(input)),
+				neu::range::get_buffer(output),
+				static_cast<cl_int>(neu::range::get_begin_index(output)),
 				static_cast<cl_int>(input_dim_));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION( //TODO
-				boost::compute::all_of(neu::range_begin(output), neu::range_end(output),
+				boost::compute::all_of(neu::range::begin(output), neu::range::end(output),
 				0.f <= boost::compute::lambda::_1, queue));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION( //TODO
-				boost::compute::all_of(neu::range_begin(output), neu::range_end(output),
+				boost::compute::all_of(neu::range::begin(output), neu::range::end(output),
 				boost::compute::lambda::_1 <= 1.f, queue));
 		}
 
