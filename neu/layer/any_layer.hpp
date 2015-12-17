@@ -182,7 +182,8 @@ namespace neu {
 			}
 			template <typename Layer>
 			Layer const* target() const {
-				return static_cast<Layer const*>(const_cast<any_layer*>(this)->target<Layer>());
+				return static_cast<Layer const*>(
+					const_cast<any_layer*>(this)->target<Layer>());
 			}
 
 			std::size_t input_dim() const { return holder_->input_dim(); }
