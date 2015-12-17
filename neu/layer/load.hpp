@@ -13,9 +13,14 @@ namespace neu {
 	namespace layer {
 		class load_error : public std::exception {
 		public:
+			explicit load_error(std::string const& layer_id) : layer_id_(layer_id) {}
+
 			virtual const char* what() const noexcept {
-				return "Unknown layer is loaded. Check layer data and load function.";
+				return ("Unknown layer \""+ layer_id_
+					+ "\" is loaded. Check layer data and load function.").c_str();
 			}
+		private:
+			std::string layer_id_;
 		};
 		any_layer load(YAML::Node const& node, 
 				boost::compute::command_queue& queue) {
@@ -39,7 +44,7 @@ namespace neu {
 				return static_cast<any_layer>(load_any_layer_vector(node, queue));
 			}
 			else {
-				throw load_error();
+				throw load_error(lt);
 			}
 		}
 	}
