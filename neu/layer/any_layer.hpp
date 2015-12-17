@@ -20,9 +20,6 @@ namespace neu {
 				any_layer_holder_base& operator=(any_layer_holder_base&&) = default;
 				virtual ~any_layer_holder_base() noexcept = default;
 
-				virtual bool operator==(
-					any_layer_holder_base const& other) const noexcept  = 0;
-
 				virtual std::type_info const& target_type() const = 0;
 				virtual void* get() = 0;
 				virtual void const* get() const = 0;
@@ -83,16 +80,6 @@ namespace neu {
 				any_layer_holder(any_layer_holder&&) = default;
 				any_layer_holder& operator=(any_layer_holder&&) = default;
 				~any_layer_holder() noexcept = default;
-
-				virtual bool operator==(
-						any_layer_holder_base const& other) const noexcept override {
-					if(target_type() != other.target_type()) {
-						return false;
-					}
-					else {
-						return l_ == *(static_cast<Layer const*>(other.get()));
-					}
-				}
 
 				explicit any_layer_holder(Layer const& l)
 				: any_layer_holder_base(), l_(l) {}
@@ -176,14 +163,8 @@ namespace neu {
 				return holder_->target_type();
 			}
 
-			bool operator==(any_layer const& other) const noexcept {
-				if(holder_ == nullptr || other.holder_ == nullptr) {
-					return holder_ == other.holder_;
-				}
-				else {
-					NEU_ASSERT(holder_ != nullptr && other.holder_ != nullptr);
-					return *holder_ == *(other.holder_);
-				}
+			bool operator==(nullptr_t) const noexcept {
+				return holder_ == nullptr;
 			}
 
 			void swap(any_layer& other) noexcept {
@@ -239,8 +220,15 @@ namespace neu {
 			std::unique_ptr<any_layer_impl::any_layer_holder_base> holder_;
 		};
 
-		bool operator!=(any_layer const& lhs, any_layer const& rhs) noexcept {
-			return !(lhs == rhs);
+		bool operator==(std::nullptr_t, any_layer const& al) noexcept {
+			return al == nullptr;
+		}
+
+		bool operator!=(any_layer const& al, std::nullptr_t) noexcept {
+			return !(al == nullptr);
+		}
+		bool operator!=(std::nullptr_t, any_layer const& al) noexcept {
+			return al != nullptr;
 		}
 
 		void swap(any_layer& lhs, any_layer& rhs) noexcept {
