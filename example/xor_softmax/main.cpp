@@ -1,3 +1,4 @@
+//#define NEU_DISABLE_ASSERTION
 #include <iostream>
 #include <boost/progress.hpp>
 #include <neu/vector_io.hpp>
