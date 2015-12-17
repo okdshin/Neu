@@ -72,17 +72,23 @@ namespace neu {
 				test_forward(batch_size_, input, output, queue);
 			}
 
-			template<typename InputRange, typename OutputRange>
-			decltype(auto) backward(
-					InputRange const& delta, OutputRange const& prev_delta,
-					bool is_top,
+			template<typename InputRange>
+			decltype(auto) backward_top(
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(delta) == delta_.size());
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				range::copy(delta, delta_, queue); //TODO async operation
-				if(!is_top) {
-					range::copy(delta, prev_delta, queue); //TODO async operation
-				}
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) backward(
+					InputRange const& delta, OutputRange const& prev_delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				backward_top(delta, queue);
+				range::copy(delta, prev_delta, queue); //TODO async operation
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 

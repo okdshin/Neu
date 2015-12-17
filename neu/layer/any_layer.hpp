@@ -38,9 +38,10 @@ namespace neu {
 					range::gpu_vector_range const& output,
 					boost::compute::command_queue& queue) = 0;
 
+				virtual void backward_top(range::gpu_vector_range const& delta,
+					boost::compute::command_queue& queue) = 0;
 				virtual void backward(range::gpu_vector_range const& delta,
 					range::gpu_vector_range const& prev_delta,
-					bool is_top,
 					boost::compute::command_queue& queue) = 0;
 
 				virtual void update(boost::compute::command_queue& queue) = 0;
@@ -117,11 +118,14 @@ namespace neu {
 					neu::layer::forward(unwrap(l_), input, output, queue);
 				}
 
+				void backward_top(range::gpu_vector_range const& delta,
+						boost::compute::command_queue& queue) override {
+					neu::layer::backward_top(unwrap(l_), delta, queue);
+				}
 				void backward(range::gpu_vector_range const& delta,
 						range::gpu_vector_range const& prev_delta,
-						bool is_top,
 						boost::compute::command_queue& queue) override {
-					neu::layer::backward(unwrap(l_), delta, prev_delta, is_top, queue);
+					neu::layer::backward(unwrap(l_), delta, prev_delta, queue);
 				}
 
 				void update(boost::compute::command_queue& queue) override {
@@ -202,11 +206,14 @@ namespace neu {
 				holder_->forward(input, output, queue);
 			}
 
+			void backward_top(range::gpu_vector_range const& delta,
+					boost::compute::command_queue& queue) {
+				holder_->backward_top(delta, queue);
+			}
 			void backward(range::gpu_vector_range const& delta,
 					range::gpu_vector_range const& prev_delta,
-					bool is_top,
 					boost::compute::command_queue& queue) {
-				holder_->backward(delta, prev_delta, is_top, queue);
+				holder_->backward(delta, prev_delta, queue);
 			}
 
 			void update(boost::compute::command_queue& queue) {

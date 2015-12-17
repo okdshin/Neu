@@ -70,21 +70,45 @@ namespace neu {
 				}
 			};
 			template<>
+			class backward_top<std::vector<neu::layer::any_layer>> {
+			public:
+				template<typename InputRange>
+				static decltype(auto) call(std::vector<neu::layer::any_layer>& layers,
+						InputRange const& initial_delta,
+						boost::compute::command_queue& queue) {
+					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
+					gpu_vector prev_delta(queue.get_context());
+
+					// call backward except the top layer
+					for(int i = layers.size()-1; i >= 1; --i) {
+						auto& l = layers.at(i);
+						prev_delta.resize(neu::layer::input_size(l), queue);
+						l.backward(
+							range::to_range(delta), range::to_range(prev_delta),
+							queue);
+						delta.swap(prev_delta);
+					}
+
+					// call backward_top on the top layer
+					layers.front().backward_top(range::to_range(delta), queue);
+				}
+			};
+			template<>
 			class backward<std::vector<neu::layer::any_layer>> {
 			public:
 				template<typename InputRange, typename OutputRange>
 				static decltype(auto) call(std::vector<neu::layer::any_layer>& layers,
 						InputRange const& initial_delta,
 						OutputRange& result_prev_delta,
-						bool is_top,
 						boost::compute::command_queue& queue) {
 					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
 					gpu_vector prev_delta(queue.get_context());
 					for(int i = layers.size()-1; i >= 0; --i) {
 						auto& l = layers.at(i);
 						prev_delta.resize(neu::layer::input_size(l), queue);
-						l.backward(range::to_range(delta), range::to_range(prev_delta),
-							false, queue);//TODO is_top
+						l.backward(
+							range::to_range(delta), range::to_range(prev_delta),
+							queue);
 						delta.swap(prev_delta);
 					}
 					range::copy(delta, result_prev_delta, queue);

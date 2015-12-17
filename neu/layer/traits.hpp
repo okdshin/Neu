@@ -121,6 +121,30 @@ namespace neu {
 		}
 
 		//
+		// backward_top
+		//
+		namespace traits {
+			// default implementation (call member function)
+			template<typename Layer>
+			class backward_top {
+			public:
+				template<typename InputRange>
+				static decltype(auto) call(Layer& l,
+						InputRange const& delta,
+						boost::compute::command_queue& queue) {
+					l.backward_top(delta, queue);
+				}
+			};
+		}
+		template<typename Layer, typename InputRange>
+		decltype(auto) backward_top(Layer& l,
+				InputRange const& delta,
+				boost::compute::command_queue& queue) {
+			::neu::layer::traits::backward_top<std::decay_t<Layer>>::call(
+				l, delta, queue);
+		}
+
+		//
 		// backward
 		//
 		namespace traits {
@@ -131,19 +155,17 @@ namespace neu {
 				template<typename InputRange, typename OutputRange>
 				static decltype(auto) call(Layer& l,
 						InputRange const& delta, OutputRange& prev_delta,
-						bool is_top,
 						boost::compute::command_queue& queue) {
-					l.backward(delta, prev_delta, is_top, queue);
+					l.backward(delta, prev_delta, queue);
 				}
 			};
 		}
 		template<typename Layer, typename InputRange, typename OutputRange>
 		decltype(auto) backward(Layer& l,
 				InputRange const& delta, OutputRange& prev_delta,
-				bool is_top,
 				boost::compute::command_queue& queue) {
 			::neu::layer::traits::backward<std::decay_t<Layer>>::call(
-				l, delta, prev_delta, is_top, queue);
+				l, delta, prev_delta, queue);
 		}
 
 		//

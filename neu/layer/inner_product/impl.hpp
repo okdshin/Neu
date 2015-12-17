@@ -82,24 +82,30 @@ namespace neu {
 				test_forward(batch_size_, input, output, queue);
 			}
 
-			template<typename InputRange, typename OutputRange>
-			decltype(auto) backward(
-					InputRange const& delta, OutputRange const& prev_delta,
-					bool is_top,
+			template<typename InputRange>
+			decltype(auto) backward_top(
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(delta) == delta_.size());
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				range::copy(delta, delta_, queue); //TODO async operation
-				if(!is_top) {
-					enqueue_nd_range_kernel<2>(queue, backward_kernel_,
-						{0, 0}, {input_dim_, batch_size_},
-						range::get_buffer(prev_delta),
-						static_cast<cl_int>(range::get_begin_index(prev_delta)),
-						range::get_buffer(delta),
-						static_cast<cl_int>(range::get_begin_index(delta)),
-						weight_,
-						static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
-				}
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) backward(
+					InputRange const& delta, OutputRange const& prev_delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				backward_top(delta, queue);
+				enqueue_nd_range_kernel<2>(queue, backward_kernel_,
+					{0, 0}, {input_dim_, batch_size_},
+					range::get_buffer(prev_delta),
+					static_cast<cl_int>(range::get_begin_index(prev_delta)),
+					range::get_buffer(delta),
+					static_cast<cl_int>(range::get_begin_index(delta)),
+					weight_,
+					static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
