@@ -4,10 +4,8 @@
 #include <boost/progress.hpp>
 #include <neu/vector_io.hpp>
 #include <neu/kernel.hpp>
-#include <neu/activation_func/sigmoid_loss.hpp>
-#include <neu/activation_func/rectifier.hpp>
-#include <neu/activation_func/sigmoid.hpp>
-#include <neu/layer/activation.hpp>
+#include <neu/layer/activation/rectifier.hpp>
+#include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
@@ -85,7 +83,7 @@ int main(int argc, char** argv) {
 		}
 		neu::gpu_vector error(output.size(), context);
 		neu::range::calc_last_layer_delta(output, teach, error, queue);
-		neu::layer::backward(nn, error, prev_delta, false, queue);
+		neu::layer::backward(nn, error, prev_delta, queue); //or neu::layer::backward_top(nn, error, queue);
 		neu::layer::update(nn, queue);
 		++progress;
 	}
