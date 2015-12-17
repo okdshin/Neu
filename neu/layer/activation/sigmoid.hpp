@@ -2,7 +2,7 @@
 #define NEU_LAYER_ACTIVATION_SIGMOID_HPP
 //20151212
 #include <neu/layer/activation/impl.hpp>
-#include <neu/activation_func/sigmoid_loss.hpp>
+#include <neu/activation_func/sigmoid.hpp>
 namespace neu {
 	namespace layer {
 		using sigmoid = activation<neu::sigmoid>;
