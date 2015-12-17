@@ -7,6 +7,7 @@
 #include <neu/layer/bias.hpp>
 #include <neu/layer/activation/sigmoid.hpp>
 #include <neu/layer/activation/rectifier.hpp>
+#include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 namespace neu {
