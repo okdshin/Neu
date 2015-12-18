@@ -7,6 +7,12 @@ namespace neu {
 	namespace layer {
 		using sigmoid_loss = activation<neu::sigmoid_loss>;
 
+		decltype(auto) make_sigmoid_loss(
+				std::size_t input_dim, std::size_t batch_size) {
+			return make_activation(input_dim, batch_size,
+				neu::sigmoid_loss());
+		}
+
 		namespace traits {
 			template<>
 			class serialize<sigmoid_loss> {

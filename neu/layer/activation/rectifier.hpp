@@ -7,6 +7,12 @@ namespace neu {
 	namespace layer {
 		using rectifier = activation<neu::rectifier>;
 
+		decltype(auto) make_rectifier(
+				std::size_t input_dim, std::size_t batch_size) {
+			return make_activation(input_dim, batch_size,
+				neu::rectifier());
+		}
+
 		namespace traits {
 			template<>
 			class serialize<rectifier> {

@@ -7,6 +7,12 @@ namespace neu {
 	namespace layer {
 		using sigmoid = activation<neu::sigmoid>;
 
+		decltype(auto) make_sigmoid(
+				std::size_t input_dim, std::size_t batch_size) {
+			return make_activation(input_dim, batch_size,
+				neu::sigmoid());
+		}
+
 		namespace traits {
 			template<>
 			class serialize<sigmoid> {

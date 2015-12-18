@@ -17,7 +17,7 @@ namespace neu {
 		}
 		namespace traits {
 			template<>
-			class save<leaky_rectifier> {
+			class serialize<leaky_rectifier> {
 			public:
 				static decltype(auto) call(leaky_rectifier const& ac,
 						YAML::Emitter& emitter,
@@ -37,7 +37,7 @@ namespace neu {
 				}
 			};
 		}
-		decltype(auto) load_leaky_rectifier(YAML::Node const& node,
+		decltype(auto) deserialize_leaky_rectifier(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "leaky_rectifier");
 			return make_leaky_rectifier(
