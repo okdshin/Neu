@@ -23,6 +23,7 @@ namespace neu {
 		private:
 			std::string layer_id_;
 		};
+
 		any_layer deserialize(YAML::Node const& node, 
 				boost::compute::command_queue& queue) {
 			auto lt = node["layer_type"].as<std::string>();

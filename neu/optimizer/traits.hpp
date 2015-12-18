@@ -29,24 +29,24 @@ namespace neu {
 		}
 
 		//
-		// save
+		// serialize
 		//
 		namespace traits {
 			template<typename Optimizer>
-			class save {
+			class serialize {
 			public:
 				static decltype(auto) call(Optimizer const& o,
 						YAML::Emitter& emitter,
 						boost::compute::command_queue& queue) {
-					o.save(emitter, queue);
+					o.serialize(emitter, queue);
 				}
 			};
 		}
 		template<typename Optimizer>
-		decltype(auto) save(Optimizer const& o,
+		decltype(auto) serialize(Optimizer const& o,
 				YAML::Emitter& emitter,
 				boost::compute::command_queue& queue) {
-			::neu::optimizer::traits::save<std::decay_t<Optimizer>>::call(o,
+			::neu::optimizer::traits::serialize<std::decay_t<Optimizer>>::call(o,
 				emitter, queue);
 		}
 	}

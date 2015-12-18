@@ -46,7 +46,7 @@ namespace neu {
 
 				virtual void update(boost::compute::command_queue& queue) = 0;
 
-				virtual void save(YAML::Emitter& emitter,
+				virtual void serialize(YAML::Emitter& emitter,
 					boost::compute::command_queue& queue) const = 0;
 
 			};
@@ -132,9 +132,9 @@ namespace neu {
 					neu::layer::update(unwrap(l_), queue);
 				}
 
-				void save(YAML::Emitter& emitter,
+				void serialize(YAML::Emitter& emitter,
 						boost::compute::command_queue& queue) const override {
-					neu::layer::save(unwrap(l_), emitter, queue);
+					neu::layer::serialize(unwrap(l_), emitter, queue);
 				}
 				
 			private:
@@ -220,8 +220,9 @@ namespace neu {
 				holder_->update(queue);
 			}
 
-			void save(YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
-				holder_->save(emitter, queue);
+			void serialize(YAML::Emitter& emitter,
+					boost::compute::command_queue& queue) const {
+				holder_->serialize(emitter, queue);
 			}
 
 		private:

@@ -125,7 +125,7 @@ namespace neu {
 				}
 			};
 			template<>
-			class save<std::vector<neu::layer::any_layer>> {
+			class serialize<std::vector<neu::layer::any_layer>> {
 			public:
 				static decltype(auto) call(
 						std::vector<neu::layer::any_layer> const& layers,
@@ -134,27 +134,27 @@ namespace neu {
 						<< YAML::Key << "layer_type"
 							<< YAML::Value << "any_layer_vector"
 						<< YAML::Key << "input_dim"
-							<< YAML::Value << neu::layer::input_dim(layers)
+							<< YAML::Value << ::neu::layer::input_dim(layers)
 						<< YAML::Key << "output_dim"
-							<< YAML::Value << neu::layer::output_dim(layers)
+							<< YAML::Value << ::neu::layer::output_dim(layers)
 						<< YAML::Key << "batch_size"
-							<< YAML::Value << neu::layer::batch_size(layers)
+							<< YAML::Value << ::neu::layer::batch_size(layers)
 						<< YAML::Key << "layers" << YAML::Value
 							<< YAML::BeginSeq;
 					for(auto const& l : layers) {
-						neu::layer::save(l, emitter, queue);
+						::neu::layer::serialize(l, emitter, queue);
 					}
 					emitter << YAML::EndSeq << YAML::EndMap;
 				}
 			};
 		}
-		decltype(auto) load_any_layer_vector(YAML::Node const& node,
+		decltype(auto) deserialize_any_layer_vector(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "any_layer_vector");
 			auto layers_node = node["layers"];
 			std::vector<neu::layer::any_layer> layers;
 			for(auto const& ln : layers_node) {
-				layers.push_back(neu::layer::load(ln, queue));
+				layers.push_back(::neu::layer::deserialize(ln, queue));
 			}
 			return layers;
 		}

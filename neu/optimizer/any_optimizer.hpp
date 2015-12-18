@@ -31,7 +31,7 @@ namespace neu {
 				virtual void apply(gpu_vector& weight, gpu_vector const& del_weight,
 					boost::compute::command_queue& queue) = 0;
 
-				virtual void save(YAML::Emitter& emitter,
+				virtual void serialize(YAML::Emitter& emitter,
 					boost::compute::command_queue& queue) const = 0;
 
 			};
@@ -85,9 +85,9 @@ namespace neu {
 					neu::optimizer::apply(unwrap(l_), weight, del_weight, queue);
 				}
 
-				void save(YAML::Emitter& emitter,
+				void serialize(YAML::Emitter& emitter,
 						boost::compute::command_queue& queue) const override {
-					neu::optimizer::save(unwrap(l_), emitter, queue);
+					neu::optimizer::serialize(unwrap(l_), emitter, queue);
 				}
 				
 			private:
@@ -140,9 +140,9 @@ namespace neu {
 				holder_->apply(weight, del_weight, queue);
 			}
 
-			void save(YAML::Emitter& emitter,
+			void serialize(YAML::Emitter& emitter,
 					boost::compute::command_queue& queue) const {
-				holder_->save(emitter, queue);
+				holder_->serialize(emitter, queue);
 			}
 
 		private:

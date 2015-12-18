@@ -8,7 +8,7 @@
 #include <neu/range/traits.hpp>
 #include <neu/kernel.hpp>
 #include <neu/layer/inner_product/kernel_source.hpp>
-#include <neu/optimizer/load.hpp>
+#include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>
 namespace neu {
 	namespace layer {
@@ -147,7 +147,7 @@ namespace neu {
 
 		namespace traits {
 			template<>
-			class save<inner_product> {
+			class serialize<inner_product> {
 			public:
 				static decltype(auto) call(
 						inner_product const& ip,
@@ -165,20 +165,20 @@ namespace neu {
 							<< YAML::Value << YAML::Flow << ip.weight(queue)
 						<< YAML::Key << "optimizer"
 							<< YAML::Value;
-					optimizer::save(ip.optimizer(), emitter, queue);
+					optimizer::serialize(ip.optimizer(), emitter, queue);
 					emitter << YAML::EndMap;
 				}
 			};
 		}
 
-		decltype(auto) load_inner_product(YAML::Node const& node,
+		decltype(auto) deserialize_inner_product(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			return inner_product(
 				node["input_dim"].as<std::size_t>(),
 				node["output_dim"].as<std::size_t>(),
 				node["batch_size"].as<std::size_t>(),
 				node["weight"].as<cpu_vector>(),
-				optimizer::load(node["optimizer"], queue),
+				optimizer::deserialize(node["optimizer"], queue),
 				queue
 			);
 		}

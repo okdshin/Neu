@@ -9,7 +9,7 @@ namespace neu {
 
 		namespace traits {
 			template<>
-			class save<sigmoid> {
+			class serialize<sigmoid> {
 			public:
 				static decltype(auto) call(sigmoid const& ac,
 						YAML::Emitter& emitter,
@@ -27,7 +27,7 @@ namespace neu {
 				}
 			};
 		}
-		decltype(auto) load_sigmoid(YAML::Node const& node,
+		decltype(auto) deserialize_sigmoid(YAML::Node const& node,
 				boost::compute::command_queue&) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "sigmoid");
 			return activation<neu::sigmoid>(

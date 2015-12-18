@@ -125,7 +125,7 @@ namespace neu {
 
 		namespace traits {
 			template<>
-			class save<bias> {
+			class serialize<bias> {
 			public:
 				static decltype(auto) call(
 						bias const& b,
@@ -143,19 +143,19 @@ namespace neu {
 							<< YAML::Value << YAML::Flow << b.weight(queue)
 						<< YAML::Key << "optimizer"
 							<< YAML::Value;
-					optimizer::save(b.optimizer(), emitter, queue);
+					optimizer::serialize(b.optimizer(), emitter, queue);
 					emitter << YAML::EndMap;
 				}
 			};
 		}
 
-		decltype(auto) load_bias(YAML::Node const& node,
+		decltype(auto) deserialize_bias(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			return bias(
 				node["input_dim"].as<std::size_t>(),
 				node["batch_size"].as<std::size_t>(),
 				node["weight"].as<cpu_vector>(),
-				optimizer::load(node["optimizer"], queue),
+				optimizer::deserialize(node["optimizer"], queue),
 				queue
 			);
 		}

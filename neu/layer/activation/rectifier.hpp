@@ -9,7 +9,7 @@ namespace neu {
 
 		namespace traits {
 			template<>
-			class save<rectifier> {
+			class serialize<rectifier> {
 			public:
 				static decltype(auto) call(rectifier const& ac,
 						YAML::Emitter& emitter,
@@ -27,7 +27,7 @@ namespace neu {
 				}
 			};
 		}
-		decltype(auto) load_rectifier(YAML::Node const& node,
+		decltype(auto) deserialize_rectifier(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "rectifier");
 			return activation<neu::rectifier>(

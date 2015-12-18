@@ -189,25 +189,25 @@ namespace neu {
 		}
 
 		//
-		// save
+		// serialize
 		//
 		namespace traits {
 			// default implementation (call member function)
 			template<typename Layer>
-			class save {
+			class serialize {
 			public:
 				static decltype(auto) call(Layer const& l,
 						YAML::Emitter& emitter,
 						boost::compute::command_queue& queue) {
-					l.save(emitter, queue);
+					l.serialize(emitter, queue);
 				}
 			};
 		}
 		template<typename Layer>
-		decltype(auto) save(Layer const& l,
+		decltype(auto) serialize(Layer const& l,
 				YAML::Emitter& emitter,
 				boost::compute::command_queue& queue) {
-			::neu::layer::traits::save<std::decay_t<Layer>>::call(l, emitter, queue);
+			::neu::layer::traits::serialize<std::decay_t<Layer>>::call(l, emitter, queue);
 		}
 	}
 }

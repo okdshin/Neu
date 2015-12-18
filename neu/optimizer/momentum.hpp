@@ -47,7 +47,7 @@ namespace neu {
 					weight.begin(), _1+_2, queue);
 			}
 
-			decltype(auto) save(YAML::Emitter& emitter,
+			decltype(auto) serialize(YAML::Emitter& emitter,
 					boost::compute::command_queue& queue) const {
 				emitter << YAML::BeginMap
 					<< YAML::Key << "optimizer_type"
@@ -66,7 +66,7 @@ namespace neu {
 			gpu_vector delta_weight_;
 		};
 
-		decltype(auto) load_momentum(YAML::Node const& node,
+		decltype(auto) deserialize_momentum(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["optimizer_type"].as<std::string>() == "momentum");
 			return momentum(
