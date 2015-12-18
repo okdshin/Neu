@@ -11,7 +11,6 @@
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
-#include <neu/layer/branch_reduce.hpp>
 #include <neu/layer/load.hpp>
 
 int main(int argc, char** argv) {
@@ -40,8 +39,8 @@ int main(int argc, char** argv) {
 		() mutable { return dist(rand); };
 	auto constant_g = [](){ return 0.f; };
 
-	constexpr neu::scalar base_lr = 0.1;
-	constexpr neu::scalar momentum = 0.9;
+	constexpr neu::scalar base_lr = 0.1f;
+	constexpr neu::scalar momentum = 0.9f;
 	constexpr std::size_t hidden_node_num = 10u;
 
 	std::vector<neu::layer::any_layer> nn;
