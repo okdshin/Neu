@@ -7,29 +7,32 @@
 #include <neu/range/gpu_buffer_range.hpp>
 #include <neu/layer/traits.hpp>
 #include <neu/layer/any_layer.hpp>
-#include <neu/layer/load_fwd.hpp>
+#include <neu/layer/deserialize_fwd.hpp>
 namespace neu {
 	namespace layer {
 		namespace traits {
 			template<>
 			class input_dim<std::vector<neu::layer::any_layer>> {
 			public:
-				static decltype(auto) call(std::vector<neu::layer::any_layer> const& alv) {
-					return neu::layer::input_dim(alv.front());
+				static decltype(auto) call(
+						std::vector<neu::layer::any_layer> const& alv) {
+					return ::neu::layer::input_dim(alv.front());
 				}
 			};
 			template<>
 			class output_dim<std::vector<neu::layer::any_layer>> {
 			public:
-				static decltype(auto) call(std::vector<neu::layer::any_layer> const& alv) {
-					return neu::layer::output_dim(alv.back());
+				static decltype(auto) call(
+						std::vector<neu::layer::any_layer> const& alv) {
+					return ::neu::layer::output_dim(alv.back());
 				}
 			};
 			template<>
 			class batch_size<std::vector<neu::layer::any_layer>> {
 			public:
-				static decltype(auto) call(std::vector<neu::layer::any_layer> const& alv) {
-					return neu::layer::batch_size(alv.front());
+				static decltype(auto) call(
+						std::vector<neu::layer::any_layer> const& alv) {
+					return ::neu::layer::batch_size(alv.front());
 				}
 			};
 			template<>
@@ -44,7 +47,7 @@ namespace neu {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
 					for(auto& l : layers) {
-						output.resize(neu::layer::output_size(l), queue);
+						output.resize(::neu::layer::output_size(l), queue);
 						l.test_forward(batch_size,
 							range::to_range(input), range::to_range(output), queue);
 						input.swap(output);
@@ -62,7 +65,7 @@ namespace neu {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
 					for(auto& l : layers) {
-						output.resize(neu::layer::output_size(l), queue);
+						output.resize(::neu::layer::output_size(l), queue);
 						l.forward(range::to_range(input), range::to_range(output), queue);
 						input.swap(output);
 					}
@@ -82,7 +85,7 @@ namespace neu {
 					// call backward except the top layer
 					for(int i = layers.size()-1; i >= 1; --i) {
 						auto& l = layers.at(i);
-						prev_delta.resize(neu::layer::input_size(l), queue);
+						prev_delta.resize(::neu::layer::input_size(l), queue);
 						l.backward(
 							range::to_range(delta), range::to_range(prev_delta),
 							queue);
@@ -105,7 +108,7 @@ namespace neu {
 					gpu_vector prev_delta(queue.get_context());
 					for(int i = layers.size()-1; i >= 0; --i) {
 						auto& l = layers.at(i);
-						prev_delta.resize(neu::layer::input_size(l), queue);
+						prev_delta.resize(::neu::layer::input_size(l), queue);
 						l.backward(
 							range::to_range(delta), range::to_range(prev_delta),
 							queue);
