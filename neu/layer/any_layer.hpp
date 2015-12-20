@@ -26,8 +26,12 @@ namespace neu {
 
 				virtual std::unique_ptr<any_layer_holder_base> clone() = 0;
 
-				virtual std::size_t input_dim() const = 0;
-				virtual std::size_t output_dim() const = 0;
+				virtual std::size_t input_rank() const = 0;
+				virtual std::size_t output_rank() const = 0;
+
+				virtual std::size_t input_size(rank_id) const = 0;
+				virtual std::size_t output_size(rank_id) const = 0;
+
 				virtual std::size_t batch_size() const = 0;
 
 				virtual void test_forward(std::size_t batch_size,
@@ -96,11 +100,18 @@ namespace neu {
 					return std::make_unique<any_layer_holder>(*this);
 				}
 
-				std::size_t input_dim() const override {
-					return neu::layer::input_dim(unwrap(l_));
+				std::size_t input_rank() const override {
+					return neu::layer::input_rank(unwrap(l_));
 				}
-				std::size_t output_dim() const override {
-					return neu::layer::output_dim(unwrap(l_));
+				std::size_t output_rank() const override {
+					return neu::layer::output_rank(unwrap(l_));
+				}
+
+				std::size_t input_size(rank_id ri) const override {
+					return neu::layer::input_size(unwrap(l_), ri);
+				}
+				std::size_t output_size(rank_id ri) const override {
+					return neu::layer::output_size(unwrap(l_), ri);
 				}
 				std::size_t batch_size() const override {
 					return neu::layer::batch_size(unwrap(l_));
@@ -190,8 +201,12 @@ namespace neu {
 					const_cast<any_layer*>(this)->target<Layer>());
 			}
 
-			std::size_t input_dim() const { return holder_->input_dim(); }
-			std::size_t output_dim() const { return holder_->output_dim(); }
+			std::size_t input_rank() const { return holder_->input_rank(); }
+			std::size_t output_rank() const { return holder_->output_rank(); }
+
+			std::size_t input_size(rank_id ri) const { return holder_->input_size(ri); }
+			std::size_t output_size(rank_id ri) const { return holder_->output_size(ri); }
+
 			std::size_t batch_size() const { return holder_->batch_size(); }
 
 			void test_forward(std::size_t batch_size,

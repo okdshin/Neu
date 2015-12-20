@@ -66,8 +66,8 @@ int main(int argc, char** argv) {
 	nn.push_back(neu::layer::make_softmax_loss(
 		neu::layer::output_dim(nn), batch_size, context));
 
-	neu::gpu_vector output(neu::layer::output_size(nn), context);
-	neu::gpu_vector prev_delta(neu::layer::input_size(nn), context);
+	neu::gpu_vector output(neu::layer::whole_output_size(nn), context);
+	neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
 
 	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");

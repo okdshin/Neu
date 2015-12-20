@@ -47,8 +47,10 @@ namespace neu {
 				}
 			}
 
-			decltype(auto) input_dim() const { return input_dim_; }
-			decltype(auto) output_dim() const { return output_dim_; }
+			decltype(auto) input_rank() const { return 1; }
+			decltype(auto) output_rank() const { return 1; }
+			decltype(auto) input_size(rank_id) const { return input_dim_; }
+			decltype(auto) output_size(rank_id) const { return output_dim_; }
 			decltype(auto) batch_size() const { return batch_size_; }
 			decltype(auto) weight(boost::compute::command_queue& queue) const {
 				return to_cpu_vector(weight_, queue); }
@@ -149,8 +151,7 @@ namespace neu {
 			template<>
 			class serialize<inner_product> {
 			public:
-				static decltype(auto) call(
-						inner_product const& ip,
+				static decltype(auto) call(inner_product const& ip,
 						YAML::Emitter& emitter, boost::compute::command_queue& queue) {
 					emitter << YAML::BeginMap
 						<< YAML::Key << "layer_type"

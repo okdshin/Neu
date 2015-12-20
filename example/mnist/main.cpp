@@ -66,14 +66,15 @@ int main(int argc, char** argv) {
 		neu::layer::make_softmax_loss(neu::layer::output_dim(nn), batch_size, context));
 	//nn.push_back(neu::layer::make_sigmoid_loss(neu::layer::output_dim(nn), batch_size));
 
-	neu::gpu_vector output(neu::layer::output_size(nn), context);
-	neu::gpu_vector prev_delta(neu::layer::input_size(nn), context);
+	neu::gpu_vector output(neu::layer::whole_output_size(nn), context);
+	neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
 
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");
-	std::ofstream del_weight_log("del_weight.txt");
+
 	make_next_batch(ds);
+
 	auto iteration_limit = 10000u;
 	boost::progress_display progress(iteration_limit);
 	boost::timer timer;

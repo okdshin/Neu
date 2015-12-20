@@ -38,8 +38,10 @@ namespace neu {
 				activation_func_type(),
 				derivative_activation_func_type()) {}
 
-			decltype(auto) input_dim() const { return input_dim_; }
-			decltype(auto) output_dim() const { return input_dim_; }
+			decltype(auto) input_rank() const { return 1; }
+			decltype(auto) output_rank() const { return 1; }
+			decltype(auto) input_size(rank_id) const { return input_dim_; }
+			decltype(auto) output_size(rank_id) const { return input_dim_; }
 			decltype(auto) batch_size() const { return batch_size_; }
 			
 			decltype(auto) activation_func() const { return activation_func_; }

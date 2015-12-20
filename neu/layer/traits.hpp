@@ -6,41 +6,129 @@
 
 namespace neu {
 	namespace layer {
+		enum class rank_id : std::size_t {
+			dim = 0,
+			width = 0,
+			height = 1,
+			channel_num = 2
+		};
+
 		//
-		// input_dim
+		// input_rank
 		//
 		namespace traits {
 			// default implementation (call member function)
 			template<typename Layer>
-			class input_dim {
+			class input_rank {
 			public:
 				static decltype(auto) call(Layer const& l) {
-					return l.input_dim();
+					return l.input_rank();
 				}
 			};
 		}
 		template<typename Layer>
-		decltype(auto) input_dim(Layer const& l) {
-			return ::neu::layer::traits::input_dim<std::decay_t<Layer>>::call(l);
+		decltype(auto) input_rank(Layer const& l) {
+			return ::neu::layer::traits::input_rank<std::decay_t<Layer>>::call(l);
 		}
 
 		//
-		// output_dim
+		// output_rank
 		//
 		namespace traits {
 			// default implementation (call member function)
 			template<typename Layer>
-			class output_dim {
+			class output_rank {
 			public:
 				static decltype(auto) call(Layer const& l) {
-					return l.output_dim();
+					return l.output_rank();
 				}
 			};
 		}
 		template<typename Layer>
-		decltype(auto) output_dim(Layer const& l) {
-			return ::neu::layer::traits::output_dim<std::decay_t<Layer>>::call(l);
+		decltype(auto) output_rank(Layer const& l) {
+			return ::neu::layer::traits::output_rank<std::decay_t<Layer>>::call(l);
 		}
+
+		//
+		// input_size
+		//
+		namespace traits {
+			// default implementation (call member function)
+			template<typename Layer>
+			class input_size {
+			public:
+				static decltype(auto) call(Layer const& l, rank_id ri) {
+					return l.input_size(ri);
+				}
+			};
+		}
+		template<typename Layer>
+		decltype(auto) input_size(Layer const& l, rank_id ri) {
+			if(static_cast<int>(ri) >= input_rank(l)) {
+				throw "out of range of input rank";
+			}
+			return ::neu::layer::traits::input_size<std::decay_t<Layer>>::call(l, ri);
+		}
+
+		// helper for geometric layers
+		template<typename Layer>
+		decltype(auto) input_width(Layer const& l) {
+			if(input_rank(l) <= 1) {
+				throw "input rank should be greater than 1";
+			}
+			return ::neu::layer::input_size(l, rank_id::width);
+		}
+
+		//
+		// output_size
+		//
+		namespace traits {
+			// default implementation (call member function)
+			template<typename Layer>
+			class output_size {
+			public:
+				static decltype(auto) call(Layer const& l, rank_id ri) {
+					return l.output_size(ri);
+				}
+			};
+		}
+		template<typename Layer>
+		decltype(auto) output_size(Layer const& l, rank_id ri) {
+			if(static_cast<int>(ri) >= output_rank(l)) {
+				throw "out of range of output rank";
+			}
+			return ::neu::layer::traits::output_size<std::decay_t<Layer>>::call(l, ri);
+		}
+
+		// helper for geometric layers
+		template<typename Layer>
+		decltype(auto) output_width(Layer const& l) {
+			if(output_rank(l) <= 1) {
+				throw "output rank should be greater than 1";
+			}
+			return ::neu::layer::output_size(l, rank_id::width);
+		}
+
+		// input_dim
+		template<typename Layer>
+		decltype(auto) input_dim(Layer const& l) {
+			auto dim = 1;
+			for(auto i = 0; i < static_cast<int>(::neu::layer::input_rank(l)); ++i) {
+				dim *= input_size(l, static_cast<rank_id>(i));
+			}
+			return dim;
+		}
+
+		// output_dim
+		template<typename Layer>
+		decltype(auto) output_dim(Layer const& l) {
+			auto dim = 1;
+			for(auto i = 0; i < static_cast<int>(::neu::layer::output_rank(l)); ++i) {
+				dim *= output_size(l, static_cast<rank_id>(i));
+			}
+			return dim;
+		}
+
 
 		//
 		// batch_size
@@ -62,13 +150,13 @@ namespace neu {
 
 		// input_size
 		template<typename Layer>
-		decltype(auto) input_size(Layer const& l) {
+		decltype(auto) whole_input_size(Layer const& l) {
 			return ::neu::layer::input_dim(l)*::neu::layer::batch_size(l);
 		}
 
 		// output_size
 		template<typename Layer>
-		decltype(auto) output_size(Layer const& l) {
+		decltype(auto) whole_output_size(Layer const& l) {
 			return ::neu::layer::output_dim(l)*::neu::layer::batch_size(l);
 		}
 
