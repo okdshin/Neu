@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
 		neu::layer::forward(nn, input, output, queue);
 		{
 			neu::print(output_log, output, output_dim);
-			auto cel = neu::range::cross_entropy_loss(output, teach);
+			auto cel = neu::range::cross_entropy_loss(output, teach, queue);
 			cel_error_log << i << " " << cel << std::endl;
 		}
 		neu::gpu_vector error(output.size(), context);
@@ -89,21 +89,7 @@ int main(int argc, char** argv) {
 	std::cout << timer.elapsed() << " sec" << std::endl;
 	neu::print(std::cout, output, output_dim);
 	boost::compute::system::finish();
-	YAML::Emitter emitter;
-	neu::layer::save(nn, emitter, queue);
-	std::cout << emitter.c_str() << std::endl;
 
 	std::ofstream ofs("nn.yaml");
-	ofs << emitter.c_str();
-
-	{
-		auto node = YAML::Load(emitter.c_str());
-		auto loaded = neu::layer::load(node, queue);
-		YAML::Emitter emitter;
-		neu::layer::save(loaded, emitter, queue);
-		std::ofstream ofs("loaded_nn.yaml");
-		ofs << emitter.c_str();
-	}
-
-
+	neu::layer::output_to_file(nn, "nn.yaml", queue);
 }

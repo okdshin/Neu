@@ -9,6 +9,7 @@
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/activation/sigmoid_loss.hpp>
+#include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 namespace neu {
 	namespace layer {
@@ -44,6 +45,9 @@ namespace neu {
 			} else
 			if(lt == "sigmoid_loss") {
 				return static_cast<any_layer>(deserialize_sigmoid_loss(node, queue));
+			} else
+			if(lt == "softmax_loss") {
+				return static_cast<any_layer>(deserialize_softmax_loss(node, queue));
 			} else
 			if(lt == "any_layer_vector") {
 				return static_cast<any_layer>(deserialize_any_layer_vector(node, queue));
