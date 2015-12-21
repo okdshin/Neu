@@ -55,5 +55,10 @@ if(${NEU_BUILD_EXAMPLES})
   add_subdirectory(example)
 endif()
 
+option(NEU_BUILD_UTILITIES "Build the Neu utilities" ON)
+if(${NEU_BUILD_UTILITIES})
+  add_subdirectory(utility)
+endif()
+
 # install header files
 install( DIRECTORY neu DESTINATION neu FILES_MATCHING PATTERN "*.hpp" )
