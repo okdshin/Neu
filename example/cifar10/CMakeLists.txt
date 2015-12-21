@@ -7,5 +7,6 @@ target_link_libraries( cifer10
 	${OpenCL_LIBRARIES}
 	${FREEIMAGEPLUS_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
+	${YAMLCPP_LIBRARY}
 )
 set_target_properties( cifer10 PROPERTIES OUTPUT_NAME "a.out" )

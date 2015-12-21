@@ -124,6 +124,8 @@ namespace neu {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
+			decltype(auto) update(boost::compute::command_queue&) { /* do nothing */ }
+
 			decltype(auto) serialize(
 					YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
 				emitter << YAML::BeginMap

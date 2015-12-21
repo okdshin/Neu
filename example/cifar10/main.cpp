@@ -5,18 +5,20 @@
 #include <boost/progress.hpp>
 #include <boost/program_options.hpp>
 #include <neu/vector_io.hpp>
-#include <neu/layers_algorithm.hpp>
 #include <neu/kernel.hpp>
-#include <neu/learning_rate_gen/weight_decay_and_momentum.hpp>
-#include <neu/activation_func/sigmoid.hpp>
-#include <neu/activation_func/rectifier.hpp>
-#include <neu/activation_func/softmax_loss.hpp>
-#include <neu/activation_layer.hpp>
-#include <neu/convolution_layer.hpp>
-#include <neu/max_pooling_layer.hpp>
-#include <neu/average_pooling_layer.hpp>
-#include <neu/fully_connected_layer.hpp>
-#include <neu/layer.hpp>
+#include <neu/image.hpp>
+#include <neu/range/algorithm.hpp>
+#include <neu/layer/activation/rectifier.hpp>
+#include <neu/layer/activation/softmax_loss.hpp>
+#include <neu/optimizer/momentum.hpp>
+#include <neu/layer/convolution.hpp>
+#include <neu/layer/max_pooling.hpp>
+#include <neu/layer/average_pooling.hpp>
+#include <neu/layer/inner_product.hpp>
+#include <neu/layer/bias.hpp>
+#include <neu/layer/any_layer.hpp>
+#include <neu/layer/any_layer_vector.hpp>
+#include <neu/layer/io.hpp>
 #include <neu/load_data_set/load_cifar10.hpp>
 #include <neu/data_set.hpp>
 
@@ -24,8 +26,11 @@ int main(int argc, char** argv) {
 	namespace po = boost::program_options;
 
 	constexpr auto label_num = 10u;
-	constexpr auto input_dim = 32u*32u*3u;
+	constexpr auto input_width = 32u;
+	constexpr auto input_channel_num = 3u;
 	constexpr auto test_data_num_per_label = 1000;
+
+	constexpr auto input_dim = input_width*input_width*input_channel_num;
 
 	int data_num_per_label;
 	int iteration_limit;
@@ -66,9 +71,11 @@ int main(int argc, char** argv) {
 	std::cout << "momentum was set to " << momentum << ".\n";
 	std::cout << "weight_decay was set to " << weight_decay << ".\n";
 
+	auto& queue = boost::compute::system::default_queue();
+	auto context = boost::compute::system::default_context();
 
-	//std::random_device rd; std::mt19937 rand(rd());
-	std::mt19937 rand(3); std::cout << "INFO: fixed random engine" << std::endl;
+	std::random_device rd; std::mt19937 rand(rd());
+	//std::mt19937 rand(1); std::cout << "INFO: fixed random engine" << std::endl;
 
 	auto train_data = neu::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : train_data) {
@@ -90,27 +97,6 @@ int main(int argc, char** argv) {
 	auto test_ds = neu::make_data_set(
 		label_num, test_data_num_per_label, input_dim, test_data, rand);
 
-	auto conv1_param = neu::convolution_layer_parameter()
-		.input_width(32).input_channel_num(3).output_channel_num(32)
-		.filter_width(5).stride(1).pad(2).batch_size(batch_size);
-	auto pool1_param = neu::make_max_pooling_layer_parameter(conv1_param)
-		.filter_width(3).stride(2).pad(1);
-	auto relu1_param = neu::make_activation_layer_parameter(pool1_param);
-	auto conv2_param = neu::make_convolution_layer_parameter(pool1_param)
-		.output_channel_num(32).filter_width(5).stride(1).pad(2);
-	auto relu2_param = neu::make_activation_layer_parameter(conv2_param);
-	auto pool2_param = neu::make_average_pooling_layer_parameter(conv2_param)
-		.filter_width(3).stride(2).pad(1);
-	auto conv3_param = neu::make_convolution_layer_parameter(pool2_param)
-		.output_channel_num(64).filter_width(5).stride(1).pad(2);
-	auto relu3_param = neu::make_activation_layer_parameter(conv3_param);
-	auto pool3_param = neu::make_average_pooling_layer_parameter(conv3_param)
-		.filter_width(3).stride(2).pad(1);
-	auto fc1_param = neu::make_fully_connected_layer_parameter(pool3_param)
-		.output_dim(64);
-	auto fc2_param = neu::make_fully_connected_layer_parameter(fc1_param)
-		.output_dim(label_num);
-	auto softmax_loss_param = neu::make_activation_layer_parameter(fc2_param);
 
 	auto conv1_g = [&rand, dist=std::normal_distribution<>(0.f, 0.0001f)]
 		() mutable { return dist(rand); };
@@ -120,81 +106,203 @@ int main(int argc, char** argv) {
 		() mutable { return dist(rand); };
 	auto constant_g = [](){ return 0.f; };
 
-	auto conv1 = neu::make_convolution_layer(conv1_param, conv1_g, constant_g,
-		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
-			conv1_param.weight_dim(), conv1_param.bias_dim()));
-	auto pool1 = neu::make_max_pooling_layer(pool1_param);
-	auto relu1 = neu::make_activation_layer(relu1_param, neu::rectifier());
-	auto conv2 = neu::make_convolution_layer(conv2_param, conv23_g, constant_g,
-		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
-			conv2_param.weight_dim(), conv2_param.bias_dim()));
-	auto relu2 = neu::make_activation_layer(relu2_param, neu::rectifier());
-	auto pool2 = neu::make_uniform_average_pooling_layer(pool2_param);
-	auto conv3 = neu::make_convolution_layer(conv3_param, conv23_g, constant_g,
-		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
-			conv3_param.weight_dim(), conv3_param.bias_dim()));
-	auto relu3 = neu::make_activation_layer(relu3_param, neu::rectifier());
-	auto pool3 = neu::make_uniform_average_pooling_layer(pool3_param);
-	auto fc1 = neu::make_fully_connected_layer(fc1_param, fc12_g, constant_g,
-		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
-			fc1_param.weight_dim(), fc1_param.bias_dim()));
-	auto fc2 = neu::make_fully_connected_layer(fc2_param, fc12_g, constant_g,
-		neu::make_weight_decay_and_momentum(base_lr, momentum, weight_decay,
-			fc2_param.weight_dim(), fc2_param.bias_dim()));
-	auto softmax_loss = neu::make_activation_layer(softmax_loss_param,
-		neu::softmax_loss(label_num, batch_size));
+	std::vector<neu::layer::any_layer> nn;
 
-	auto layers = std::vector<neu::layer>{
-		std::ref(conv1),
-		pool1,
-		relu1,
-		std::ref(conv2),
-		relu2,
-		pool2,
-		std::ref(conv3),
-		relu3,
-		pool3,
-		std::ref(fc1),
-		std::ref(fc2),
-		softmax_loss
-	};
-	/*
-	std::ofstream mse_log("mean_square_error.txt");
-	std::ofstream cel_log("cross_entropy_loss.txt");
-	std::ofstream test_accuracy_log("test_accuracy.txt");
-	std::ofstream test_cel_log("test_cross_entropy_loss.txt"); std::ofstream log("log.txt");
-	*/
+	{ // conv1
+		neu::layer::geometric_layer_property glp{
+			input_width,
+			5,
+			input_channel_num,
+			32,
+			1, 2
+		};
+		nn.push_back(neu::layer::make_convolution(
+			glp, batch_size, conv1_g,
+			neu::optimizer::momentum(base_lr, momentum,
+				neu::layer::filters_size(glp), queue), queue));
+	}
+	auto conv1 = nn.back();
+
+	{ // bias-2
+		nn.push_back(neu::layer::make_bias(
+			neu::layer::output_dim(nn), batch_size, constant_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			queue));
+	}
+
+	{ // pool1(max)
+		neu::layer::geometric_layer_property glp{
+			neu::layer::output_width(conv1),
+			3,
+			neu::layer::output_channel_num(conv1),
+			neu::layer::output_channel_num(conv1),
+			2, 1
+		};
+		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
+	}
+	auto pool1 = nn.back();
+
+	{ // relu1
+		nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
+	}
+
+	{ // conv2
+		neu::layer::geometric_layer_property glp{
+			neu::layer::output_width(pool1),
+			5,
+			neu::layer::output_channel_num(pool1),
+			32,
+			1, 2
+		};
+		nn.push_back(neu::layer::make_convolution(
+			glp, batch_size, conv23_g,
+			neu::optimizer::momentum(base_lr, momentum,
+				neu::layer::filters_size(glp), queue), queue));
+	}
+	auto conv2 = nn.back();
+
+	{ // bias-1
+		nn.push_back(neu::layer::make_bias(
+			neu::layer::output_dim(nn), batch_size, constant_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			queue));
+	}
+
+	{ // relu2
+		nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
+	}
+
+	{ // pool2(ave)
+		neu::layer::geometric_layer_property glp{
+			neu::layer::output_width(conv2),
+			3,
+			neu::layer::output_channel_num(conv2),
+			neu::layer::output_channel_num(conv2),
+			2, 1
+		};
+		nn.push_back(neu::layer::make_uniform_average_pooling(glp, batch_size, queue));
+	}
+
+	{ // conv3
+		neu::layer::geometric_layer_property glp{
+			neu::layer::output_width(nn),
+			5,
+			neu::layer::output_channel_num(nn),
+			64,
+			1, 2
+		};
+		nn.push_back(neu::layer::make_convolution(
+			glp, batch_size, conv23_g,
+			neu::optimizer::momentum(base_lr, momentum,
+				neu::layer::filters_size(glp), queue), queue));
+	}
+	auto conv3 = nn.back();
+
+	{ // bias0
+		nn.push_back(neu::layer::make_bias(
+			neu::layer::output_dim(nn), batch_size, constant_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			queue));
+	}
+
+	{ // relu3
+		nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
+	}
+
+	{ // pool3(ave)
+		neu::layer::geometric_layer_property glp{
+			neu::layer::output_width(conv3),
+			3,
+			neu::layer::output_channel_num(conv3),
+			neu::layer::output_channel_num(conv3),
+			2, 1
+		};
+		nn.push_back(neu::layer::make_uniform_average_pooling(glp, batch_size, queue));
+	}
+
+	{ // ip1
+		nn.push_back(neu::layer::make_inner_product(
+			neu::layer::output_dim(nn), 64, batch_size, fc12_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn)*64, queue),
+			queue));
+	}
+
+	{ // bias1
+		nn.push_back(neu::layer::make_bias(
+			neu::layer::output_dim(nn), batch_size, constant_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			queue));
+	}
+
+	{ // ip2
+		nn.push_back(neu::layer::make_inner_product(
+			neu::layer::output_dim(nn), label_num, batch_size, fc12_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn)*label_num, queue),
+			queue));
+	}
+
+	{ // bias2
+		nn.push_back(neu::layer::make_bias(
+			neu::layer::output_dim(nn), batch_size, constant_g,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			queue));
+	}
+
+	{ // softmax_loss
+		nn.push_back(neu::layer::make_softmax_loss(
+			neu::layer::output_dim(nn), batch_size, context));
+	}
+
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");
 	make_next_batch(train_ds);
 	make_next_batch(test_ds);
-	neu::gpu_vector output;
-	neu::gpu_vector prev_delta;
+
+	neu::gpu_vector output(neu::layer::whole_output_size(nn), context);
+	neu::gpu_vector error(output.size(), context);
+	neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
+
 	boost::progress_display progress(iteration_limit);
 	boost::timer timer;
+
 	for(auto i = 0; i < iteration_limit; ++i) {
 		auto batch = train_ds.get_batch();
 		const auto input = batch.train_data;
 		const auto teach = batch.teach_data;
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 
-		neu::layers_forward(layers, input, output);
-		{
-			neu::print(output_log, output, label_num);
-			auto mse = neu::mean_square_error(output, teach);
-			mse_error_log << i << " " << mse << std::endl;
-			auto cel = neu::cross_entropy_loss(output, teach);
-			cel_error_log << i << " " << cel << std::endl;
+		if(i%(iteration_limit/10) == 0) {
+			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 		}
 
-		neu::gpu_vector error(output.size());
-		neu::calc_last_layer_delta(output, teach, error);
-		neu::layers_backward(layers, error, prev_delta);
-		neu::layers_update(layers);
+		neu::layer::forward(nn, input, output, queue);
+
+		{
+			neu::print(output_log, output, label_num);
+
+			auto mse = neu::range::mean_square_error(output, teach, queue);
+			mse_error_log << i << " " << mse/batch_size << std::endl;
+
+			auto cel = neu::range::cross_entropy_loss(output, teach, queue);
+			cel_error_log << i << " " << cel/batch_size << std::endl;
+		}
+
+		neu::range::calc_last_layer_delta(output, teach, error, queue);
+		neu::layer::backward(nn, error, prev_delta, queue);
+		neu::layer::update(nn, queue);
 
 		make_next_batch_future.wait();
 		++progress;
 	}
 	std::cout << timer.elapsed() << " secs" << std::endl;
+	boost::compute::system::finish();
+	neu::layer::output_to_file(nn, "nn.yaml", queue);
 }
