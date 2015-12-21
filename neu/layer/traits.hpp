@@ -2,6 +2,8 @@
 #define NEU_LAYER_TRAITS_HPP
 //20151025
 #include <type_traits>
+#include <exception>
+#include <string>
 #include <yaml-cpp/yaml.h>
 
 namespace neu {
@@ -49,6 +51,19 @@ namespace neu {
 			return ::neu::layer::traits::output_rank<std::decay_t<Layer>>::call(l);
 		}
 
+		class invalid_rank_access_error : public std::exception {
+		public:
+			invalid_rank_access_error(std::string const& message)
+				: message_(message) {}
+
+			const char* what() const noexcept override {
+				return ("invalid_rank_access_error: "+message_).c_str();
+			}
+
+		private:
+			std::string message_;
+		};
+
 		//
 		// input_size
 		//
@@ -65,7 +80,7 @@ namespace neu {
 		template<typename Layer>
 		decltype(auto) input_size(Layer const& l, rank_id ri) {
 			if(static_cast<int>(ri) >= input_rank(l)) {
-				throw "out of range of input rank";
+				throw invalid_rank_access_error("out of range of input rank");
 			}
 			return ::neu::layer::traits::input_size<std::decay_t<Layer>>::call(l, ri);
 		}
@@ -74,7 +89,7 @@ namespace neu {
 		template<typename Layer>
 		decltype(auto) input_width(Layer const& l) {
 			if(input_rank(l) <= 1) {
-				throw "input rank should be greater than 1";
+				throw invalid_rank_access_error("input rank should be greater than 1");
 			}
 			return ::neu::layer::input_size(l, rank_id::width);
 		}
@@ -95,7 +110,7 @@ namespace neu {
 		template<typename Layer>
 		decltype(auto) output_size(Layer const& l, rank_id ri) {
 			if(static_cast<int>(ri) >= output_rank(l)) {
-				throw "out of range of output rank";
+				throw invalid_rank_access_error("out of range of output rank");
 			}
 			return ::neu::layer::traits::output_size<std::decay_t<Layer>>::call(l, ri);
 		}
@@ -104,7 +119,7 @@ namespace neu {
 		template<typename Layer>
 		decltype(auto) output_width(Layer const& l) {
 			if(output_rank(l) <= 1) {
-				throw "output rank should be greater than 1";
+				throw invalid_rank_access_error("output rank should be greater than 1");
 			}
 			return ::neu::layer::output_size(l, rank_id::width);
 		}
@@ -112,7 +127,7 @@ namespace neu {
 		template<typename Layer>
 		decltype(auto) output_channel_num(Layer const& l) {
 			if(output_rank(l) <= 2) {
-				throw "output rank should be greater than 1";
+				throw invalid_rank_access_error("output rank should be greater than 1");
 			}
 			return ::neu::layer::output_size(l, rank_id::channel_num);
 		}
