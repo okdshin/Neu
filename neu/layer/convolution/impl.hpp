@@ -1,168 +1,229 @@
-#ifndef NEU_CONVOLUTION_LAYER_IMPL_HPP
-#define NEU_CONVOLUTION_LAYER_IMPL_HPP
+#ifndef NEU_LAYER_CONVOLUTION_IMPL_HPP
+#define NEU_LAYER_CONVOLUTION_IMPL_HPP
 //20151005
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
 #include <neu/basic_type.hpp>
-#include <neu/range_traits.hpp>
-#include <neu/range_algorithm.hpp>
-#include <neu/layer_traits.hpp>
+#include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
+#include <neu/layer/traits.hpp>
 #include <neu/kernel.hpp>
-#include <neu/convolution_layer/indices.hpp>
-
-#include <chrono>
-#include <thread>
+#include <neu/layer/geometric_layer_property.hpp>
+#include <neu/layer/impl/convolution_indices.hpp>
+#include <neu/layer/convolution/kernel_source.hpp>
+#include <neu/optimizer/deserialize.hpp>
+#include <neu/optimizer/any_optimizer.hpp>
 
 namespace neu {
-	template<typename LearningRateGen>
-	class convolution_layer {
-	public:
-		using layer_category = convolution_like_layer_tag;
-		convolution_layer(
-			std::size_t input_width, std::size_t output_width,
-			std::size_t filter_width,
-			std::size_t input_channel_num, std::size_t output_channel_num,
-			std::size_t stride, std::size_t pad, std::size_t batch_size,
-			gpu_vector&& filters, gpu_vector&& bias,
-			LearningRateGen const& learning_rate_gen,
-			convolution_indices const& indices,
-			kernel const& convolution_kernel,
-			kernel const& convolution_back_kernel,
-			kernel const& update_del_filters_kernel,
-			boost::compute::context const& context)
-		: input_width_(input_width), filter_width_(filter_width),
-		input_channel_num_(input_channel_num), output_channel_num_(output_channel_num),
-		stride_(stride), pad_(pad), batch_size_(batch_size),
-		indices_(indices),
-		filters_(std::move(filters)), bias_(std::move(bias)),
-		learning_rate_gen_(learning_rate_gen),
-		convolution_kernel_(convolution_kernel),
-		convolution_back_kernel_(convolution_back_kernel),
-		update_del_filters_kernel_(update_del_filters_kernel),
-		output_width_(output_width),
-		input_(input_width_*input_width_*input_channel_num_*batch_size_, context),
-		delta_(output_width_*output_width_*output_channel_num_*batch_size_, context),
-		del_filters_(filters_.size(), context),
-		del_bias_(bias_.size(), context) {}
+	namespace layer {
+		class convolution {
+		public:
+			convolution() = default;
 
-		decltype(auto) input_width() const { return input_width_; }
-		decltype(auto) input_channel_num() const { return input_channel_num_; }
-		decltype(auto) output_width() const { return output_width_; }
-		decltype(auto) output_channel_num() const { return output_channel_num_; }
-		decltype(auto) batch_size() const { return batch_size_; }
+			convolution(
+				geometric_layer_property const& glp,
+				std::size_t batch_size,
+				cpu_vector const& filters,
+				optimizer::any_optimizer const& optimizer,
+				boost::compute::command_queue& queue)
+			: glp_(glp), batch_size_(batch_size),
+			filters_(filters.begin(), filters.end(), queue),
+			optimizer_(optimizer),
+			output_width_(output_width(glp)),
+			indices_(impl::make_convolution_indices(
+				glp_.input_width, output_width_, glp_.filter_width,
+				glp_.stride, glp_.pad, queue)),
+			convolution_kernel_(make_kernel(convolution_kernel_source,
+				"convolution", queue.get_context())),
+			convolution_back_kernel_(make_kernel(convolution_back_kernel_source,
+				"convolution_back", queue.get_context())),
+			update_del_filters_kernel_(make_kernel(update_delta_filters_kernel_source, 
+				"update_delta_filters", queue.get_context())),
+			input_(layer::input_dim(glp)*batch_size_, queue.get_context()),
+			delta_(layer::output_dim(glp)*batch_size_, queue.get_context()),
+			del_filters_(filters_.size(), queue.get_context()) {}
 
-		decltype(auto) get_filters() const { return (filters_); }
-		decltype(auto) get_bias() const { return (bias_); }
+			decltype(auto) batch_size() const { return batch_size_; }
 
-		decltype(auto) get_del_filters() const { return (del_filters_); }
-		decltype(auto) get_del_bias() const { return (del_bias_); }
+			decltype(auto) input_rank() const { return 3; }
+			decltype(auto) output_rank() const { return 3; }
 
-		template<typename InputRange, typename OutputRange>
-		decltype(auto) test_forward(std::size_t test_batch_size,
-				InputRange const& input, OutputRange const& output,
-				boost::compute::command_queue& queue
-					=boost::compute::system::default_queue()) {
-			NEU_ASSERT(neu::range_distance(input) ==
-				neu::layer_input_dim(*this)*test_batch_size);
-			NEU_ASSERT(neu::range_distance(output) ==
-				neu::layer_output_dim(*this)*test_batch_size);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			neu::enqueue_nd_range_kernel<3>(queue, convolution_kernel_,
-				{0, 0, 0},
-				{output_width_, output_width_, test_batch_size},
-				static_cast<int>(input_width_), static_cast<int>(output_width_),
-				static_cast<int>(filter_width_),
-				static_cast<int>(input_channel_num_),
-				static_cast<int>(output_channel_num_),
-				static_cast<int>(stride_), static_cast<int>(pad_),
-				neu::range_get_buffer(input),
-				static_cast<int>(neu::range_get_begin_index(input)),
-				neu::range_get_buffer(output),
-				static_cast<int>(neu::range_get_begin_index(output)),
-				filters_, bias_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+			decltype(auto) input_size(rank_id ri) const {
+				return ri == rank_id::width || ri == rank_id::height ? glp_.input_width :
+					ri == rank_id::channel_num ? glp_.input_channel_num : 0;
+			}
+			decltype(auto) output_size(rank_id ri) const {
+				return ri == rank_id::width || ri == rank_id::height ? output_width_ :
+					ri == rank_id::channel_num ? glp_.output_channel_num : 0;
+			}
+
+			decltype(auto) filters(boost::compute::command_queue& queue) const {
+				return neu::to_cpu_vector(filters_, queue);
+			}
+			decltype(auto) del_filters(boost::compute::command_queue& queue) const {
+				return neu::to_cpu_vector(del_filters_, queue);
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) test_forward(std::size_t test_batch_size,
+					InputRange const& input, OutputRange const& output,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(input) ==
+					neu::layer::input_dim(*this)*test_batch_size);
+				NEU_ASSERT(neu::range::distance(output) ==
+					neu::layer::output_dim(*this)*test_batch_size);
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+
+				neu::enqueue_nd_range_kernel<3>(queue, convolution_kernel_,
+					{0, 0, 0}, {output_width_, output_width_, test_batch_size},
+					static_cast<int>(glp_.input_width),
+					static_cast<int>(output_width_),
+					static_cast<int>(glp_.filter_width),
+					static_cast<int>(glp_.input_channel_num),
+					static_cast<int>(glp_.output_channel_num),
+					static_cast<int>(glp_.stride),
+					static_cast<int>(glp_.pad),
+					neu::range::get_buffer(input),
+					static_cast<int>(neu::range::get_begin_index(input)),
+					neu::range::get_buffer(output),
+					static_cast<int>(neu::range::get_begin_index(output)),
+					filters_);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+			}
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) forward(
+					InputRange const& input, OutputRange const& output,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(input) == input_.size());
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+
+				neu::range::copy(input, input_, queue); //TODO async operation
+				test_forward(batch_size_, input, output, queue);
+			}
+
+			template<typename InputRange>
+			decltype(auto) backward_top(
+					InputRange const& delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(delta) == delta_.size());
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+
+				neu::range::copy(delta, delta_, queue); //TODO async operation
+			}
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) backward(
+					InputRange const& delta, OutputRange const& prev_delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(delta) == delta_.size());
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+
+				backward_top(delta, queue);
+				neu::enqueue_nd_range_kernel<2>(queue, convolution_back_kernel_,
+					{0, 0}, {glp_.input_width*glp_.input_width, batch_size_},
+					indices_.indices_range_list_for_input,
+					indices_.output_indices_list_for_input,
+					indices_.filter_indices_list_for_input,
+					static_cast<int>(glp_.input_width),
+					static_cast<int>(output_width_),
+					static_cast<int>(glp_.filter_width),
+					static_cast<int>(glp_.input_channel_num),
+					static_cast<int>(glp_.output_channel_num),
+					neu::range::get_buffer(prev_delta),
+					static_cast<int>(neu::range::get_begin_index(prev_delta)),
+					neu::range::get_buffer(delta),
+					static_cast<int>(neu::range::get_begin_index(delta)),
+					filters_);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
+			}
+
+			decltype(auto) update(boost::compute::command_queue& queue) {
+				neu::enqueue_nd_range_kernel<3>(queue, update_del_filters_kernel_,
+					{0, 0, 0},
+					{glp_.filter_width, glp_.filter_width, glp_.output_channel_num},
+					static_cast<int>(glp_.input_width),
+					static_cast<int>(output_width_),
+					static_cast<int>(glp_.filter_width),
+					static_cast<int>(glp_.input_channel_num),
+					static_cast<int>(glp_.output_channel_num),
+					static_cast<int>(glp_.stride),
+					static_cast<int>(glp_.pad),
+					static_cast<int>(batch_size_),
+					input_, delta_, del_filters_);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(del_filters_, queue));
+
+				optimizer_.apply(filters_, del_filters_, queue);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(filters_, queue));
+			}
+
+			decltype(auto) serialize(
+					YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
+				emitter << YAML::BeginMap
+					<< YAML::Key << "layer_type"
+						<< YAML::Value << "convolution";
+				layer::serialize(glp_, emitter);
+				emitter 
+					<< YAML::Key << "output_width(calculated)"
+						<< YAML::Value << output_width_
+					<< YAML::Key << "batch_size"
+						<< YAML::Value << batch_size_
+					<< YAML::Key << "filters"
+						<< YAML::Value << YAML::Flow << filters(queue)
+					<< YAML::Key << "optimizer"
+						<< YAML::Value;
+				optimizer::serialize(optimizer_, emitter, queue);
+				emitter << YAML::EndMap;
+			}
+
+		private:
+			geometric_layer_property glp_;
+			std::size_t batch_size_;
+
+			gpu_vector filters_;
+
+			optimizer::any_optimizer optimizer_;
+
+			std::size_t output_width_;
+
+			impl::convolution_indices indices_;
+
+			kernel convolution_kernel_;
+			kernel convolution_back_kernel_;
+			kernel update_del_filters_kernel_;
+
+			gpu_vector input_;
+			gpu_vector delta_;
+
+			gpu_vector del_filters_;
+		};
+
+		template<typename FilterGen>
+		decltype(auto) make_convolution(
+			geometric_layer_property const& glp,
+			std::size_t batch_size,
+			FilterGen const& fg,
+			optimizer::any_optimizer const& optimizer,
+			boost::compute::command_queue& queue
+		) {
+			cpu_vector cpu_filters(filters_size(glp));
+			std::generate(cpu_filters.begin(), cpu_filters.end(), fg);
+			return convolution(glp, batch_size, cpu_filters, optimizer, queue);
 		}
-		template<typename InputRange, typename OutputRange>
-		decltype(auto) forward(InputRange const& input, OutputRange const& output,
-				boost::compute::command_queue& queue
-					=boost::compute::system::default_queue()) {
-			NEU_ASSERT(neu::range_distance(input) == input_.size());
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			neu::range_copy(input, input_, queue);
-			test_forward(batch_size_, input, output, queue);
+
+		decltype(auto) deserialize_convolution(YAML::Node const& node,
+				boost::compute::command_queue& queue) {
+			const auto glp = deserialize_geometric_layer_property(node);
+			return convolution(
+				glp, node["batch_size"].as<std::size_t>(),
+				node["filters"].as<cpu_vector>(),
+				optimizer::deserialize(node["optimizer"], queue),
+				queue
+			);
 		}
-
-		template<typename InputRange, typename OutputRange>
-		decltype(auto) backward(InputRange const& delta, OutputRange const& prev_delta,
-				boost::compute::command_queue& queue
-					=boost::compute::system::default_queue()) {
-			NEU_ASSERT(neu::range_distance(delta) == delta_.size());
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
-			neu::range_copy(delta, delta_, queue);
-			neu::enqueue_nd_range_kernel<2>(queue, convolution_back_kernel_,
-				{0, 0}, {input_width_*input_width_, batch_size_},
-				indices_.indices_range_list_for_input,
-				indices_.output_indices_list_for_input,
-				indices_.filter_indices_list_for_input,
-				static_cast<int>(input_width_), static_cast<int>(output_width_),
-				static_cast<int>(filter_width_),
-				static_cast<int>(input_channel_num_),
-				static_cast<int>(output_channel_num_),
-				neu::range_get_buffer(prev_delta),
-				static_cast<int>(neu::range_get_begin_index(prev_delta)),
-				neu::range_get_buffer(delta),
-				static_cast<int>(neu::range_get_begin_index(delta)),
-				filters_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
-		}
-
-		decltype(auto) update(
-				boost::compute::command_queue& queue
-					=boost::compute::system::default_queue()) {
-			neu::enqueue_nd_range_kernel<3>(queue, update_del_filters_kernel_,
-				{0, 0, 0}, {filter_width_, filter_width_, output_channel_num_},
-				static_cast<int>(input_width_), static_cast<int>(output_width_),
-				static_cast<int>(filter_width_),
-				static_cast<int>(input_channel_num_),
-				static_cast<int>(output_channel_num_),
-				static_cast<int>(stride_), static_cast<int>(pad_),
-				static_cast<int>(batch_size_),
-				input_, delta_, del_filters_, del_bias_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(del_filters_, queue));
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(del_bias_, queue));
-			learning_rate_gen_(filters_, bias_, del_filters_, del_bias_, queue);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(filters_, queue));
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(bias_, queue));
-		}
-
-	private:
-		std::size_t input_width_;
-		std::size_t filter_width_;
-		std::size_t input_channel_num_;
-		std::size_t output_channel_num_;
-		std::size_t stride_;
-		std::size_t pad_;
-		std::size_t batch_size_;
-
-		convolution_indices indices_;
-
-		gpu_vector filters_;
-		gpu_vector bias_;
-
-		LearningRateGen learning_rate_gen_;
-
-		kernel convolution_kernel_;
-		kernel convolution_back_kernel_;
-		kernel update_del_filters_kernel_;
-
-		std::size_t output_width_;
-
-		gpu_vector input_;
-		gpu_vector delta_;
-
-		gpu_vector del_filters_;
-		gpu_vector del_bias_;
-	};
+	}
 }// namespace neu
 
-#endif //NEU_CONVOLUTION_LAYER_IMPL_HPP
+#endif //NEU_LAYER_CONVOLUTION_IMPL_HPP

@@ -14,7 +14,7 @@ namespace neu {
 			const int stride, const int pad,
 			const __global float* input, const int input_offset,
 			__global float* output, const int output_offset,
-			const __global float* filter, const __global float* bias)
+			const __global float* filter)
 		{
 			const int b = get_global_id(2);
 			const int or = get_global_id(1);
@@ -35,9 +35,6 @@ namespace neu {
 								k, m, filter_width, input_channel_num);
 							sum += input[input_index+input_offset]*filter[filter_index];
 						}
-						const int bias_index = index(fc, fr,
-							0, m, filter_width, 1);
-						sum += bias[bias_index];
 					}
 				}
 				const int output_index = index(oc, or,
@@ -83,6 +80,7 @@ namespace neu {
 			}
 		}
 	);
+
 	constexpr char update_delta_filters_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		int index(int x, int y, int c, int id, int width, int channel_num) {
 			return id*channel_num*width*width +c*width*width +y*width +x; }
@@ -93,7 +91,7 @@ namespace neu {
 			const int input_channel_num, const int output_channel_num,
 			const int stride, const int pad, const int batch_size,
 			const __global float* input, const __global float* output,
-			__global float* filter, __global float* bias)
+			__global float* filter)
 		{
 			const int m = get_global_id(2);
 			const int fr = get_global_id(1);
@@ -121,87 +119,8 @@ namespace neu {
 					k, m, filter_width, input_channel_num);
 				filter[filter_index] = filter_sum;
 			}
-			float bias_sum = 0.0;
-			for(int b = 0; b < batch_size; ++b) {
-				for(int or = 0; or < output_width; ++or) {
-					for(int oc = 0; oc < output_width; ++oc) {
-						const int ic = oc*stride+fc-pad;
-						const int ir = or*stride+fr-pad;
-						if(0 <= ic && ic < input_width
-								&& 0 <= ir && ir < input_width) {
-							const int output_index = index(oc, or,
-								m, b, output_width, output_channel_num);
-							bias_sum += output[output_index];
-						}
-					}
-				}
-			}
-			const int bias_index = index(fc, fr,
-				0, m, filter_width, 1);
-			bias[bias_index] = bias_sum;
 		}
 	);
-
-	/*
-	constexpr char update_delta_filters_kernel_source_by_reduction[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
-		int index(int x, int y, int c, int id, int width, int channel_num) {
-			return id*channel_num*width*width +c*width*width +y*width +x; }
-
-		__kernel void update_delta_filters(
-			const int input_width, const int output_width,
-			const int filter_width,
-			const int input_channel_num, const int output_channel_num,
-			const int stride, const int pad, const int batch_size,
-			const __global float* input, const __global float* output,
-			__global float* filter, __global float* bias,
-			__local float* filter_sum)
-		{
-			const int b = get_global_id(2);
-			const int or = get_global_id(1);
-			const int oc = get_global_id(0);
-
-			for(int k = 0; k < input_channel_num; ++k) {
-				float filter_sum = 0.0;
-				for(int m = 0; m < output_channel_num; ++m) {
-					for(int fr = 0; fr < filter_width; ++fr) {
-						for(int fc = 0; fc < filter_width; ++fc) {
-							const int ic = oc*stride+fc-pad;
-							const int ir = or*stride+fr-pad;
-							const int filter_index = index(fc, fr,
-								k, m, );
-							const int output_index = index(oc, or,
-								m, b, output_width, output_channel_num);
-							const int input_index = index(ic, ir,
-								k, b, input_width, input_channel_num);
-							filter_sum += input[input_index]*output[output_index];
-						}
-					}
-				}
-				const int filter_index = index(fc, fr,
-					k, m, filter_width, input_channel_num);
-				filter[filter_index] = filter_sum;
-			}
-			float bias_sum = 0.0;
-			for(int b = 0; b < batch_size; ++b) {
-				for(int or = 0; or < output_width; ++or) {
-					for(int oc = 0; oc < output_width; ++oc) {
-						const int ic = oc*stride+fc-pad;
-						const int ir = or*stride+fr-pad;
-						if(0 <= ic && ic < input_width
-								&& 0 <= ir && ir < input_width) {
-							const int output_index = index(oc, or,
-								m, b, output_width, output_channel_num);
-							bias_sum += output[output_index];
-						}
-					}
-				}
-			}
-			const int bias_index = index(fc, fr,
-				0, m, filter_width, 1);
-			bias[bias_index] = bias_sum;
-		}
-	);
-	*/
 }// namespace neu
 
 #endif //NEU_CONVOLUTION_LAYER_KERNEL_SOURCE_HPP

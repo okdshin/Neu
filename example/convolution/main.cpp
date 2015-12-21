@@ -1,6 +1,6 @@
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #include <iostream>
-#include <neu/convolution_layer.hpp>
+#include <neu/convolution/kernel.hpp>
 #include <neu/learning_rate_gen/fixed_learning_rate_gen.hpp>
 #include <neu/image.hpp>
 #include <neu/kernel.hpp>
