@@ -39,7 +39,9 @@ int main(int argc, char** argv) {
 				layer_data["filter_width"].as<std::size_t>(),
 				layer_data["input_channel_num"].as<std::size_t>(),
 				layer_data["output_channel_num"].as<std::size_t>(),
-				"filter"+std::to_string(i)+"_.bmp", 255.f);
+				[i, &output_dir_path](std::size_t b, std::size_t k) {	
+					return output_dir_path+std::to_string(i)+"_"+std::to_string(b)+"_"+std::to_string(k)+".bmp";
+				}, 255.f);
 		}
 		++i;
 	}

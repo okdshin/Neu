@@ -76,7 +76,8 @@ template<typename Iter>
 decltype(auto) save_image_vector_as_images(
 		Iter first, Iter const& last,
 		std::size_t width, std::size_t channel_num, std::size_t batch_size,
-		boost::filesystem::path const& filepath, scalar ratio) {
+		std::function<std::string(std::size_t/*b*/, std::size_t/*k*/)> const& fg,
+		scalar ratio) {
 	for(auto b = 0u; b < batch_size; ++b) {
 		for(auto k = 0u; k < channel_num; ++k) {
 			assert(first != last);
@@ -84,7 +85,7 @@ decltype(auto) save_image_vector_as_images(
 			neu::cpu_vector normalized(width*width);
 			neu::normalize(first, next_first, normalized.begin());
 			neu::save_image_vector_as_image(normalized.begin(), normalized.end(),
-				width, filepath.parent_path().string()+filepath.stem().string()+std::to_string(b)+std::to_string(k)+filepath.extension().string(), ratio);
+				width, fg(b, k), ratio);
 			first = next_first;
 		}
 	}
@@ -93,9 +94,10 @@ decltype(auto) save_image_vector_as_images(
 decltype(auto) save_image_vector_as_images(
 		neu::cpu_vector const& image_vector,
 		std::size_t width, std::size_t channel_num, std::size_t batch_size,
-		boost::filesystem::path const& filepath, scalar ratio) {
+		std::function<std::string(std::size_t/*b*/, std::size_t/*k*/)> const& fg,
+		scalar ratio) {
 	neu::save_image_vector_as_images(image_vector.begin(), image_vector.end(),
-		width, channel_num, batch_size, filepath, ratio);
+		width, channel_num, batch_size, fg, ratio);
 }
 
 template<typename Iter>
