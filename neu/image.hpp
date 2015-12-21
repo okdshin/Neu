@@ -3,6 +3,7 @@
 //20150611
 #include <boost/filesystem/path.hpp>
 #include <FreeImagePlus.h>
+#include <neu/assert.hpp>
 #include <neu/basic_type.hpp>
 namespace neu {
 decltype(auto) load_rgb_image_as_3ch_image_vector(std::string const& filename) {
