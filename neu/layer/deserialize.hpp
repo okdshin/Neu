@@ -5,6 +5,8 @@
 #include <yaml-cpp/yaml.h>
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
+#include <neu/layer/convolution.hpp>
+#include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/sigmoid.hpp>
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/leaky_rectifier.hpp>
@@ -33,6 +35,12 @@ namespace neu {
 			} else
 			if(lt == "bias") {
 				return static_cast<any_layer>(deserialize_bias(node, queue));
+			} else
+			if(lt == "convolution") {
+				return static_cast<any_layer>(deserialize_convolution(node, queue));
+			} else
+			if(lt == "max_pooling") {
+				return static_cast<any_layer>(deserialize_max_pooling(node, queue.get_context()));
 			} else
 			if(lt == "sigmoid") {
 				return static_cast<any_layer>(deserialize_sigmoid(node, queue));

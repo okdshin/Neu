@@ -8,5 +8,6 @@ target_link_libraries( mnist_conv
 	${OpenCL_LIBRARIES}
 	${FREEIMAGEPLUS_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
+	${YAMLCPP_LIBRARY}
 )
 set_target_properties( mnist_conv PROPERTIES OUTPUT_NAME "a.out" )
