@@ -5,5 +5,6 @@ target_link_libraries( average_pooling_layer
 	${Boost_FILESYSTEM_LIBRARIES}
 	${OpenCL_LIBRARIES}
 	${FREEIMAGEPLUS_LIBRARIES}
+	${YAMLCPP_LIBRARY}
 )
 set_target_properties( average_pooling_layer PROPERTIES OUTPUT_NAME "a.out" )
