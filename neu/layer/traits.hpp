@@ -109,6 +109,14 @@ namespace neu {
 			return ::neu::layer::output_size(l, rank_id::width);
 		}
 
+		template<typename Layer>
+		decltype(auto) output_channel_num(Layer const& l) {
+			if(output_rank(l) <= 2) {
+				throw "output rank should be greater than 1";
+			}
+			return ::neu::layer::output_size(l, rank_id::channel_num);
+		}
+
 		// input_dim
 		template<typename Layer>
 		decltype(auto) input_dim(Layer const& l) {
