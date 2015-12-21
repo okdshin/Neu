@@ -1,22 +1,22 @@
-- type erasured optimizer
-- integrate the caliculation of output_width from input_width, stride and pad
-- max pooling without indices
-- average pooling without indices
 - enrich data_set function
 - accuracy
-- rename DiffActivationFunc Derivative one
-- error functions
-- output layer state
 - zca whitening
 - float4 convolution
 - float4 matrix multiply
 - local memory
 - weight regularization
 - the fewer bias part in convolution_layer
-- avoid the calculation of delta of top layer
 - CMake function
 - Boost.Test
 DONE
+- output layer state
+- type erasured optimizer
+- max pooling without indices
+- average pooling without indices
+- error functions
+- avoid the calculation of delta of top layer
+- rename DiffActivationFunc Derivative one
+- integrate the caliculation of output_width from input_width, stride and pad
 - adopt layers to layer_traits
 - bias layer
 - change the keyword "differential" to "derivative"
