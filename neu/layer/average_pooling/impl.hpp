@@ -4,119 +4,183 @@
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
 #include <neu/basic_type.hpp>
-#include <neu/range_traits.hpp>
-#include <neu/range_algorithm.hpp>
-#include <neu/layer_traits.hpp>
+#include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
+#include <neu/layer/traits.hpp>
 #include <neu/kernel.hpp>
-#include <neu/average_pooling_layer/kernel_source.hpp>
-#include <neu/convolution_layer/indices.hpp>
+#include <neu/layer/average_pooling/kernel_source.hpp>
+#include <neu/layer/geometric_layer_property.hpp>
+#include <neu/layer/impl/convolution_indices.hpp>
+
 namespace neu {
-	class average_pooling_layer {
-	public:
-		using layer_category = convolution_like_layer_tag;
+	namespace layer {
+		class average_pooling {
+		public:
+			average_pooling() = default;
 
-		average_pooling_layer() = default;
+			average_pooling(
+				geometric_layer_property const& glp,
+				std::size_t batch_size,
+				cpu_vector const& filter,
+				boost::compute::command_queue& queue)
+			: glp_(glp), batch_size_(batch_size),
+			filter_(filter.begin(), filter.end(), queue),
+			output_width_(neu::layer::output_width(glp)),
+			indices_(impl::make_convolution_indices(
+				glp_.input_width, output_width_, glp_.filter_width,
+				glp_.stride, glp_.pad, queue)),
+			pooling_kernel_(make_kernel(average_pooling_kernel_source,
+				"average_pooling", queue.get_context())),
+			pooling_back_kernel_(make_kernel(average_pooling_back_kernel_source,
+				"average_pooling_back", queue.get_context())) {}
 
-		average_pooling_layer(std::size_t input_width, std::size_t output_width,
-			std::size_t filter_width,
-			std::size_t input_channel_num,
-			std::size_t stride, std::size_t pad, std::size_t batch_size,
-			convolution_indices const& indices, gpu_vector const& filter,
-			kernel const& pooling_kernel, kernel const& pooling_back_kernel)
-			: input_width_(input_width), filter_width_(filter_width),  
-			input_channel_num_(input_channel_num),
-			stride_(stride), pad_(pad), batch_size_(batch_size),
-			indices_(indices), filter_(filter),
-			pooling_kernel_(pooling_kernel),
-			pooling_back_kernel_(pooling_back_kernel),
-			output_width_(output_width) {}
+			decltype(auto) batch_size() const { return batch_size_; }
 
-		decltype(auto) input_width() const { return input_width_; }
-		decltype(auto) input_channel_num() const { return input_channel_num_; }
-		decltype(auto) output_width() const { return output_width_; }
-		// output channel num is equal to the of input
-		decltype(auto) output_channel_num() const { return input_channel_num_; }
-		decltype(auto) batch_size() const { return batch_size_; }
+			decltype(auto) input_rank() const { return 3; }
+			decltype(auto) output_rank() const { return 3; }
 
-		template<typename InputRange, typename OutputRange>
-		decltype(auto) test_forward(std::size_t test_batch_size,
-				InputRange const& input, OutputRange const& output,
-				boost::compute::command_queue& queue) {
-			NEU_ASSERT(neu::range_distance(input) ==
-				neu::layer_input_dim(*this)*test_batch_size);
-			NEU_ASSERT(neu::range_distance(output) ==
-				neu::layer_output_dim(*this)*test_batch_size);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-			enqueue_nd_range_kernel<3>(queue, pooling_kernel_,
-				{0, 0, 0}, {output_width_, output_width_, test_batch_size},
-				static_cast<cl_int>(input_width_), static_cast<cl_int>(output_width_),
-				static_cast<cl_int>(filter_width_),
-				static_cast<cl_int>(input_channel_num_),
-				static_cast<cl_int>(stride_), static_cast<cl_int>(pad_),
-				neu::range_get_buffer(input),
-				static_cast<cl_int>(neu::range_get_begin_index(input)),
-				neu::range_get_buffer(output),
-				static_cast<cl_int>(neu::range_get_begin_index(output)),
-				filter_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+			decltype(auto) input_size(rank_id ri) const {
+				return ri == rank_id::width || ri == rank_id::height ? glp_.input_width :
+					ri == rank_id::channel_num ? glp_.input_channel_num : 0;
+			}
+			decltype(auto) output_size(rank_id ri) const {
+				return ri == rank_id::width || ri == rank_id::height ? output_width_ :
+					ri == rank_id::channel_num ? glp_.output_channel_num : 0;
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) test_forward(std::size_t test_batch_size,
+					InputRange const& input, OutputRange const& output,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(input) ==
+					neu::layer::input_dim(*this)*test_batch_size);
+				NEU_ASSERT(neu::range::distance(output) ==
+					neu::layer::output_dim(*this)*test_batch_size);
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+
+				enqueue_nd_range_kernel<3>(queue, pooling_kernel_,
+					{0, 0, 0}, {output_width_, output_width_, test_batch_size},
+					static_cast<cl_int>(glp_.input_width),
+					static_cast<cl_int>(output_width_),
+					static_cast<cl_int>(glp_.filter_width),
+					static_cast<cl_int>(glp_.input_channel_num),
+					static_cast<cl_int>(glp_.stride), static_cast<cl_int>(glp_.pad),
+					neu::range::get_buffer(input),
+					static_cast<cl_int>(neu::range::get_begin_index(input)),
+					neu::range::get_buffer(output),
+					static_cast<cl_int>(neu::range::get_begin_index(output)),
+					filter_);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) forward(
+					InputRange const& input, OutputRange const& output,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(input) ==
+					neu::layer::whole_input_size(*this));
+				NEU_ASSERT(neu::range::distance(output) ==
+					neu::layer::whole_output_size(*this));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+
+				test_forward(batch_size_, input, output, queue);
+			}
+
+			template<typename InputRange>
+			decltype(auto) backward_top(
+					InputRange const& delta,
+					boost::compute::command_queue& queue) {
+				/* do nothing */
+			}
+
+			template<typename InputRange, typename OutputRange>
+			decltype(auto) backward(
+					InputRange const& delta, OutputRange const& prev_delta,
+					boost::compute::command_queue& queue) {
+				NEU_ASSERT(neu::range::distance(delta) ==
+					neu::layer::whole_output_size(*this));
+				NEU_ASSERT(neu::range::distance(prev_delta) ==
+					neu::layer::whole_input_size(*this));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+
+				enqueue_nd_range_kernel<3>(queue, pooling_back_kernel_,
+					{0, 0, 0},
+					{glp_.input_width*glp_.input_width,
+						glp_.input_channel_num, batch_size_},
+					indices_.indices_range_list_for_input,
+					indices_.output_indices_list_for_input,
+					indices_.filter_indices_list_for_input,
+					static_cast<int>(glp_.input_width),
+					static_cast<int>(output_width_),
+					static_cast<int>(glp_.filter_width),
+					static_cast<int>(glp_.input_channel_num),
+					neu::range::get_buffer(prev_delta),
+					static_cast<int>(neu::range::get_begin_index(prev_delta)),
+					neu::range::get_buffer(delta),
+					static_cast<int>(neu::range::get_begin_index(delta)),
+					filter_);
+
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
+			}
+
+			decltype(auto) serialize(
+					YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
+				emitter << YAML::BeginMap
+					<< YAML::Key << "layer_type"
+						<< YAML::Value << "average_pooling";
+				layer::serialize(glp_, emitter);
+				emitter 
+					<< YAML::Key << "output_width(calculated)"
+						<< YAML::Value << output_width_
+					<< YAML::Key << "batch_size"
+						<< YAML::Value << batch_size_
+					<< YAML::Key << "filter"
+						<< YAML::Value << YAML::Flow << neu::to_cpu_vector(filter_, queue)
+				<< YAML::EndMap;
+			}
+
+		private:
+			geometric_layer_property glp_;
+			std::size_t batch_size_;
+
+			gpu_vector filter_;
+
+			std::size_t output_width_;
+
+			impl::convolution_indices indices_;
+
+			kernel pooling_kernel_;
+			kernel pooling_back_kernel_;
+		};
+
+		decltype(auto) make_average_pooling(
+			geometric_layer_property const& glp,
+			std::size_t batch_size, 
+			cpu_vector const& filter,
+			boost::compute::command_queue& queue
+		){
+			return average_pooling(glp, batch_size, filter, queue);
 		}
 
-		template<typename InputRange, typename OutputRange>
-		decltype(auto) backward(InputRange const& delta, OutputRange const& prev_delta,
-				boost::compute::command_queue& queue) {
-			NEU_ASSERT(neu::range_distance(delta) == neu::layer_output_size(*this));
-			NEU_ASSERT(neu::range_distance(prev_delta) == neu::layer_input_size(*this));
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
-			enqueue_nd_range_kernel<3>(queue, pooling_back_kernel_,
-				{0, 0, 0}, {input_width_*input_width_, input_channel_num_, batch_size_},
-				indices_.indices_range_list_for_input,
-				indices_.output_indices_list_for_input,
-				indices_.filter_indices_list_for_input,
-				static_cast<int>(input_width_), static_cast<int>(output_width_),
-				static_cast<int>(filter_width_),
-				static_cast<int>(input_channel_num_),
-				neu::range_get_buffer(prev_delta),
-				static_cast<int>(neu::range_get_begin_index(prev_delta)),
-				neu::range_get_buffer(delta),
-				static_cast<int>(neu::range_get_begin_index(delta)),
-				filter_);
-			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
+		decltype(auto) make_uniform_average_pooling(
+			geometric_layer_property const& glp,
+			std::size_t batch_size, 
+			boost::compute::command_queue& queue
+		){
+			const auto filter_size = glp.filter_width*glp.filter_width;
+			return make_average_pooling(glp, batch_size,
+				cpu_vector(filter_size, 1.f/filter_size), queue);
 		}
 
-	private:
-		std::size_t input_width_;
-		std::size_t filter_width_;
-		std::size_t input_channel_num_;
-		std::size_t stride_;
-		std::size_t pad_;
-		std::size_t batch_size_;
-
-		convolution_indices indices_;
-
-		gpu_vector filter_;
-
-		kernel pooling_kernel_;
-		kernel pooling_back_kernel_;
-
-		std::size_t output_width_;
-	};
-	decltype(auto) make_average_pooling_layer(
-		std::size_t input_width, std::size_t output_width, std::size_t filter_width,
-		std::size_t input_channel_num, std::size_t stride, std::size_t pad,
-		std::size_t batch_size, 
-		gpu_vector const& filter,
-		boost::compute::context const& context
-			=boost::compute::system::default_context()
-	){
-		auto indices = neu::make_convolution_indices(
-			input_width, output_width, filter_width, stride, pad);
-		auto pooling_kernel = make_kernel(
-			average_pooling_kernel_source, "average_pooling", context);
-		auto pooling_back_kernel = make_kernel(
-			average_pooling_back_kernel_source, "average_pooling_back", context);
-		return average_pooling_layer(input_width, output_width, filter_width,
-			input_channel_num, stride, pad, batch_size, indices, filter,
-			pooling_kernel, pooling_back_kernel);
+		decltype(auto) deserialize_average_pooling(YAML::Node const& node,
+				boost::compute::command_queue& queue) {
+			const auto glp = deserialize_geometric_layer_property(node);
+			return average_pooling(glp,
+				node["batch_size"].as<std::size_t>(),
+				node["filter"].as<cpu_vector>(),
+				queue);
+		}
 	}
 }// namespace neu
 
