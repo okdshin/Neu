@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
 	// conv1
 	neu::layer::geometric_layer_property glp1{
-		input_width, 10, input_channel_num, 10, 1, 5};
+		input_width, 5, input_channel_num, 20, 1, 2};
 	auto conv1 = neu::layer::make_convolution(
 		glp1, batch_size, g,
 		neu::optimizer::momentum(base_lr, momentum,
@@ -131,15 +131,19 @@ int main(int argc, char** argv) {
 		auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
 
+		if(i%(iteration_limit/10) == 0) {
+			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
+		}
+
 		neu::layer::forward(nn, input, output, queue);
 		{
 			neu::print(output_log << i, output, label_num);
 
 			auto mse = neu::range::mean_square_error(output, teach, queue);
-			mse_error_log << i << " " << mse << std::endl;
+			mse_error_log << i << " " << mse/batch_size << std::endl;
 
 			auto cel = neu::range::cross_entropy_loss(output, teach, queue);
-			cel_error_log << i << " " << cel << std::endl;
+			cel_error_log << i << " " << cel/batch_size << std::endl;
 		}
 		neu::range::calc_last_layer_delta(output, teach, error, queue);
 		neu::layer::backward(nn, error, prev_delta, queue);
