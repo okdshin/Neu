@@ -7,10 +7,10 @@ set(CMAKE_MODULE_PATH ${Neu_SOURCE_DIR}/cmake)
 # build type
 set(CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -std=c++14 -Og -g")
-#set(CMAKE_C_FLAGS_DEBUG "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -Og -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -std=c++15 -O2 -DNEU_DISABLE_ASSERTION")
-#set(CMAKE_C_FLAGS_RELEASE "-Wall -Wextra -Wno-unused-parameter -Werror -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -std=c++14 -O0 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wno-unused-parameter -Wno-deprecated-declarations -std=c++14 -O2 -DNEU_DISABLE_ASSERTION")
+
+set(CMAKE_CXX_FLAGS_DOC "-std=c++1y")
 
 # find Threads
 find_package(Threads REQUIRED)
@@ -59,6 +59,8 @@ option(NEU_BUILD_UTILITIES "Build the Neu utilities" ON)
 if(${NEU_BUILD_UTILITIES})
   add_subdirectory(utility)
 endif()
+
+add_subdirectory(doc)
 
 # install header files
 install( DIRECTORY neu DESTINATION neu FILES_MATCHING PATTERN "*.hpp" )
