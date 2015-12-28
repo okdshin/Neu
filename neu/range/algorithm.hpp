@@ -90,30 +90,12 @@ namespace neu {
 			static BOOST_COMPUTE_FUNCTION(float, cross_entropy_kernel, (float d, float y), {
 				return -d*log(y+0.00001);
 			});
-			gpu_vector error(range::distance(last_output_range), queue.get_context());
-			range::transform(last_output_range, teach_range,
+			::neu::gpu_vector error(::neu::range::distance(last_output_range),
+				queue.get_context());
+			::neu::range::transform(last_output_range, teach_range,
 				error, cross_entropy_kernel, queue);
 			return range::sum(error, queue);
 		}
-
-		/*
-		decltype(auto) accuracy(std::size_t input_dim, std::size_t batch_size,
-				gpu_vector const& last_output, gpu_vector const& teach) {
-			NEU_ASSERT(teach.size() == last_output.size());
-			NEU_ASSERT(input_dim*batch_size == last_output.size());
-			scalar sum = 0.f;
-			for(auto b = 0u; b < batch_size; ++b) {
-				auto max_iter = boost::compute::
-					max_element(last_output.begin()+b*input_dim,
-						last_output.begin()+b*input_dim+input_dim);
-				auto index = std::distance(max_iter, teach.begin()+b*input_dim);
-				if(teach[index]) {
-					sum += 1.f;
-				}
-			}
-			return sum/batch_size;
-		}
-		*/
 	}
 }// namespace neu
 
