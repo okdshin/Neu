@@ -18,6 +18,6 @@ struct Context {
     {}
 };
 
-BOOST_FIXTURE_TEST_SUITE(compute_test, Context)
+BOOST_FIXTURE_TEST_SUITE(neu_test, Context)
 
 #endif
