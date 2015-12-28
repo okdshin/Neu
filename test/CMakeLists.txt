@@ -18,4 +18,6 @@ function(add_neu_test TEST_NAME TEST_SOURCE)
   add_test(${TEST_NAME} ${TEST_TARGET})
 endfunction()
 
-add_neu_test("any_layer" test_layer_any_layer.cpp)
+#add_neu_test("layer.any_layer" test_any_layer.cpp)
+add_neu_test("layer.automatic_differentiation_layer"
+	test_automatic_differentiation_layer.cpp)
