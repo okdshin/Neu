@@ -26,7 +26,8 @@ int main() {
 		neu::layer::output_width(pool), "output.bmp", 255);
 	
 	neu::gpu_vector prev_delta(neu::layer::whole_input_size(pool));
-	neu::layer::backward(pool, neu::gpu_vector(output.size(), 1.f), prev_delta, queue);
+	neu::layer::backward(pool,
+		neu::gpu_vector(output.size(), 1.f, queue), prev_delta, queue);
 	neu::save_3ch_image_vector_as_rgb_image(neu::to_cpu_vector(prev_delta, queue),
 		neu::layer::input_width(pool), "prev_delta.bmp", 255);
 
