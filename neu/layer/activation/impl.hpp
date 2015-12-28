@@ -48,7 +48,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) test_forward(std::size_t batch_size,
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input, queue));
 				activation_func_(input, output, queue);
@@ -57,7 +57,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) forward(
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(input) == range::distance(output));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input, queue));
@@ -76,7 +76,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& delta, OutputRange const& prev_delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
 				derivative_activation_func_(input_, df_, queue);

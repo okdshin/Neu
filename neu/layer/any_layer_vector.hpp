@@ -62,10 +62,11 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
+					auto output_range = range::to_range(output);
 					for(auto& l : layers) {
 						output.resize(::neu::layer::whole_output_size(l), queue);
 						l.test_forward(batch_size,
-							range::to_range(input), range::to_range(output), queue);
+							range::to_range(input), output_range, queue);
 						input.swap(output);
 					}
 					range::copy(input, result_output, queue);
@@ -80,9 +81,10 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
+					auto output_range = range::to_range(output);
 					for(auto& l : layers) {
 						output.resize(::neu::layer::whole_output_size(l), queue);
-						l.forward(range::to_range(input), range::to_range(output), queue);
+						l.forward(range::to_range(input), output_range, queue);
 						input.swap(output);
 					}
 					range::copy(input, result_output, queue);
@@ -97,13 +99,14 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
 					gpu_vector prev_delta(queue.get_context());
+					auto prev_delta_range = range::to_range(prev_delta);
 
 					// call backward except the top layer
 					for(int i = layers.size()-1; i >= 1; --i) {
 						auto& l = layers.at(i);
 						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
 						l.backward(
-							range::to_range(delta), range::to_range(prev_delta),
+							range::to_range(delta), prev_delta_range,
 							queue);
 						delta.swap(prev_delta);
 					}
@@ -122,11 +125,13 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
 					gpu_vector prev_delta(queue.get_context());
+					auto prev_delta_range = range::to_range(prev_delta);
+
 					for(int i = layers.size()-1; i >= 0; --i) {
 						auto& l = layers.at(i);
 						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
 						l.backward(
-							range::to_range(delta), range::to_range(prev_delta),
+							range::to_range(delta), prev_delta_range,
 							queue);
 						delta.swap(prev_delta);
 					}

@@ -50,7 +50,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) test_forward(std::size_t test_batch_size,
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
 					neu::layer::input_dim(*this)*test_batch_size);
@@ -76,7 +76,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) forward(
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
 					neu::layer::whole_input_size(*this));
@@ -96,7 +96,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& delta, OutputRange const& prev_delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(delta) ==
 					neu::layer::whole_output_size(*this));

@@ -36,16 +36,16 @@ namespace neu {
 
 				virtual void test_forward(std::size_t batch_size,
 					range::gpu_vector_range const& input,
-					range::gpu_vector_range const& output,
+					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) = 0;
 				virtual void forward(range::gpu_vector_range const& input,
-					range::gpu_vector_range const& output,
+					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) = 0;
 
 				virtual void backward_top(range::gpu_vector_range const& delta,
 					boost::compute::command_queue& queue) = 0;
 				virtual void backward(range::gpu_vector_range const& delta,
-					range::gpu_vector_range const& prev_delta,
+					range::gpu_vector_range& prev_delta,
 					boost::compute::command_queue& queue) = 0;
 
 				virtual void update(boost::compute::command_queue& queue) = 0;
@@ -119,12 +119,12 @@ namespace neu {
 
 				void test_forward(std::size_t batch_size,
 						range::gpu_vector_range const& input,
-						range::gpu_vector_range const& output,
+						range::gpu_vector_range& output,
 						boost::compute::command_queue& queue) override {
 					neu::layer::test_forward(unwrap(l_), batch_size, input, output, queue);
 				}
 				void forward(range::gpu_vector_range const& input,
-						range::gpu_vector_range const& output,
+						range::gpu_vector_range& output,
 						boost::compute::command_queue& queue) override {
 					neu::layer::forward(unwrap(l_), input, output, queue);
 				}
@@ -134,7 +134,7 @@ namespace neu {
 					neu::layer::backward_top(unwrap(l_), delta, queue);
 				}
 				void backward(range::gpu_vector_range const& delta,
-						range::gpu_vector_range const& prev_delta,
+						range::gpu_vector_range& prev_delta,
 						boost::compute::command_queue& queue) override {
 					neu::layer::backward(unwrap(l_), delta, prev_delta, queue);
 				}
@@ -211,12 +211,12 @@ namespace neu {
 
 			void test_forward(std::size_t batch_size,
 					range::gpu_vector_range const& input,
-					range::gpu_vector_range const& output,
+					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) {
 				holder_->test_forward(batch_size, input, output, queue);
 			}
 			void forward(range::gpu_vector_range const& input,
-					range::gpu_vector_range const& output,
+					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) {
 				holder_->forward(input, output, queue);
 			}
@@ -226,7 +226,7 @@ namespace neu {
 				holder_->backward_top(delta, queue);
 			}
 			void backward(range::gpu_vector_range const& delta,
-					range::gpu_vector_range const& prev_delta,
+					range::gpu_vector_range& prev_delta,
 					boost::compute::command_queue& queue) {
 				holder_->backward(delta, prev_delta, queue);
 			}

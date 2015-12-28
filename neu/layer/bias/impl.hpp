@@ -52,7 +52,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) test_forward(std::size_t test_batch_size,
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(input) == input_dim_*test_batch_size);
 				NEU_ASSERT(range::distance(output) ==  input_dim_*test_batch_size);
@@ -70,7 +70,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) forward(
-					InputRange const& input, OutputRange const& output,
+					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				test_forward(batch_size_, input, output, queue);
 			}
@@ -86,7 +86,7 @@ namespace neu {
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& delta, OutputRange const& prev_delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(delta) == delta_.size());
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
