@@ -57,7 +57,8 @@ int main() {
 
 	neu::save_image_vector_as_images(conv.filters(queue),
 		filter_width, input_channel_num, output_channel_num,
-		"0filter.bmp", 255.f);
+		[](std::size_t i, std::size_t k){
+			return "0filter"+std::to_string(i)+"_"+std::to_string(k)+".bmp"; }, 255.f);
 
 	for(auto i = 0u; i < 1000u; ++i) {
 		neu::layer::forward(conv, input, output, queue);
@@ -77,6 +78,7 @@ int main() {
 		neu::layer::backward(conv, error, prev_delta, queue);
 		neu::layer::update(conv, queue);
 
+		/*
 		if(i%100 == 0) {
 			neu::save_image_vector_as_images(conv.filters(queue),
 				filter_width, input_channel_num, output_channel_num,
@@ -90,6 +92,7 @@ int main() {
 				output_width, output_channel_num, batch_size,
 				"output"+std::to_string(i)+".bmp", 255.f);
 		}
+		*/
 	}
 	boost::compute::system::finish();
 
