@@ -12,12 +12,14 @@
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
+#include <neu/layer/dropout.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 namespace neu {
 	namespace layer {
 		class deserialize_error : public std::exception {
 		public:
-			explicit deserialize_error(std::string const& layer_id) : layer_id_(layer_id) {}
+			explicit deserialize_error(std::string const& layer_id)
+				: layer_id_(layer_id) {}
 
 			virtual const char* what() const noexcept {
 				return ("Unknown layer \""+ layer_id_
@@ -56,6 +58,9 @@ namespace neu {
 			} else
 			if(lt == "softmax_loss") {
 				return static_cast<any_layer>(deserialize_softmax_loss(node, queue));
+			} else
+			if(lt == "dropout") {
+				return static_cast<any_layer>(deserialize_dropout(node, queue));
 			} else
 			if(lt == "any_layer_vector") {
 				return static_cast<any_layer>(deserialize_any_layer_vector(node, queue));
