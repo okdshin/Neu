@@ -1,6 +1,7 @@
 #ifndef NEU_LAYER_ANY_LAYER_HPP
 #define NEU_LAYER_ANY_LAYER_HPP
 //20150622
+#include <cstddef>
 #include <typeinfo>
 #include <memory>
 #include <functional>
@@ -13,7 +14,8 @@ namespace neu {
 		class any_layer;
 		namespace any_layer_impl {
 			class any_layer_holder_base {
-			public: any_layer_holder_base() = default;
+			public:
+				any_layer_holder_base() = default;
 				any_layer_holder_base(any_layer_holder_base const&) = default;
 				any_layer_holder_base& operator=(any_layer_holder_base const&) = default;
 				any_layer_holder_base(any_layer_holder_base&&) = default;
@@ -178,7 +180,7 @@ namespace neu {
 				return holder_->target_type();
 			}
 
-			bool operator==(nullptr_t) const noexcept {
+			bool operator==(std::nullptr_t) const noexcept {
 				return holder_ == nullptr;
 			}
 

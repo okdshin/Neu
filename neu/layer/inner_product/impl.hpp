@@ -6,7 +6,9 @@
 #include <neu/validation.hpp>
 #include <neu/basic_type.hpp>
 #include <neu/range/traits.hpp>
+#include <neu/range/algorithm.hpp>
 #include <neu/kernel.hpp>
+#include <neu/layer/traits.hpp>
 #include <neu/layer/inner_product/kernel_source.hpp>
 #include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>

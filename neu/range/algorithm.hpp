@@ -3,6 +3,7 @@
 //20151031
 #include <type_traits>
 #include <boost/compute/algorithm.hpp>
+#include <neu/assert.hpp>
 #include <neu/range/traits.hpp>
 namespace neu {
 	namespace range {

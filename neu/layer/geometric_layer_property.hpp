@@ -1,7 +1,7 @@
 #ifndef NEU_LAYER_GEOMETRIC_LAYER_PROPERTY_HPP
 #define NEU_LAYER_GEOMETRIC_LAYER_PROPERTY_HPP
 //20151220
-
+#include <yaml-cpp/yaml.h>
 namespace neu {
 	namespace layer {
 		struct geometric_layer_property {

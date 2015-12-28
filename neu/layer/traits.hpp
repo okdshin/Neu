@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <exception>
 #include <string>
+#include <boost/compute/command_queue.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace neu {
