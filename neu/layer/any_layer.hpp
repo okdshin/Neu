@@ -220,6 +220,8 @@ namespace neu {
 			void forward(range::gpu_vector_range const& input,
 					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) {
+				NEU_ASSERT(range::distance(input) == layer::whole_input_size(*this));
+				NEU_ASSERT(range::distance(output) == layer::whole_output_size(*this));
 				holder_->forward(input, output, queue);
 			}
 
