@@ -8,9 +8,13 @@
 
 class test_layerA {
 public:
-	std::size_t input_dim() const { return 42; }
-	std::size_t output_dim() const { return 101; }
-	std::size_t batch_size() const { return 666; }
+	decltype(auto) input_rank() const { return 1; }
+	decltype(auto) output_rank() const { return 1; }
+	decltype(auto) input_size(neu::layer::rank_id ri) const {
+		return ri == neu::layer::rank_id::dim ? 42 : 0; }
+	decltype(auto) output_size(neu::layer::rank_id ri) const {
+		return ri == neu::layer::rank_id::dim ? 666 : 0; }
+	decltype(auto) batch_size() const { return 101; }
 
 	void test_forward(std::size_t batch_size,
 			neu::range::gpu_vector_range const& input,
@@ -22,16 +26,18 @@ public:
 			boost::compute::command_queue& queue) {
 	}
 
+	void backward_top(neu::range::gpu_vector_range const& delta,
+			boost::compute::command_queue& queue) {
+	}
 	void backward(neu::range::gpu_vector_range const& delta,
 			neu::range::gpu_vector_range const& prev_delta,
-			bool is_top,
 			boost::compute::command_queue& queue) {
 	}
 
 	void update(boost::compute::command_queue& queue) {
 	}
 
-	void save(YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
+	void serialize(YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
 	}
 };
 
