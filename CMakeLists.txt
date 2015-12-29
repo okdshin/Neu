@@ -63,4 +63,4 @@ endif()
 add_subdirectory(doc)
 
 # install header files
-install( DIRECTORY neu DESTINATION neu FILES_MATCHING PATTERN "*.hpp" )
+install( DIRECTORY neu DESTINATION include FILES_MATCHING PATTERN "*.hpp" )
