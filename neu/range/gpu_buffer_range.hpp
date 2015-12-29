@@ -29,6 +29,7 @@ namespace neu {
 			boost::compute::buffer_iterator<T> begin_, end_;
 		};
 		using gpu_vector_range = gpu_buffer_range<scalar>;
+
 		decltype(auto) to_range(gpu_vector const& v) {
 			return gpu_vector_range(v.begin(), v.end());
 		}
