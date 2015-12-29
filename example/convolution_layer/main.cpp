@@ -12,9 +12,9 @@ int main() {
 
 	//std::random_device engine; std::mt19937 rand(engine());
 	std::mt19937 rand(0);
-	auto batch_size = 1u;
+	auto batch_size = 1;
 	neu::gpu_vector input;
-	for(auto b = 0u; b < batch_size; ++b) {
+	for(auto b = 0; b < batch_size; ++b) {
 		auto input_image =
 			neu::load_rgb_image_as_3ch_image_vector("../../../data/lena256.bmp");
 		auto cpu_input = std::get<0>(input_image);
@@ -30,12 +30,12 @@ int main() {
 	constexpr neu::scalar base_lr = 0.01;
 	constexpr neu::scalar momentum = 0.9;
 
-	auto input_width = 256u;
-	auto input_channel_num = 3u;
-	auto output_channel_num = 1u;
-	auto filter_width = 20u;
-	auto stride = 2u;
-	auto pad = filter_width/2u;
+	auto input_width = 256;
+	auto input_channel_num = 3;
+	auto output_channel_num = 1;
+	auto filter_width = 20;
+	auto stride = 2;
+	auto pad = filter_width/2;
 
 	auto g = [&rand, dist=std::uniform_real_distribution<>(-1.f, 1.f)]
 		() mutable { return dist(rand); };
@@ -60,7 +60,7 @@ int main() {
 		[](std::size_t i, std::size_t k){
 			return "0filter"+std::to_string(i)+"_"+std::to_string(k)+".bmp"; }, 255.f);
 
-	for(auto i = 0u; i < 1000u; ++i) {
+	for(auto i = 0; i < 1000; ++i) {
 		neu::layer::forward(conv, input, output, queue);
 
 		{

@@ -26,15 +26,15 @@ namespace neu {
 			return std::async(std::launch::async, [this](){
 				cpu_vector cpu_train_data;
 				cpu_vector cpu_teach_data;
-				for(auto i = 0u; i < label_num_; ++i) {
+				for(auto i = 0; i < label_num_; ++i) {
 					std::shuffle(data_[i].begin(), data_[i].end(), g_);
-					for(auto j = 0u; j < data_num_per_label_; ++j) {
+					for(auto j = 0; j < data_num_per_label_; ++j) {
 						cpu_train_data.insert(cpu_train_data.end(),
 							data_[i][j].begin(), data_[i][j].end());
 					}
 
 					cpu_vector teach(label_num_, 0.f); teach[i] = 1.f;
-					for(auto j = 0u; j < data_num_per_label_; ++j) {
+					for(auto j = 0; j < data_num_per_label_; ++j) {
 						cpu_teach_data.insert(cpu_teach_data.end(),
 							teach.begin(), teach.end());
 					}

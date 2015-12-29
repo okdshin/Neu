@@ -44,7 +44,7 @@ namespace neu {
 			input_(input_dim*batch_size, queue.get_context()),
 			delta_(output_dim*batch_size, queue.get_context()),
 			del_weight_(weight_.size(), queue.get_context()) {
-				if(weight_.size() != input_dim*output_dim) {
+				if(range::distance(weight_) != input_dim*output_dim) {
 					throw std::invalid_argument("the size of weight is not correct.");
 				}
 			}
@@ -82,7 +82,7 @@ namespace neu {
 			decltype(auto) forward(
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(input) == input_.size());
+				NEU_ASSERT(range::distance(input) == range::distance(input_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 				range::copy(input, input_, queue); //TODO async operation
 				test_forward(batch_size_, input, output, queue);
@@ -92,7 +92,7 @@ namespace neu {
 			decltype(auto) backward_top(
 					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				range::copy(delta, delta_, queue); //TODO async operation
 			}
@@ -101,7 +101,7 @@ namespace neu {
 			decltype(auto) backward(
 					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				backward_top(delta, queue);
 				enqueue_nd_range_kernel<2>(queue, backward_kernel_,

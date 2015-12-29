@@ -35,7 +35,7 @@ namespace neu {
 				"update", queue.get_context())),
 			delta_(input_dim*batch_size, queue.get_context()),
 			del_bias_(bias_.size(), queue.get_context()) {
-				if(bias_.size() != input_dim) {
+				if(static_cast<int>(bias_.size()) != input_dim) {
 					throw std::invalid_argument("the size of bias is not correct.");
 				}	
 			}
@@ -79,7 +79,7 @@ namespace neu {
 			decltype(auto) backward_top(
 					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				range::copy(delta, delta_, queue); //TODO async operation
 			}
@@ -88,7 +88,7 @@ namespace neu {
 			decltype(auto) backward(
 					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(delta) == delta_.size());
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				backward_top(delta, queue);
 				range::copy(delta, prev_delta, queue); //TODO async operation

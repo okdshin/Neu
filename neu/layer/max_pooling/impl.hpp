@@ -108,8 +108,7 @@ namespace neu {
 				for(auto i = 0u; i < cpu_indices.size(); ++i) {
 					NEU_ASSERT(i < cpu_indices.size());
 					NEU_ASSERT(i < cpu_delta.size());
-					NEU_ASSERT(static_cast<int>(
-						cpu_indices[i]) < cpu_prev_delta.size());
+					NEU_ASSERT(cpu_indices[i] < static_cast<int>(cpu_prev_delta.size()));
 
 					cpu_prev_delta[cpu_indices[i]] += cpu_delta[i];
 				}

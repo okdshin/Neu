@@ -21,16 +21,20 @@ namespace neu {
 	decltype(auto) enqueue_nd_range_kernel(
 		boost::compute::command_queue& queue,
 		kernel& kernel,
-		std::array<std::size_t, Dim> const& origin,
-		std::array<std::size_t, Dim> const& region,
+		std::array<int, Dim> const& origin,
+		std::array<int, Dim> const& region,
 		Args&&... args
 	) {
+		std::array<std::size_t, Dim> o;
+		std::copy(origin.begin(), origin.end(), o.begin());
+		std::array<std::size_t, Dim> r;
+		std::copy(region.begin(), region.end(), r.begin());
 		kernel.set_args(std::forward<Args>(args)...);
 		return queue.enqueue_nd_range_kernel(
 			kernel,
 			static_cast<std::size_t>(Dim),
-			origin.data(),
-			region.data(),
+			o.data(),
+			r.data(),
 			nullptr);
 	}
 }// namespace neu

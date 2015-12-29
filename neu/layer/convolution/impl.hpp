@@ -95,7 +95,8 @@ namespace neu {
 			decltype(auto) forward(
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(input) == input_.size());
+				NEU_ASSERT(neu::range::distance(input)
+					== static_cast<int>(input_.size()));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 
 				neu::range::copy(input, input_, queue); //TODO async operation
@@ -106,7 +107,8 @@ namespace neu {
 			decltype(auto) backward_top(
 					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(delta) == delta_.size());
+				NEU_ASSERT(neu::range::distance(delta)
+					== static_cast<int>(delta_.size()));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
 				neu::range::copy(delta, delta_, queue); //TODO async operation
@@ -115,7 +117,8 @@ namespace neu {
 			decltype(auto) backward(
 					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(delta) == delta_.size());
+				NEU_ASSERT(neu::range::distance(delta)
+					== static_cast<int>(delta_.size()));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
 				backward_top(delta, queue);

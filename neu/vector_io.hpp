@@ -44,7 +44,7 @@ namespace neu {
 		auto line_num = neu::range::distance(range)/dim;
 		auto first = neu::range::begin(range);
 		os << "size: " << neu::range::distance(range) << std::endl;
-		for(auto i = 0u; i < line_num; ++i) {
+		for(auto i = 0; i < line_num; ++i) {
 			os << "(";
 			boost::compute::copy(first, first+dim,
 				std::ostream_iterator<float>(os, ", "), queue);
