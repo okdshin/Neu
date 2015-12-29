@@ -8,7 +8,7 @@ namespace neu {
 		using sigmoid_loss = activation<neu::sigmoid_loss>;
 
 		decltype(auto) make_sigmoid_loss(
-				std::size_t input_dim, std::size_t batch_size) {
+				int input_dim, int batch_size) {
 			return make_activation(input_dim, batch_size,
 				neu::sigmoid_loss());
 		}
@@ -37,8 +37,8 @@ namespace neu {
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "sigmoid_loss");
 			return activation<neu::sigmoid_loss>(
-				node["input_dim"].as<std::size_t>(),
-				node["batch_size"].as<std::size_t>()
+				node["input_dim"].as<int>(),
+				node["batch_size"].as<int>()
 			);
 		}
 	}

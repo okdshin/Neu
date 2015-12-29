@@ -8,7 +8,7 @@ namespace neu {
 		using softmax_loss = activation<neu::softmax_loss>;
 
 		decltype(auto) make_softmax_loss(
-				std::size_t input_dim, std::size_t batch_size,
+				int input_dim, int batch_size,
 				boost::compute::context const& context) {
 			return make_activation(input_dim, batch_size,
 				neu::softmax_loss(input_dim, batch_size, context));
@@ -37,8 +37,8 @@ namespace neu {
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "softmax_loss");
 			return make_softmax_loss(
-				node["input_dim"].as<std::size_t>(),
-				node["batch_size"].as<std::size_t>(),
+				node["input_dim"].as<int>(),
+				node["batch_size"].as<int>(),
 				queue.get_context()
 			);
 		}

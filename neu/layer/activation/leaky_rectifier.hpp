@@ -9,7 +9,7 @@ namespace neu {
 			activation<neu::leaky_rectifier, neu::derivative_leaky_rectifier>;
 
 		decltype(auto) make_leaky_rectifier(
-				std::size_t input_dim, std::size_t batch_size,
+				int input_dim, int batch_size,
 				neu::scalar negative_scale) {
 			return make_activation(input_dim, batch_size,
 				neu::leaky_rectifier(negative_scale),
@@ -41,8 +41,8 @@ namespace neu {
 				boost::compute::command_queue& queue) {
 			NEU_ASSERT(node["layer_type"].as<std::string>() == "leaky_rectifier");
 			return make_leaky_rectifier(
-				node["input_dim"].as<std::size_t>(),
-				node["batch_size"].as<std::size_t>(),
+				node["input_dim"].as<int>(),
+				node["batch_size"].as<int>(),
 				node["negative_scale"].as<scalar>()
 			);
 		}

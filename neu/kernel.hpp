@@ -17,7 +17,7 @@ namespace neu {
 		}
 		return kernel(program, name.c_str());
 	}
-	template<std::size_t Dim, typename... Args>
+	template<int Dim, typename... Args>
 	decltype(auto) enqueue_nd_range_kernel(
 		boost::compute::command_queue& queue,
 		kernel& kernel,
@@ -27,7 +27,11 @@ namespace neu {
 	) {
 		kernel.set_args(std::forward<Args>(args)...);
 		return queue.enqueue_nd_range_kernel(
-			kernel, Dim, origin.data(), region.data(), nullptr);
+			kernel,
+			static_cast<std::size_t>(Dim),
+			origin.data(),
+			region.data(),
+			nullptr);
 	}
 }// namespace neu
 

@@ -8,7 +8,7 @@
 namespace neu {
 	class identity {
 	public:
-		identity(std::size_t, std::size_t) {} //TODO
+		identity(int, int) {} //TODO
 		decltype(auto) operator()(gpu_vector_range input, gpu_vector_range output) {
 			NEU_ASSERT(size(output) == size(input));
 			NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input));
@@ -19,7 +19,7 @@ namespace neu {
 	template<>
 	class derivative<identity> {
 	public:
-		derivative(std::size_t, std::size_t) {} //TODO
+		derivative(int, int) {} //TODO
 		decltype(auto) operator()(
 				neu::gpu_vector_range, neu::gpu_vector_range output) const {
 			boost::compute::fill(output.begin(), output.end(), 1.f);

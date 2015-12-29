@@ -56,7 +56,7 @@ decltype(auto) normalize(InIter first, InIter const& last, OutIter out) {
 
 template<typename Iter>
 decltype(auto) save_image_vector_as_image(Iter first, Iter const& last,
-		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+		int width, boost::filesystem::path const& filepath, scalar ratio) {
 	auto image = fipImage{FIT_BITMAP,
 		static_cast<unsigned int>(width), static_cast<unsigned int>(width), 32};
 	// coordinate system of freeimage is upside down.
@@ -75,8 +75,8 @@ decltype(auto) save_image_vector_as_image(Iter first, Iter const& last,
 template<typename Iter>
 decltype(auto) save_image_vector_as_images(
 		Iter first, Iter const& last,
-		std::size_t width, std::size_t channel_num, std::size_t batch_size,
-		std::function<std::string(std::size_t/*b*/, std::size_t/*k*/)> const& fg,
+		int width, int channel_num, int batch_size,
+		std::function<std::string(int/*b*/, int/*k*/)> const& fg,
 		scalar ratio) {
 	for(auto b = 0u; b < batch_size; ++b) {
 		for(auto k = 0u; k < channel_num; ++k) {
@@ -93,8 +93,8 @@ decltype(auto) save_image_vector_as_images(
 }
 decltype(auto) save_image_vector_as_images(
 		neu::cpu_vector const& image_vector,
-		std::size_t width, std::size_t channel_num, std::size_t batch_size,
-		std::function<std::string(std::size_t/*b*/, std::size_t/*k*/)> const& fg,
+		int width, int channel_num, int batch_size,
+		std::function<std::string(int/*b*/, int/*k*/)> const& fg,
 		scalar ratio) {
 	neu::save_image_vector_as_images(image_vector.begin(), image_vector.end(),
 		width, channel_num, batch_size, fg, ratio);
@@ -102,7 +102,7 @@ decltype(auto) save_image_vector_as_images(
 
 template<typename Iter>
 decltype(auto) save_3ch_image_vector_as_rgb_image(Iter first, Iter const& last,
-		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+		int width, boost::filesystem::path const& filepath, scalar ratio) {
 	constexpr auto channel_num = 3u;
 	NEU_ASSERT(std::distance(first, last) == static_cast<decltype(std::distance(first, last))>(width*width*channel_num));
 	auto image = fipImage{FIT_BITMAP,
@@ -122,14 +122,14 @@ decltype(auto) save_3ch_image_vector_as_rgb_image(Iter first, Iter const& last,
 }
 decltype(auto) save_3ch_image_vector_as_rgb_image(
 		neu::cpu_vector const& image_vector,
-		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+		int width, boost::filesystem::path const& filepath, scalar ratio) {
 	neu::save_3ch_image_vector_as_rgb_image(image_vector.begin(), image_vector.end(),
 		width, filepath, ratio);
 }
 
 template<typename Iter>
 decltype(auto) save_1ch_image_vector_as_monochro_image(Iter first, Iter const& last,
-		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+		int width, boost::filesystem::path const& filepath, scalar ratio) {
 	auto image = fipImage{FIT_BITMAP,
 		static_cast<unsigned int>(width), static_cast<unsigned int>(width), 32};
 	// coordinate system of freeimage is upside down.
@@ -146,7 +146,7 @@ decltype(auto) save_1ch_image_vector_as_monochro_image(Iter first, Iter const& l
 }
 decltype(auto) save_1ch_image_vector_as_monochro_image(
 		neu::cpu_vector const& image_vector,
-		std::size_t width, boost::filesystem::path const& filepath, scalar ratio) {
+		int width, boost::filesystem::path const& filepath, scalar ratio) {
 	neu::save_1ch_image_vector_as_monochro_image(image_vector.begin(), image_vector.end(),
 		width, filepath, ratio);
 }

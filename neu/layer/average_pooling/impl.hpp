@@ -20,7 +20,7 @@ namespace neu {
 
 			average_pooling(
 				geometric_layer_property const& glp,
-				std::size_t batch_size,
+				int batch_size,
 				cpu_vector const& filter,
 				boost::compute::command_queue& queue)
 			: glp_(glp), batch_size_(batch_size),
@@ -49,7 +49,7 @@ namespace neu {
 			}
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t test_batch_size,
+			decltype(auto) test_forward(int test_batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
@@ -144,11 +144,11 @@ namespace neu {
 
 		private:
 			geometric_layer_property glp_;
-			std::size_t batch_size_;
+			int batch_size_;
 
 			gpu_vector filter_;
 
-			std::size_t output_width_;
+			int output_width_;
 
 			impl::convolution_indices indices_;
 
@@ -158,7 +158,7 @@ namespace neu {
 
 		decltype(auto) make_average_pooling(
 			geometric_layer_property const& glp,
-			std::size_t batch_size, 
+			int batch_size, 
 			cpu_vector const& filter,
 			boost::compute::command_queue& queue
 		){
@@ -167,7 +167,7 @@ namespace neu {
 
 		decltype(auto) make_uniform_average_pooling(
 			geometric_layer_property const& glp,
-			std::size_t batch_size, 
+			int batch_size, 
 			boost::compute::command_queue& queue
 		){
 			const auto filter_size = glp.filter_width*glp.filter_width;
@@ -179,7 +179,7 @@ namespace neu {
 				boost::compute::command_queue& queue) {
 			const auto glp = deserialize_geometric_layer_property(node);
 			return average_pooling(glp,
-				node["batch_size"].as<std::size_t>(),
+				node["batch_size"].as<int>(),
 				node["filter"].as<cpu_vector>(),
 				queue);
 		}

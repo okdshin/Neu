@@ -20,8 +20,8 @@ namespace neu {
 			~bias() = default;
 
 			bias(
-				std::size_t input_dim,
-				std::size_t batch_size,
+				int input_dim,
+				int batch_size,
 				cpu_vector const& bias,
 				optimizer::any_optimizer const& optimizer,
 				boost::compute::command_queue& queue)
@@ -51,7 +51,7 @@ namespace neu {
 			decltype(auto) optimizer() const { return (optimizer_); }
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t test_batch_size,
+			decltype(auto) test_forward(int test_batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(input) == input_dim_*test_batch_size);
@@ -105,8 +105,8 @@ namespace neu {
 			}
 
 		private:
-			std::size_t input_dim_;
-			std::size_t batch_size_;
+			int input_dim_;
+			int batch_size_;
 			gpu_vector bias_;
 			optimizer::any_optimizer optimizer_;
 
@@ -116,8 +116,8 @@ namespace neu {
 		};
 		template<typename BiasGen>
 		decltype(auto) make_bias(
-				std::size_t input_dim,
-				std::size_t batch_size,
+				int input_dim,
+				int batch_size,
 				BiasGen const& bg,
 				optimizer::any_optimizer const& optimizer,
 				boost::compute::command_queue& queue) {
@@ -155,8 +155,8 @@ namespace neu {
 		decltype(auto) deserialize_bias(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			return bias(
-				node["input_dim"].as<std::size_t>(),
-				node["batch_size"].as<std::size_t>(),
+				node["input_dim"].as<int>(),
+				node["batch_size"].as<int>(),
 				node["weight"].as<cpu_vector>(),
 				optimizer::deserialize(node["optimizer"], queue),
 				queue

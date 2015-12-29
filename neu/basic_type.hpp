@@ -39,7 +39,7 @@ namespace neu {
 	}
 
 	template<typename Rand>
-	decltype(auto) make_random_gpu_vector(std::size_t size, Rand const& rand,
+	decltype(auto) make_random_gpu_vector(int size, Rand const& rand,
 			boost::compute::command_queue& queue) {
 		cpu_vector cpu_vec(size);
 		std::generate(cpu_vec.begin(), cpu_vec.end(), rand);

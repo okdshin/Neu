@@ -23,7 +23,7 @@ namespace neu {
 			momentum(
 				float learning_rate,
 				float momentum_rate,
-				std::size_t weight_dim,
+				int weight_dim,
 				boost::compute::command_queue& queue)
 			: momentum(learning_rate, momentum_rate, cpu_vector(weight_dim, 0.f), queue) {}
 

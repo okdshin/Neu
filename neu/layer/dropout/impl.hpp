@@ -28,8 +28,8 @@ namespace neu {
 			dropout() = default;
 
 			dropout(
-				std::size_t input_dim,
-				std::size_t batch_size,
+				int input_dim,
+				int batch_size,
 				scalar probability,
 				boost::compute::command_queue& queue)
 			: input_dim_(input_dim),
@@ -57,7 +57,7 @@ namespace neu {
 				return input_size(ri); }
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t test_batch_size,
+			decltype(auto) test_forward(int test_batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
@@ -146,8 +146,8 @@ namespace neu {
 			}
 
 		private:
-			std::size_t input_dim_;
-			std::size_t batch_size_;
+			int input_dim_;
+			int batch_size_;
 
 			scalar probability_;
 
@@ -164,8 +164,8 @@ namespace neu {
 		decltype(auto) deserialize_dropout(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
 			return dropout(
-				node["input_dim"].as<std::size_t>(),
-				node["batch_size"].as<std::size_t>(),
+				node["input_dim"].as<int>(),
+				node["batch_size"].as<int>(),
 				node["probability"].as<float>(),
 				queue
 			);

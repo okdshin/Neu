@@ -57,7 +57,7 @@ namespace neu {
 				template<typename InputRange, typename OutputRange>
 				static decltype(auto) call(
 						std::vector<neu::layer::any_layer>& layers,
-						std::size_t batch_size,
+						int batch_size,
 						InputRange const& initial_input, OutputRange& result_output,
 						boost::compute::command_queue& queue) {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);

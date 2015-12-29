@@ -19,7 +19,7 @@ namespace neu {
 
 			max_pooling(
 				geometric_layer_property const& glp,
-				std::size_t batch_size,
+				int batch_size,
 				boost::compute::context const& context)
 			: glp_(glp), batch_size_(batch_size),
 			pooling_kernel_(make_kernel(max_pooling_kernel_source,
@@ -42,7 +42,7 @@ namespace neu {
 			}
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t test_batch_size,
+			decltype(auto) test_forward(int test_batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
@@ -108,7 +108,7 @@ namespace neu {
 				for(auto i = 0u; i < cpu_indices.size(); ++i) {
 					NEU_ASSERT(i < cpu_indices.size());
 					NEU_ASSERT(i < cpu_delta.size());
-					NEU_ASSERT(static_cast<std::size_t>(
+					NEU_ASSERT(static_cast<int>(
 						cpu_indices[i]) < cpu_prev_delta.size());
 
 					cpu_prev_delta[cpu_indices[i]] += cpu_delta[i];
@@ -137,11 +137,11 @@ namespace neu {
 		private:
 			geometric_layer_property glp_;
 
-			std::size_t batch_size_;
+			int batch_size_;
 
 			kernel pooling_kernel_;
 
-			std::size_t output_width_;
+			int output_width_;
 
 			gpu_indices gpu_indices_;
 		};
@@ -150,7 +150,7 @@ namespace neu {
 				boost::compute::context const& context) {
 			const auto glp = deserialize_geometric_layer_property(node);
 			return max_pooling(
-				glp, node["batch_size"].as<std::size_t>(), context);
+				glp, node["batch_size"].as<int>(), context);
 		}
 	}
 }// namespace neu

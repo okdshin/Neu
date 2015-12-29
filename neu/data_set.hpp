@@ -14,8 +14,8 @@ namespace neu {
 	template<typename UniformRandomNumberGenerator>
 	class data_set {
 	public:
-		data_set(std::size_t label_num, std::size_t data_num_per_label,
-			std::size_t input_dim, std::vector<std::vector<cpu_vector>> const& data,
+		data_set(int label_num, int data_num_per_label,
+			int input_dim, std::vector<std::vector<cpu_vector>> const& data,
 			UniformRandomNumberGenerator const& g)
 			: label_num_(label_num), data_num_per_label_(data_num_per_label),
 			input_dim_(input_dim), data_(data), g_(g),
@@ -49,9 +49,9 @@ namespace neu {
 		}
 		decltype(auto) get_batch() const { return (batch_); }
 	private:
-		std::size_t label_num_;
-		std::size_t data_num_per_label_;
-		std::size_t input_dim_;
+		int label_num_;
+		int data_num_per_label_;
+		int input_dim_;
 		std::vector<std::vector<cpu_vector>> data_;
 		UniformRandomNumberGenerator g_;
 		batch batch_;
@@ -61,8 +61,8 @@ namespace neu {
 		ds.async_make_next_batch().wait();
 	}
 	template<typename UniformRandomNumberGenerator>
-	decltype(auto) make_data_set(std::size_t label_num, std::size_t data_num_per_label,
-			std::size_t input_dim, std::vector<std::vector<cpu_vector>> const& data,
+	decltype(auto) make_data_set(int label_num, int data_num_per_label,
+			int input_dim, std::vector<std::vector<cpu_vector>> const& data,
 			UniformRandomNumberGenerator const& g) {
 		return data_set<UniformRandomNumberGenerator>(label_num, data_num_per_label,
 			input_dim, data, g);

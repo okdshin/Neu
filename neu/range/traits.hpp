@@ -52,7 +52,7 @@ namespace neu {
 			class distance {
 			public:
 				static decltype(auto) call(Range const& range) {
-					return static_cast<std::size_t>(
+					return static_cast<int>(
 						std::distance(::neu::range::begin(range), ::neu::range::end(range)));
 				}
 			};

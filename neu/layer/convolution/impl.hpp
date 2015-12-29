@@ -22,7 +22,7 @@ namespace neu {
 
 			convolution(
 				geometric_layer_property const& glp,
-				std::size_t batch_size,
+				int batch_size,
 				cpu_vector const& filters,
 				optimizer::any_optimizer const& optimizer,
 				boost::compute::command_queue& queue)
@@ -65,7 +65,7 @@ namespace neu {
 			}
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t test_batch_size,
+			decltype(auto) test_forward(int test_batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(neu::range::distance(input) ==
@@ -180,13 +180,13 @@ namespace neu {
 
 		private:
 			geometric_layer_property glp_;
-			std::size_t batch_size_;
+			int batch_size_;
 
 			gpu_vector filters_;
 
 			optimizer::any_optimizer optimizer_;
 
-			std::size_t output_width_;
+			int output_width_;
 
 			impl::convolution_indices indices_;
 
@@ -203,7 +203,7 @@ namespace neu {
 		template<typename FilterGen>
 		decltype(auto) make_convolution(
 			geometric_layer_property const& glp,
-			std::size_t batch_size,
+			int batch_size,
 			FilterGen const& fg,
 			optimizer::any_optimizer const& optimizer,
 			boost::compute::command_queue& queue
@@ -217,7 +217,7 @@ namespace neu {
 				boost::compute::command_queue& queue) {
 			const auto glp = deserialize_geometric_layer_property(node);
 			return convolution(
-				glp, node["batch_size"].as<std::size_t>(),
+				glp, node["batch_size"].as<int>(),
 				node["filters"].as<cpu_vector>(),
 				optimizer::deserialize(node["optimizer"], queue),
 				queue

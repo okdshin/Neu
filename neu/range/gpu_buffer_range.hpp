@@ -20,7 +20,7 @@ namespace neu {
 			}
 			gpu_buffer_range(
 				boost::compute::buffer_iterator<T> begin,
-				std::size_t count)
+				int count)
 			: gpu_buffer_range(begin, begin+count) {}
 
 			decltype(auto) begin() const { return (begin_); }

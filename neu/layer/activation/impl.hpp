@@ -25,7 +25,7 @@ namespace neu {
 			~activation() = default;
 
 			activation(
-				std::size_t input_dim, std::size_t batch_size,
+				int input_dim, int batch_size,
 				activation_func_type const& activation_func,
 				derivative_activation_func_type const& derivative_activation_func)
 			: input_dim_(input_dim), batch_size_(batch_size),
@@ -33,7 +33,7 @@ namespace neu {
 			derivative_activation_func_(derivative_activation_func),
 			input_(input_dim*batch_size), df_(input_dim*batch_size) {}
 
-			activation(std::size_t input_dim, std::size_t batch_size)
+			activation(int input_dim, int batch_size)
 			: activation(input_dim, batch_size,
 				activation_func_type(),
 				derivative_activation_func_type()) {}
@@ -47,7 +47,7 @@ namespace neu {
 			decltype(auto) activation_func() const { return activation_func_; }
 
 			template<typename InputRange, typename OutputRange>
-			decltype(auto) test_forward(std::size_t batch_size,
+			decltype(auto) test_forward(int batch_size,
 					InputRange const& input, OutputRange& output,
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(input, queue));
@@ -90,14 +90,14 @@ namespace neu {
 			decltype(auto) update(boost::compute::command_queue&) { /*do nothing*/ }
 
 		private:
-			std::size_t input_dim_, batch_size_;
+			int input_dim_, batch_size_;
 			activation_func_type activation_func_;
 			derivative_activation_func_type derivative_activation_func_;
 			gpu_vector input_, df_;
 		};
 		template<typename ActivationFunc, typename DerivativeActivationFunc>
 		decltype(auto) make_activation(
-				std::size_t input_dim, std::size_t batch_size,
+				int input_dim, int batch_size,
 				ActivationFunc const& activation_func,
 				DerivativeActivationFunc const& derivative_activation_func) {
 			return activation<ActivationFunc, DerivativeActivationFunc>(
@@ -105,7 +105,7 @@ namespace neu {
 		}
 		template<typename ActivationFunc>
 		decltype(auto) make_activation(
-				std::size_t input_dim, std::size_t batch_size,
+				int input_dim, int batch_size,
 				ActivationFunc const& activation_func) {
 			return make_activation(input_dim, batch_size,
 				activation_func, neu::derivative<ActivationFunc>());

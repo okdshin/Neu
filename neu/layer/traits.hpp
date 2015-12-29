@@ -9,7 +9,7 @@
 
 namespace neu {
 	namespace layer {
-		enum class rank_id : std::size_t {
+		enum class rank_id : int {
 			dim = 0,
 			width = 0,
 			height = 1,
@@ -193,7 +193,7 @@ namespace neu {
 			class test_forward {
 			public:
 				template<typename InputRange, typename OutputRange>
-				static decltype(auto) call(Layer& l, std::size_t batch_size,
+				static decltype(auto) call(Layer& l, int batch_size,
 						InputRange const& input, OutputRange& output,
 						boost::compute::command_queue& queue) {
 					l.test_forward(batch_size, input, output, queue);
@@ -201,7 +201,7 @@ namespace neu {
 			};
 		}
 		template<typename Layer, typename InputRange, typename OutputRange>
-		decltype(auto) test_forward(Layer& l, std::size_t batch_size,
+		decltype(auto) test_forward(Layer& l, int batch_size,
 				InputRange const& input, OutputRange& output,
 				boost::compute::command_queue& queue) {
 			::neu::layer::traits::test_forward<std::decay_t<Layer>>::call(

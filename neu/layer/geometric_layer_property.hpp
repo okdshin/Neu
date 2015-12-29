@@ -5,12 +5,12 @@
 namespace neu {
 	namespace layer {
 		struct geometric_layer_property {
-			std::size_t input_width;
-			std::size_t filter_width;
-			std::size_t input_channel_num;
-			std::size_t output_channel_num;
-			std::size_t stride;
-			std::size_t pad;
+			int input_width;
+			int filter_width;
+			int input_channel_num;
+			int output_channel_num;
+			int stride;
+			int pad;
 		};
 
 		decltype(auto) serialize(geometric_layer_property const& glp,
@@ -29,12 +29,12 @@ namespace neu {
 
 		decltype(auto) deserialize_geometric_layer_property(YAML::Node const& node) {
 			return geometric_layer_property{
-				node["input_width"].as<std::size_t>(),
-				node["filter_width"].as<std::size_t>(),
-				node["input_channel_num"].as<std::size_t>(),
-				node["output_channel_num"].as<std::size_t>(),
-				node["stride"].as<std::size_t>(),
-				node["pad"].as<std::size_t>()
+				node["input_width"].as<int>(),
+				node["filter_width"].as<int>(),
+				node["input_channel_num"].as<int>(),
+				node["output_channel_num"].as<int>(),
+				node["stride"].as<int>(),
+				node["pad"].as<int>()
 			};
 		}
 

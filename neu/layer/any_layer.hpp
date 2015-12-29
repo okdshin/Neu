@@ -28,15 +28,15 @@ namespace neu {
 
 				virtual std::unique_ptr<any_layer_holder_base> clone() = 0;
 
-				virtual std::size_t input_rank() const = 0;
-				virtual std::size_t output_rank() const = 0;
+				virtual int input_rank() const = 0;
+				virtual int output_rank() const = 0;
 
-				virtual std::size_t input_size(rank_id) const = 0;
-				virtual std::size_t output_size(rank_id) const = 0;
+				virtual int input_size(rank_id) const = 0;
+				virtual int output_size(rank_id) const = 0;
 
-				virtual std::size_t batch_size() const = 0;
+				virtual int batch_size() const = 0;
 
-				virtual void test_forward(std::size_t batch_size,
+				virtual void test_forward(int batch_size,
 					range::gpu_vector_range const& input,
 					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) = 0;
@@ -102,24 +102,24 @@ namespace neu {
 					return std::make_unique<any_layer_holder>(*this);
 				}
 
-				std::size_t input_rank() const override {
+				int input_rank() const override {
 					return neu::layer::input_rank(unwrap(l_));
 				}
-				std::size_t output_rank() const override {
+				int output_rank() const override {
 					return neu::layer::output_rank(unwrap(l_));
 				}
 
-				std::size_t input_size(rank_id ri) const override {
+				int input_size(rank_id ri) const override {
 					return neu::layer::input_size(unwrap(l_), ri);
 				}
-				std::size_t output_size(rank_id ri) const override {
+				int output_size(rank_id ri) const override {
 					return neu::layer::output_size(unwrap(l_), ri);
 				}
-				std::size_t batch_size() const override {
+				int batch_size() const override {
 					return neu::layer::batch_size(unwrap(l_));
 				}
 
-				void test_forward(std::size_t batch_size,
+				void test_forward(int batch_size,
 						range::gpu_vector_range const& input,
 						range::gpu_vector_range& output,
 						boost::compute::command_queue& queue) override {
@@ -203,15 +203,15 @@ namespace neu {
 					const_cast<any_layer*>(this)->target<Layer>());
 			}
 
-			std::size_t input_rank() const { return holder_->input_rank(); }
-			std::size_t output_rank() const { return holder_->output_rank(); }
+			int input_rank() const { return holder_->input_rank(); }
+			int output_rank() const { return holder_->output_rank(); }
 
-			std::size_t input_size(rank_id ri) const { return holder_->input_size(ri); }
-			std::size_t output_size(rank_id ri) const { return holder_->output_size(ri); }
+			int input_size(rank_id ri) const { return holder_->input_size(ri); }
+			int output_size(rank_id ri) const { return holder_->output_size(ri); }
 
-			std::size_t batch_size() const { return holder_->batch_size(); }
+			int batch_size() const { return holder_->batch_size(); }
 
-			void test_forward(std::size_t batch_size,
+			void test_forward(int batch_size,
 					range::gpu_vector_range const& input,
 					range::gpu_vector_range& output,
 					boost::compute::command_queue& queue) {

@@ -25,7 +25,7 @@ namespace neu {
 	decltype(auto) print(cpu_indices const& x) {
 		std::cout << "(";
 		std::copy(x.begin(), x.end(),
-			std::ostream_iterator<std::size_t>(std::cout, ", "));
+			std::ostream_iterator<int>(std::cout, ", "));
 		std::cout << ")" << std::endl;
 	}
 	decltype(auto) print(gpu_indices const& x, boost::compute::command_queue& queue) {
@@ -37,7 +37,7 @@ namespace neu {
 	*/
 
 	template<typename Range>
-	decltype(auto) print(std::ostream& os, Range const& range, std::size_t dim,
+	decltype(auto) print(std::ostream& os, Range const& range, int dim,
 			boost::compute::command_queue& queue
 				=boost::compute::system::default_queue()) {
 		NEU_ASSERT(neu::range::distance(range)%dim == 0);

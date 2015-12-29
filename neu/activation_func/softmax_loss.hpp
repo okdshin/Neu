@@ -40,7 +40,7 @@ namespace neu {
 	
 	class softmax_loss {
 	public:
-		softmax_loss(std::size_t input_dim, std::size_t batch_size,
+		softmax_loss(int input_dim, int batch_size,
 				boost::compute::context const& context) :
 			input_dim_(input_dim), batch_size_(batch_size),
 			softmax_loss_kernel_(
@@ -69,8 +69,8 @@ namespace neu {
 		}
 
 	private:
-		std::size_t input_dim_;
-		std::size_t batch_size_;
+		int input_dim_;
+		int batch_size_;
 		kernel softmax_loss_kernel_;
 	};
 	template<>
