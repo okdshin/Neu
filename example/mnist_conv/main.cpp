@@ -16,8 +16,8 @@
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/io.hpp>
-#include <neu/load_data_set/load_mnist.hpp>
-#include <neu/data_set.hpp>
+#include <neu/dataset/load_mnist.hpp>
+#include <neu/dataset/classification_dataset.hpp>
 
 int main(int argc, char** argv) {
 	std::cout << "hello world" << std::endl;
@@ -35,13 +35,13 @@ int main(int argc, char** argv) {
 	//std::random_device rd; std::mt19937 rand(rd());
 	std::mt19937 rand(0); std::cout << "INFO: fixed random engine" << std::endl;
 
-	auto data = neu::load_mnist("../../../data/mnist/");
+	auto data = neu::dataset::load_mnist("../../../data/mnist/");
 	for(auto& labeled : data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(), [](auto e){ return e/255.f; });
 		}
 	}
-	auto ds = neu::make_data_set(label_num, data_num_per_label, input_dim, data, rand);
+	auto ds = neu::dataset::make_classification_dataset(label_num, data_num_per_label, input_dim, data, rand, context);
 
 	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
 		() mutable { return dist(rand); };
@@ -152,9 +152,9 @@ int main(int argc, char** argv) {
 		make_next_batch_future.wait();
 		++progress;
 	}
+	queue.finish();
 	std::cout << timer.elapsed() << " secs" << std::endl;
-	boost::compute::system::finish();
 	neu::layer::output_to_file(nn, "nn.yaml", queue);
-	auto loaded_nn = neu::layer::input_from_file("nn.yaml", queue);
-	neu::layer::output_to_file(loaded_nn, "loaded_nn.yaml", queue);
+	//auto loaded_nn = neu::layer::input_from_file("nn.yaml", queue);
+	queue.finish();
 }

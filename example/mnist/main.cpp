@@ -8,15 +8,14 @@
 #include <neu/range/algorithm.hpp>
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
-//#include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/io.hpp>
-#include <neu/load_data_set/load_mnist.hpp>
-#include <neu/data_set.hpp>
+#include <neu/dataset/load_mnist.hpp>
+#include <neu/dataset/classification_dataset.hpp>
 
 int main(int argc, char** argv) {
 	std::cout << "hello world" << std::endl;
@@ -31,13 +30,15 @@ int main(int argc, char** argv) {
 	//std::random_device rd; std::mt19937 rand(rd());
 	std::mt19937 rand(0); std::cout << "INFO: fixed random engine" << std::endl;
 
-	auto data = neu::load_mnist("../../../data/mnist/");
+	auto data = neu::dataset::load_mnist("../../../data/mnist/");
 	for(auto& labeled : data) {
 		for(auto& d : labeled) {
-			std::transform(d.begin(), d.end(), d.begin(), [](auto e){ return e/255.f; });
+			std::transform(d.begin(), d.end(), d.begin(),
+				[](auto e){ return e/255.f; });
 		}
 	}
-	auto ds = neu::make_data_set(label_num, data_num_per_label, input_dim, data, rand);
+	auto ds = neu::dataset::make_classification_dataset(
+		label_num, data_num_per_label, input_dim, data, rand, context);
 
 	auto g = [&rand, dist=std::uniform_real_distribution<>(-1.f, 1.f)]
 		() mutable { return dist(rand); };
@@ -64,7 +65,6 @@ int main(int argc, char** argv) {
 		queue));
 	nn.push_back(
 		neu::layer::make_softmax_loss(neu::layer::output_dim(nn), batch_size, context));
-	//nn.push_back(neu::layer::make_sigmoid_loss(neu::layer::output_dim(nn), batch_size));
 
 	neu::gpu_vector output(neu::layer::whole_output_size(nn), context);
 	neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 	std::ofstream cel_error_log("cel_error.txt");
 	std::ofstream output_log("output.txt");
 
-	make_next_batch(ds);
+	neu::dataset::make_next_batch(ds);
 
 	auto iteration_limit = 10000u;
 	boost::progress_display progress(iteration_limit);
@@ -102,10 +102,9 @@ int main(int argc, char** argv) {
 		make_next_batch_future.wait();
 		++progress;
 	}
+	queue.finish();
 	std::cout << timer.elapsed() << " secs" << std::endl;
-	boost::compute::system::finish();
 	neu::layer::output_to_file(nn, "nn.yaml", queue);
-	auto loaded_nn = neu::layer::input_from_file("nn.yaml", queue);
-	neu::layer::output_to_file(loaded_nn, "loaded_nn.yaml", queue);
-	
+	//auto loaded_nn = neu::layer::input_from_file("nn.yaml", queue);
+	queue.finish();
 }

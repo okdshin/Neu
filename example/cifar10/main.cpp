@@ -19,8 +19,8 @@
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/io.hpp>
-#include <neu/load_data_set/load_cifar10.hpp>
-#include <neu/data_set.hpp>
+#include <neu/dataset/load_cifar10.hpp>
+#include <neu/dataset/classification_dataset.hpp>
 
 int main(int argc, char** argv) {
 	namespace po = boost::program_options;
@@ -77,25 +77,26 @@ int main(int argc, char** argv) {
 	std::random_device rd; std::mt19937 rand(rd());
 	//std::mt19937 rand(1); std::cout << "INFO: fixed random engine" << std::endl;
 
-	auto train_data = neu::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
+	auto train_data = neu::dataset::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
 				[](auto e){ return (e-127.); });
 		}
 	}
-	auto train_ds = neu::make_data_set(
-		label_num, data_num_per_label, input_dim, train_data, rand);
+	auto train_ds = neu::dataset::make_classification_dataset(
+		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
-	auto test_data = neu::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
+	auto test_data =
+		neu::dataset::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : test_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
 				[](auto e){ return (e-127.); });
 		}
 	}
-	auto test_ds = neu::make_data_set(
-		label_num, test_data_num_per_label, input_dim, test_data, rand);
+	auto test_ds = neu::dataset::make_classification_dataset(
+		label_num, test_data_num_per_label, input_dim, test_data, rand, context);
 
 
 	auto conv1_g = [&rand, dist=std::normal_distribution<>(0.f, 0.0001f)]
