@@ -8,6 +8,8 @@
 - the fewer bias part in convolution_layer
 - CMake function
 - Boost.Test
+- delay layer
+- deep layer
 DONE
 - output layer state
 - type erasured optimizer
