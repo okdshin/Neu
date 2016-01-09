@@ -39,7 +39,7 @@ namespace neu {
 		}
 
 		decltype(auto) output_width(geometric_layer_property const& glp) {
-			return (glp.input_width-glp.filter_width+1+2*glp.pad)/glp.stride;
+			return (glp.input_width+2*glp.pad-glp.filter_width)/glp.stride+1;
 		}
 
 		decltype(auto) input_dim(geometric_layer_property const& glp) {

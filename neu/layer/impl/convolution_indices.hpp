@@ -8,29 +8,31 @@ namespace neu {
 		namespace impl {
 			decltype(auto) calc_convolution_indices(
 					int input_width, int output_width, int filter_width, int stride, int pad) {
+				/*
 				NEU_ASSERT("invalid output_width or update this implementation"
 					&& output_width == (input_width-filter_width+1+2*pad)/stride);
+				*/
 
 				std::vector<cpu_indices> filter_indices_list_for_input(input_width*input_width);
 				std::vector<cpu_indices> output_indices_list_for_input(input_width*input_width);
 
 				for(auto _or = 0; _or < output_width; ++_or) {
-					for(auto oc = 0; oc < output_width; ++oc) {
-						for(auto fr = 0; fr < filter_width; ++fr) {
-							for(auto fc = 0; fc < filter_width; ++fc) {
-								const auto ir = _or*stride+fr-pad;
-								const auto ic =  oc*stride+fc-pad;
+				for(auto oc = 0; oc < output_width; ++oc) {
+					for(auto fr = 0; fr < filter_width; ++fr) {
+					for(auto fc = 0; fc < filter_width; ++fc) {
+						const auto ir = _or*stride+fr-pad;
+						const auto ic =  oc*stride+fc-pad;
 
-								if(0 <= ir && ir < input_width && 0 <= ic && ic < input_width) {
-									const auto input_index = ir*input_width+ic;
-									const auto output_index = _or*output_width+oc;
-									const auto filter_index = fr*filter_width+fc;
-									filter_indices_list_for_input[input_index].push_back(filter_index);
-									output_indices_list_for_input[input_index].push_back(output_index);
-								}
-							}
+						if(0 <= ir && ir < input_width && 0 <= ic && ic < input_width) {
+							const auto input_index = ir*input_width+ic;
+							const auto output_index = _or*output_width+oc;
+							const auto filter_index = fr*filter_width+fc;
+							filter_indices_list_for_input[input_index].push_back(filter_index);
+							output_indices_list_for_input[input_index].push_back(output_index);
 						}
 					}
+					}
+				}
 				}
 				return std::make_tuple(output_indices_list_for_input, filter_indices_list_for_input);
 			}
