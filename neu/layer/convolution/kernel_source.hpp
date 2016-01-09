@@ -22,9 +22,9 @@ namespace neu {
 
 			for(int m = 0; m < output_channel_num; ++m) {
 				float sum = 0.0;
-				const int fr_end = min(filter_width, pad-or*stride+input_width);
+				const int fr_end = min(filter_width, input_width+pad-or*stride);
 				for(int fr = max(0, pad-or*stride); fr < fr_end; ++fr) {
-					const int fc_end = min(filter_width, pad-oc*stride+input_width);
+					const int fc_end = min(filter_width, input_width+pad-oc*stride);
 					for(int fc = max(0, pad-oc*stride); fc < fc_end; ++fc) {
 						for(int k = 0; k < input_channel_num; ++k) {
 							const int ic = oc*stride+fc-pad;

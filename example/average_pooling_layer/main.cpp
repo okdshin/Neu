@@ -17,7 +17,7 @@ int main() {
 		input.insert(input.end(), cpu_input.begin(), cpu_input.end());
 	}
 
-	neu::layer::geometric_layer_property glp{512, 20, 3, 3, 2, 10};
+	neu::layer::geometric_layer_property glp{512, 21, 3, 3, 2, 10};
 	auto pool = neu::layer::make_uniform_average_pooling(glp, batch_size, queue);
 
 	neu::gpu_vector output(neu::layer::whole_output_size(pool));
@@ -30,26 +30,4 @@ int main() {
 		neu::gpu_vector(output.size(), 1.f, queue), prev_delta, queue);
 	neu::save_3ch_image_vector_as_rgb_image(neu::to_cpu_vector(prev_delta, queue),
 		neu::layer::input_width(pool), "prev_delta.bmp", 255);
-
-	/*
-	neu::average_pooling_layer_parameter params;
-	params
-	.input_width(512)
-	.filter_width(7)
-	.input_channel_num(3)
-	.stride(2)
-	.pad(3)
-	.batch_size(batch_size)
-	;
-	auto pool = neu::make_uniform_average_pooling_layer(params);
-	neu::gpu_vector output(neu::layer_output_dim(pool)*neu::layer_batch_size(pool));
-	neu::layer_forward(pool, input, output);
-	neu::save_3ch_image_vector_as_rgb_image(neu::to_cpu_vector(output),
-		neu::layer_output_width(pool), "output.bmp", 255);
-
-	neu::gpu_vector prev_delta(neu::layer_input_dim(pool)*neu::layer_batch_size(pool));
-	neu::layer_backward(pool, neu::gpu_vector(output.size(), 1.f), prev_delta);
-	neu::save_3ch_image_vector_as_rgb_image(neu::to_cpu_vector(prev_delta),
-		neu::layer_input_width(pool), "prev_delta.bmp", 255);
-	*/
 }

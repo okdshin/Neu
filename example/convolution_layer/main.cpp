@@ -21,19 +21,22 @@ int main() {
 		input.insert(input.end(), cpu_input.begin(), cpu_input.end());
 	}
 	neu::gpu_vector teach;
+	int teach_width;
 	{
-		auto teach_image = neu::load_rgb_image_as_3ch_image_vector("teach.bmp");
+		auto teach_image =
+			neu::load_rgb_image_as_3ch_image_vector("../../../data/teach.bmp");
 		auto cpu_teach = std::get<0>(teach_image);
+		teach_width = std::get<1>(teach_image);
 		teach.insert(teach.end(), cpu_teach.begin(), cpu_teach.end());
 	}
 
-	constexpr neu::scalar base_lr = 0.01;
-	constexpr neu::scalar momentum = 0.9;
+	constexpr neu::scalar base_lr = 0.1;
+	constexpr neu::scalar momentum = 0.0;
 
 	auto input_width = 256;
 	auto input_channel_num = 3;
 	auto output_channel_num = 1;
-	auto filter_width = 20;
+	auto filter_width = 13;
 	auto stride = 2;
 	auto pad = filter_width/2;
 
@@ -43,6 +46,10 @@ int main() {
 	neu::layer::geometric_layer_property glp{
 		input_width, filter_width, input_channel_num, output_channel_num, stride, pad};
 	auto output_width = neu::layer::output_width(glp);
+	if(output_width != teach_width) {
+		std::cout << "output image width(=" << output_width << ") is not equal to teach image one(=" << teach_width << ") (maybe filter width and/or pad are wrong)." << std::endl;
+		return 0;
+	}
 	auto conv = make_convolution(glp, batch_size, g,
 		neu::optimizer::momentum(base_lr, momentum,
 			neu::layer::filters_size(glp), queue), queue);
@@ -60,7 +67,7 @@ int main() {
 		[](std::size_t i, std::size_t k){
 			return "0filter"+std::to_string(i)+"_"+std::to_string(k)+".bmp"; }, 255.f);
 
-	for(auto i = 0; i < 1000; ++i) {
+	for(auto i = 0; i < 2000; ++i) {
 		neu::layer::forward(conv, input, output, queue);
 
 		{
@@ -78,21 +85,26 @@ int main() {
 		neu::layer::backward(conv, error, prev_delta, queue);
 		neu::layer::update(conv, queue);
 
-		/*
 		if(i%100 == 0) {
 			neu::save_image_vector_as_images(conv.filters(queue),
 				filter_width, input_channel_num, output_channel_num,
-				"filter"+std::to_string(i)+".bmp", 255.f);
+				[i](int b, int k) {
+					return "filter"+std::to_string(i)+".bmp";
+				}, 
+				255.f);
 
 			neu::save_image_vector_as_images(conv.del_filters(queue),
 				filter_width, input_channel_num, output_channel_num,
-				"delta_filter"+std::to_string(i)+".bmp", 255.f);
+				[i](int b, int k) {
+					return "delta"+std::to_string(i)+".bmp";
+				}, 255.f);
 
 			neu::save_image_vector_as_images(neu::to_cpu_vector(output, queue),
 				output_width, output_channel_num, batch_size,
-				"output"+std::to_string(i)+".bmp", 255.f);
+				[i](int b, int k) {
+					return "output"+std::to_string(i)+".bmp";
+				}, 255.f);
 		}
-		*/
 	}
 	boost::compute::system::finish();
 
