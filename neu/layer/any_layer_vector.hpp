@@ -1,5 +1,5 @@
-#ifndef NEU_ANY_LAYER_VECTOR_HPP
-#define NEU_ANY_LAYER_VECTOR_HPP
+#ifndef NEU_LAYER_ANY_LAYER_VECTOR_HPP
+#define NEU_LAYER_ANY_LAYER_VECTOR_HPP
 //20150914
 #include <vector>
 #include <neu/basic_type.hpp>
@@ -185,4 +185,4 @@ namespace neu {
 	}
 }// namespace neu
 
-#endif //NEU_ANY_LAYER_VECTOR_HPP
+#endif //NEU_LAYER_ANY_LAYER_VECTOR_HPP

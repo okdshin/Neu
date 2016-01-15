@@ -6,16 +6,10 @@
 #include <string>
 #include <boost/compute/command_queue.hpp>
 #include <yaml-cpp/yaml.h>
+#include <neu/layer/rank_id.hpp>
 
 namespace neu {
 	namespace layer {
-		enum class rank_id : int {
-			dim = 0,
-			width = 0,
-			height = 1,
-			channel_num = 2
-		};
-
 		//
 		// input_rank
 		//
