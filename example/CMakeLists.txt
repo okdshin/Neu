@@ -15,3 +15,5 @@ subdirs( xor_softmax )
 subdirs( mnist )
 subdirs( mnist_conv )
 subdirs( cifar10 )
+
+subdirs( xor_sigmoid_node )
