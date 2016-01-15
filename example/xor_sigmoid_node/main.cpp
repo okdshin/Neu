@@ -118,8 +118,10 @@ int main(int argc, char** argv) {
 		{"input", "ip1", "bias1", "relu", "ip2", "bias2", "sigmoid_loss", "error"});
 	//queue.finish();
 
-	auto iteration_limit = 1000;
+	auto iteration_limit = 100;
 
+	boost::progress_display progress(iteration_limit);
+	boost::timer timer;
 	for(auto i = 0; i < iteration_limit; ++i) {
 		graph["input"].forward(queue);
 
@@ -143,7 +145,10 @@ int main(int argc, char** argv) {
 		graph["bias1"].update(queue);
 		graph["ip2"].update(queue);
 		graph["bias2"].update(queue);
+		++progress;
 	}
+	std::cout << timer.elapsed() << " sec" << std::endl;
+	boost::compute::system::finish();
 	auto output = graph["sigmoid_loss"].output_for(&graph["error"]);
 	for(auto e : output) {
 		std::cout << e << " ";
