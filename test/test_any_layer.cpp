@@ -41,18 +41,4 @@ public:
 	}
 };
 
-BOOST_AUTO_TEST_CASE(nullptr_comparison) {
-	neu::layer::any_layer la_null;
-	BOOST_CHECK(la_null == nullptr);
-	BOOST_CHECK(nullptr == la_null);
-	BOOST_CHECK(!(la_null != nullptr));
-	BOOST_CHECK(!(nullptr != la_null));
-
-	neu::layer::any_layer la = test_layerA();
-	BOOST_CHECK(!(la == nullptr));
-	BOOST_CHECK(!(nullptr == la));
-	BOOST_CHECK(la != nullptr);
-	BOOST_CHECK(nullptr != la);
-}
-
 BOOST_AUTO_TEST_SUITE_END()
