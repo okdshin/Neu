@@ -97,22 +97,22 @@ namespace neu {
 				static decltype(auto) call(std::vector<neu::layer::any_layer>& layers,
 						InputRange const& initial_delta,
 						boost::compute::command_queue& queue) {
-					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
-					gpu_vector prev_delta(queue.get_context());
+					gpu_vector next_delta(initial_delta.begin(), initial_delta.end(), queue);
+					gpu_vector delta(queue.get_context());
 
 					// call backward except the top layer
 					for(int i = layers.size()-1; i >= 1; --i) {
 						auto& l = layers.at(i);
-						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
-						auto prev_delta_range = range::to_range(prev_delta);
+						delta.resize(::neu::layer::whole_input_size(l), queue);
+						auto delta_range = range::to_range(delta);
 						l.backward(
-							range::to_range(delta), prev_delta_range,
+							range::to_range(next_delta), delta_range,
 							queue);
-						delta.swap(prev_delta);
+						delta.swap(next_delta);
 					}
 
 					// call backward_top on the top layer
-					layers.front().backward_top(range::to_range(delta), queue);
+					layers.front().backward_top(range::to_range(next_delta), queue);
 				}
 			};
 			template<>
@@ -121,21 +121,21 @@ namespace neu {
 				template<typename InputRange, typename OutputRange>
 				static decltype(auto) call(std::vector<neu::layer::any_layer>& layers,
 						InputRange const& initial_delta,
-						OutputRange& result_prev_delta,
+						OutputRange& result_delta,
 						boost::compute::command_queue& queue) {
-					gpu_vector delta(initial_delta.begin(), initial_delta.end(), queue);
-					gpu_vector prev_delta(queue.get_context());
+					gpu_vector next_delta(initial_delta.begin(), initial_delta.end(), queue);
+					gpu_vector delta(queue.get_context());
 
 					for(int i = layers.size()-1; i >= 0; --i) {
 						auto& l = layers.at(i);
-						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
-						auto prev_delta_range = range::to_range(prev_delta);
+						delta.resize(::neu::layer::whole_input_size(l), queue);
+						auto delta_range = range::to_range(delta);
 						l.backward(
-							range::to_range(delta), prev_delta_range,
+							range::to_range(next_delta), delta_range,
 							queue);
-						delta.swap(prev_delta);
+						delta.swap(next_delta);
 					}
-					range::copy(delta, result_prev_delta, queue);
+					range::copy(next_delta, result_delta, queue);
 				}
 			};
 			template<>
