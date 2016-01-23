@@ -81,40 +81,40 @@ namespace neu {
 
 			template<typename InputRange>
 			decltype(auto) backward_top(
-					InputRange const& delta,
+					InputRange const& next_delta,
 					boost::compute::command_queue& queue) {
 				/* do nothing */
 			}
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& delta, OutputRange& prev_delta,
+					InputRange const& next_delta, OutputRange& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(delta)
+				NEU_ASSERT(neu::range::distance(next_delta)
 					== neu::layer::whole_output_size(*this));
-				NEU_ASSERT(neu::range::distance(prev_delta)
+				NEU_ASSERT(neu::range::distance(delta)
 					== neu::layer::whole_input_size(*this));
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
 
 				const auto cpu_indices = to_cpu_indices(gpu_indices_, queue);
 
-				const auto cpu_delta = [&delta, &queue](){
-					cpu_vector cpu_delta(neu::range::distance(delta));
-					neu::range::copy(delta, cpu_delta, queue);
-					return cpu_delta;
+				const auto cpu_next_delta = [&next_delta, &queue](){
+					cpu_vector cpu_next_delta(neu::range::distance(next_delta));
+					neu::range::copy(next_delta, cpu_next_delta, queue);
+					return cpu_next_delta;
 				}();
 
-				cpu_vector cpu_prev_delta(neu::range::distance(prev_delta), 0.f);
+				cpu_vector cpu_delta(neu::range::distance(delta), 0.f);
 				for(auto i = 0u; i < cpu_indices.size(); ++i) {
 					NEU_ASSERT(i < cpu_indices.size());
-					NEU_ASSERT(i < cpu_delta.size());
-					NEU_ASSERT(cpu_indices[i] < static_cast<int>(cpu_prev_delta.size()));
+					NEU_ASSERT(i < cpu_next_delta.size());
+					NEU_ASSERT(cpu_indices[i] < static_cast<int>(cpu_delta.size()));
 
-					cpu_prev_delta[cpu_indices[i]] += cpu_delta[i];
+					cpu_delta[cpu_indices[i]] += cpu_next_delta[i];
 				}
-				neu::range::copy(cpu_prev_delta, prev_delta, queue);
+				neu::range::copy(cpu_delta, delta, queue);
 
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 			}
 
 			decltype(auto) update(boost::compute::command_queue&) { /* do nothing */ }
