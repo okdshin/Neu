@@ -1,4 +1,4 @@
-- enrich data_set function
+- modify data_set function
 - accuracy
 - zca whitening
 - float4 convolution
