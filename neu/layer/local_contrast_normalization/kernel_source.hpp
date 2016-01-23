@@ -96,8 +96,8 @@ namespace neu {
 		constexpr char local_contrast_normalization_backward_kernel_source[] =
 			BOOST_COMPUTE_STRINGIZE_SOURCE(
 			__kernel void backward(
-				__global float* prev_delta, const int prev_delta_offset,
-				const __global float* delta, const int delta_offset,
+				__global float* delta, const int delta_offset,
+				const __global float* next_delta, const int next_delta_offset,
 				const int filter_width,
 				const float alpha, const float beta,
 				const __global float* local_mean,
@@ -108,8 +108,8 @@ namespace neu {
 				const int i = get_global_id(0);
 				const int N = filter_width*filter_width;
 
-				prev_delta[i] = delta[i]*output[i]*(
-					(1.f/(/*0.00001f+*/input[i]))
+				delta[i] = next_delta[i]*output[i]*(
+					(1.f/(0.00001f+input[i])) //TODO epsilon
 					-(2*alpha*beta*(input[i]+local_mean[i]*(1-N)))
 					/(1+(alpha/N)*local_variance[i]));
 			}
