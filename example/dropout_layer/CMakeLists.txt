@@ -1,4 +1,5 @@
 add_executable( dropout_layer main.cpp )
+include_directories(${YAMLCPP_INCLUDE_DIR})
 target_link_libraries( dropout_layer
 	${Boost_SYSTEM_LIBRARIES}
 	${Boost_THREAD_LIBRARIES}
