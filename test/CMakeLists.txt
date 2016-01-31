@@ -1,4 +1,5 @@
 include_directories(../)
+include_directories(${YAMLCPP_INCLUDE_DIR})
 set(BOOST_COMPONENTS unit_test_framework)
 set(BOOST_COMPONENTS ${BOOST_COMPONENTS} thread)
 
@@ -14,10 +15,13 @@ function(add_neu_test TEST_NAME TEST_SOURCE)
     ${OpenCL_LIBRARIES}
     ${Boost_LIBRARIES}
 	${BoostCompute_LIBRARIES}
+	${YAMLCPP_LIBRARY}
   )
   add_test(${TEST_NAME} ${TEST_TARGET})
 endfunction()
 
 add_neu_test("layer.any_layer" test_any_layer.cpp)
+add_neu_test("layer.average_pooling" test_average_pooling.cpp)
+add_neu_test("layer.max_pooling" test_max_pooling.cpp)
 #add_neu_test("layer.automatic_differentiation_layer"
 #	test_automatic_differentiation_layer.cpp)
