@@ -14,7 +14,7 @@ namespace neu {
 			virtual void backward() = 0;
 			virtual void update() = 0;
 			virtual range::gpu_vector_range output_for(node*) const = 0;
-			virtual range::gpu_vector_range next_delta_for(node*) const = 0;
+			virtual range::gpu_vector_range prev_delta_for(node*) const = 0;
 		};
 		decltype(auto) connect(node& from, node& to) {
 			from.add_next(&to);
@@ -54,7 +54,7 @@ namespace neu {
 				NEU_ASSERT(next == next_);
 				return output_range_;
 			}
-			range::gpu_vector_range next_delta_for(node* prev) const override {
+			range::gpu_vector_range prev_delta_for(node* prev) const override {
 				NEU_ASSERT(!"data node does not propagate delta");
 				return range::gpu_vector_range();
 			}
@@ -110,7 +110,7 @@ namespace neu {
 			}
 
 			void backward() override {
-				layer_.backward(next_->next_delta_for(this), delta_range_, *queue_);
+				layer_.backward(next_->prev_delta_for(this), delta_range_, *queue_);
 			}
 
 			void update() override {
@@ -121,7 +121,7 @@ namespace neu {
 				NEU_ASSERT(next == next_);
 				return output_range_;
 			}
-			range::gpu_vector_range next_delta_for(node* prev) const override {
+			range::gpu_vector_range prev_delta_for(node* prev) const override {
 				NEU_ASSERT(prev == prev_);
 				return delta_range_;
 			}
