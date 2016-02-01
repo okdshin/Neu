@@ -109,7 +109,7 @@ namespace neu {
 				const int N = filter_width*filter_width;
 
 				prev_delta[i] = delta[i]*output[i]*(
-					(1.f/(/*0.00001f+*/input[i]))
+					(1.f/(1.0e-5f+input[i])) // TODO epsilon
 					-(2*alpha*beta*(input[i]+local_mean[i]*(1-N)))
 					/(1+(alpha/N)*local_variance[i]));
 			}
