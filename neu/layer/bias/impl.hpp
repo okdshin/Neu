@@ -77,22 +77,22 @@ namespace neu {
 
 			template<typename InputRange>
 			decltype(auto) backward_top(
-					InputRange const& next_delta,
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(next_delta) == range::distance(delta_));
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
-				range::copy(next_delta, delta_, queue); //TODO async operation
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				range::copy(delta, delta_, queue); //TODO async operation
 			}
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& next_delta, OutputRange& delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(range::distance(next_delta) == range::distance(delta_));
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
-				backward_top(next_delta, queue);
-				range::copy(next_delta, delta, queue); //TODO async operation
+				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				backward_top(delta, queue);
+				range::copy(delta, prev_delta, queue); //TODO async operation
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
 			decltype(auto) update(boost::compute::command_queue& queue) {
