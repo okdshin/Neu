@@ -56,6 +56,8 @@ namespace neu {
 			decltype(auto) output_size(rank_id ri) const {
 				return ri == rank_id::dim ? output_dim_ : 0; }
 			decltype(auto) batch_size() const { return batch_size_; }
+			decltype(auto) del_weight(boost::compute::command_queue& queue) const {
+				return to_cpu_vector(del_weight_, queue); }
 			decltype(auto) weight(boost::compute::command_queue& queue) const {
 				return to_cpu_vector(weight_, queue); }
 			decltype(auto) optimizer() const { return (optimizer_); }

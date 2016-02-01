@@ -20,8 +20,9 @@ function(add_neu_test TEST_NAME TEST_SOURCE)
   add_test(${TEST_NAME} ${TEST_TARGET})
 endfunction()
 
-add_neu_test("layer.any_layer" test_any_layer.cpp)
-add_neu_test("layer.average_pooling" test_average_pooling.cpp)
-add_neu_test("layer.max_pooling" test_max_pooling.cpp)
+add_neu_test("layer.inner_product" test_inner_product.cpp)
+#add_neu_test("layer.any_layer" test_any_layer.cpp)
+#add_neu_test("layer.average_pooling" test_average_pooling.cpp)
+#add_neu_test("layer.max_pooling" test_max_pooling.cpp)
 #add_neu_test("layer.automatic_differentiation_layer"
 #	test_automatic_differentiation_layer.cpp)
