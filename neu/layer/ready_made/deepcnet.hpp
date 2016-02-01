@@ -22,7 +22,7 @@ namespace neu {
 						li == 0 ? input_width : output_width(nn),
 						li == 0 ? 3 : 2,
 						li == 0 ? 3 : output_channel_num(nn),
-						(li+1)*k,
+						static_cast<int>((li+1)*k*((10-li)/10.f)),
 						1, 1
 					};
 					nn.push_back(make_convolution(

@@ -11,6 +11,7 @@
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 #include <neu/layer/convolution.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/average_pooling.hpp>
@@ -45,9 +46,9 @@ int main(int argc, char** argv) {
 		("help", "produce help message")
 		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
 		 "set number of data per label for Batch SGD")
-		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), 
+		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.01), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -100,10 +101,11 @@ int main(int argc, char** argv) {
 		label_num, test_data_num_per_label, input_dim, test_data, rand, context);
 
 
-	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
+	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.005f)]
 		() mutable { return dist(rand); };
 	auto optgen = [base_lr, momentum, &queue](int weight_dim) {
-		return neu::optimizer::momentum(base_lr, momentum, weight_dim, queue);
+		//return neu::optimizer::momentum(base_lr, momentum, weight_dim, queue);
+		return neu::optimizer::fixed_learning_rate(base_lr);
 	};
 
 	auto fc12_g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
@@ -113,24 +115,28 @@ int main(int argc, char** argv) {
 	std::vector<neu::layer::any_layer> nn;
 
 	neu::layer::ready_made::make_deepcnet(
-		nn, batch_size, input_width, 3, 10, g, optgen, queue);
-
-	std::cout << "here" << std::endl;
-	neu::layer::output_to_file(nn, "nn00.yaml", queue);
+		nn, batch_size, input_width, 5, 300, g, optgen, queue);
+	{ // ip0
+		nn.push_back(neu::layer::make_inner_product(
+			neu::layer::output_dim(nn), 100, batch_size, fc12_g,
+			//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn)*100, queue),
+			neu::optimizer::fixed_learning_rate(base_lr),
+			queue));
+	}
 
 	{ // ip1
 		nn.push_back(neu::layer::make_inner_product(
 			neu::layer::output_dim(nn), label_num, batch_size, fc12_g,
-			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn)*label_num, queue),
+			//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn)*label_num, queue),
+			neu::optimizer::fixed_learning_rate(base_lr),
 			queue));
 	}
 
 	{ // bias1
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
-			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+			//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+			neu::optimizer::fixed_learning_rate(base_lr),
 			queue));
 	}
 
@@ -138,7 +144,6 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_softmax_loss(
 			neu::layer::output_dim(nn), batch_size, context));
 	}
-	neu::layer::output_to_file(nn, "nn0.yaml", queue);
 
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
@@ -157,11 +162,14 @@ int main(int argc, char** argv) {
 		auto batch = train_ds.get_batch();
 		const auto input = batch.train_data;
 		const auto teach = batch.teach_data;
-		auto make_next_batch_future = train_ds.async_make_next_batch();
+		//auto make_next_batch_future = train_ds.async_make_next_batch();
 
+		/*
 		if(i%(iteration_limit/10) == 0) {
 			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 		}
+		*/
+		neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 
 		neu::layer::forward(nn, input, output, queue);
 
@@ -179,7 +187,7 @@ int main(int argc, char** argv) {
 		neu::layer::backward(nn, error, prev_delta, queue);
 		neu::layer::update(nn, queue);
 
-		make_next_batch_future.wait();
+		//make_next_batch_future.wait();
 		++progress;
 	}
 	std::cout << timer.elapsed() << " secs" << std::endl;
