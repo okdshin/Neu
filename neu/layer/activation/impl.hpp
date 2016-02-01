@@ -68,23 +68,23 @@ namespace neu {
 
 			template<typename InputRange>
 			decltype(auto) backward_top(
-					InputRange const& next_delta,
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
 				/* do nithing */
 			}
 
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& next_delta, OutputRange& delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(delta, queue));
 				derivative_activation_func_(input_, df_, queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(neu::is_all_of_finite(df_, queue));
-				range::transform(df_, next_delta, delta,
+				range::transform(df_, delta, prev_delta,
 					boost::compute::multiplies<scalar>(), queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(
-					neu::is_all_of_finite(delta, queue));
+					neu::is_all_of_finite(prev_delta, queue));
 			}
 
 			decltype(auto) update(boost::compute::command_queue&) { /*do nothing*/ }
