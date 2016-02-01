@@ -105,23 +105,23 @@ namespace neu {
 
 			template<typename InputRange>
 			decltype(auto) backward_top(
-					InputRange const& next_delta,
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(next_delta)
+				NEU_ASSERT(neu::range::distance(delta)
 					== static_cast<int>(delta_.size()));
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
-				neu::range::copy(next_delta, delta_, queue); //TODO async operation
+				neu::range::copy(delta, delta_, queue); //TODO async operation
 			}
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& next_delta, OutputRange& delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT(neu::range::distance(next_delta)
+				NEU_ASSERT(neu::range::distance(delta)
 					== static_cast<int>(delta_.size()));
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
-				backward_top(next_delta, queue);
+				backward_top(delta, queue);
 				neu::enqueue_nd_range_kernel<2>(queue, convolution_back_kernel_,
 					{0, 0}, {glp_.input_width*glp_.input_width, batch_size_},
 					indices_.indices_range_list_for_input,
@@ -132,13 +132,13 @@ namespace neu {
 					static_cast<int>(glp_.filter_width),
 					static_cast<int>(glp_.input_channel_num),
 					static_cast<int>(glp_.output_channel_num),
+					neu::range::get_buffer(prev_delta),
+					static_cast<int>(neu::range::get_begin_index(prev_delta)),
 					neu::range::get_buffer(delta),
 					static_cast<int>(neu::range::get_begin_index(delta)),
-					neu::range::get_buffer(next_delta),
-					static_cast<int>(neu::range::get_begin_index(next_delta)),
 					filters_);
 
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
 			decltype(auto) update(boost::compute::command_queue& queue) {

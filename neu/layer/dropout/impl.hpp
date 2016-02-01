@@ -97,27 +97,27 @@ namespace neu {
 
 			template<typename InputRange>
 			decltype(auto) backward_top(
-					InputRange const& next_delta,
+					InputRange const& delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				/* do nothing */
 			}
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
-					InputRange const& next_delta, OutputRange& delta,
+					InputRange const& delta, OutputRange& prev_delta,
 					boost::compute::command_queue& queue) {
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(next_delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
 				neu::enqueue_nd_range_kernel<2>(queue, dropout_backward_kernel_,
 					{0, 0}, {input_dim_, batch_size_},
+					neu::range::get_buffer(prev_delta),
+					static_cast<int>(neu::range::get_begin_index(prev_delta)),
 					neu::range::get_buffer(delta),
 					static_cast<int>(neu::range::get_begin_index(delta)),
-					neu::range::get_buffer(next_delta),
-					static_cast<int>(neu::range::get_begin_index(next_delta)),
 					mask_,
 					static_cast<int>(input_dim_));
 
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
 			void update(boost::compute::command_queue& queue) {
