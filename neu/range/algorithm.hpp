@@ -70,6 +70,22 @@ namespace neu {
 		}
 
 		template<typename InputRange1, typename InputRange2>
+		decltype(auto) half_square_error_sum(
+				InputRange1 const& last_output_range, InputRange2 const& teach_range,
+				boost::compute::command_queue& queue) {
+			::neu::gpu_vector error(::neu::range::distance(last_output_range),
+				queue.get_context());
+			::neu::range::transform(last_output_range, teach_range, error,
+				boost::compute::minus<::neu::scalar>(), queue);
+			static BOOST_COMPUTE_FUNCTION(float, square_kernel, (float x), {
+				return x*x;
+			});
+			range::transform(error, error, square_kernel, queue);
+			return range::sum(error, queue) / 2.f;
+		}
+		
+
+		template<typename InputRange1, typename InputRange2>
 		decltype(auto) mean_square_error(
 				InputRange1 const& last_output_range, InputRange2 const& teach_range,
 				boost::compute::command_queue& queue) {

@@ -7,6 +7,7 @@
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
@@ -43,8 +44,10 @@ int main(int argc, char** argv) {
 	auto constant_g = [](){ return 0.f; };
 
 	constexpr neu::scalar base_lr = 0.1f;
-	constexpr neu::scalar momentum = 0.9f;
+	//constexpr neu::scalar momentum = 0.9f;
 	constexpr std::size_t hidden_node_num = 10u;
+
+	auto opt = neu::optimizer::fixed_learning_rate(base_lr);
 
 	neu::node::graph graph;
 	graph.add_node("input", neu::node::fixed_data(input, queue));
@@ -52,9 +55,10 @@ int main(int argc, char** argv) {
 		neu::node::layer(
 			neu::layer::make_inner_product(
 				input_dim, hidden_node_num, batch_size, fc12_g,
-				neu::optimizer::momentum(
+				/*neu::optimizer::momentum(
 					base_lr, momentum, input_dim*hidden_node_num, queue
-				),
+				),*/
+				opt,
 				queue
 			),
 			queue
@@ -64,9 +68,10 @@ int main(int argc, char** argv) {
 		neu::node::layer(
 			neu::layer::make_bias(
 				hidden_node_num, batch_size, constant_g,
-				neu::optimizer::momentum(
+				/*neu::optimizer::momentum(
 					base_lr, momentum, hidden_node_num, queue
-				),
+				),*/
+				opt,
 				queue
 			),
 			queue
@@ -84,8 +89,9 @@ int main(int argc, char** argv) {
 		neu::node::layer(
 			neu::layer::make_inner_product(
 				hidden_node_num, output_dim, batch_size, fc12_g,
-				neu::optimizer::momentum(
-					base_lr, momentum, hidden_node_num*output_dim, queue),
+				/*neu::optimizer::momentum(
+					base_lr, momentum, hidden_node_num*output_dim, queue),*/
+				opt,
 				queue
 			),
 			queue
@@ -95,9 +101,10 @@ int main(int argc, char** argv) {
 		neu::node::layer(
 			neu::layer::make_bias(
 				output_dim, batch_size, constant_g,
-				neu::optimizer::momentum(
+				/*neu::optimizer::momentum(
 					base_lr, momentum, output_dim, queue
-				),
+				),*/
+				opt,
 				queue
 			),
 			queue

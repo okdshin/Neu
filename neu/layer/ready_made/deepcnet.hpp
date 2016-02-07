@@ -5,7 +5,7 @@
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/convolution.hpp>
 #include <neu/layer/max_pooling.hpp>
-#include <neu/layer/activation/rectifier.hpp>
+#include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/bias.hpp>
 namespace neu {
 	namespace layer {
@@ -22,7 +22,8 @@ namespace neu {
 						li == 0 ? input_width : output_width(nn),
 						li == 0 ? 3 : 2,
 						li == 0 ? 3 : output_channel_num(nn),
-						static_cast<int>((li+1)*k*((10-li)/10.f)),
+						(li+1)*k,
+						//static_cast<int>((li+1)*k*((10-li)/10.f)),
 						1, 1
 					};
 					nn.push_back(make_convolution(
@@ -34,9 +35,9 @@ namespace neu {
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
 
-					// relu
-					nn.push_back(neu::layer::make_rectifier(
-						neu::layer::output_dim(nn), batch_size));
+					// leaky relu
+					nn.push_back(neu::layer::make_leaky_rectifier(
+						neu::layer::output_dim(nn), batch_size, 0.33f));
 
 					if(li != l) {
 						// max pooling

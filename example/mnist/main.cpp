@@ -9,6 +9,7 @@
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
@@ -53,13 +54,18 @@ int main(int argc, char** argv) {
 		neu::optimizer::momentum(base_lr, momentum, input_dim*hidden_node_num, queue),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
 	nn.push_back(neu::layer::make_inner_product(
 		neu::layer::output_dim(nn), label_num, batch_size, g,
+		/*
 		neu::optimizer::momentum(base_lr, momentum,
-			neu::layer::output_dim(nn)*label_num, queue), queue));
+			neu::layer::output_dim(nn)*label_num, queue),
+		*/
+		neu::optimizer::fixed_learning_rate(base_lr),
+		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
 		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
 		queue));
@@ -92,7 +98,7 @@ int main(int argc, char** argv) {
 			mse_error_log << i << " " << mse << std::endl;
 
 			auto cel = neu::range::cross_entropy_loss(output, teach, queue);
-			cel_error_log << i << " " << cel << std::endl;
+			cel_error_log << i << " " << cel/batch_size << std::endl;
 		}
 		neu::gpu_vector error(output.size(), context);
 		neu::range::calc_last_layer_delta(output, teach, error, queue);

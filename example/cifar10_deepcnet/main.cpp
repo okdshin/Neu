@@ -1,5 +1,5 @@
 //#define NEU_DISABLE_ASSERTION
-//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.0001), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.000001), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -88,13 +88,13 @@ int main(int argc, char** argv) {
 	auto train_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
-	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
+	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.1f)]
 		() mutable { return dist(rand); };
 	auto optgen = [base_lr, momentum, &queue](int weight_dim) {
 		return neu::optimizer::fixed_learning_rate(base_lr);
 	};
 
-	auto fc12_g = [&rand, dist=std::normal_distribution<>(0.f, 0.01f)]
+	auto fc12_g = [&rand, dist=std::normal_distribution<>(0.f, 0.1f)]
 		() mutable { return dist(rand); };
 	auto constant_g = [](){ return 0.f; };
 
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 		}
 	}
 	*/
-	const int output_channel_num = 100;
+	const int output_channel_num = 50;
 	int conv_output_width;
 	{ // conv
 		neu::layer::geometric_layer_property glp{

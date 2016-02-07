@@ -9,6 +9,7 @@
 #include <neu/layer/activation/rectifier.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 #include <neu/layer/convolution.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/inner_product.hpp>
@@ -57,8 +58,12 @@ int main(int argc, char** argv) {
 		input_width, 5, input_channel_num, 20, 1, 2};
 	auto conv1 = neu::layer::make_convolution(
 		glp1, batch_size, g,
+		/*
 		neu::optimizer::momentum(base_lr, momentum,
-			neu::layer::filters_size(glp1), queue), queue);
+			neu::layer::filters_size(glp1), queue),
+		*/
+		neu::optimizer::fixed_learning_rate(base_lr),
+		queue);
 	nn.push_back(conv1);
 	/*
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
@@ -79,8 +84,12 @@ int main(int argc, char** argv) {
 		neu::layer::output_width(nn), 5, neu::layer::output_channel_num(nn), 50, 1, 2};
 	nn.push_back(neu::layer::make_convolution(
 		glp2, batch_size, g,
+		/*
 		neu::optimizer::momentum(base_lr, momentum,
-			neu::layer::filters_size(glp2), queue), queue));
+			neu::layer::filters_size(glp2), queue),
+		*/
+		neu::optimizer::fixed_learning_rate(base_lr),
+		queue));
 
 	/*
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
@@ -91,21 +100,30 @@ int main(int argc, char** argv) {
 	// fc1
 	nn.push_back(neu::layer::make_inner_product(
 		neu::layer::output_dim(nn), hidden_node_num, batch_size, g,
+		/*
 		neu::optimizer::momentum(
 			base_lr, momentum, neu::layer::output_dim(nn)*hidden_node_num, queue),
+		*/
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
 
 	// fc2
 	nn.push_back(neu::layer::make_inner_product(
 		neu::layer::output_dim(nn), label_num, batch_size, g,
+		/*
 		neu::optimizer::momentum(base_lr, momentum,
-			neu::layer::output_dim(nn)*label_num, queue), queue));
+			neu::layer::output_dim(nn)*label_num, queue),
+		*/
+		neu::optimizer::fixed_learning_rate(base_lr),
+		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_softmax_loss(
 		neu::layer::output_dim(nn), batch_size, context));

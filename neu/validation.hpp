@@ -52,6 +52,18 @@ namespace neu {
 		boost::compute::reduce(x.begin(), x.end(), &sum, boost::compute::plus<scalar>());
 		return sum/x.size();
 	}
+
+	template<typename F>
+	decltype(auto) calc_analytic_gradient(F&& f, scalar theta, scalar eps) {
+		return (f(theta+eps)-f(theta-eps))/(2*eps);
+	}
+
+	template<typename T>
+	decltype(auto) calc_relative_error(T lhs, T rhs) {
+		return std::abs(lhs-rhs)
+			/std::max<T>({std::abs(lhs), std::abs(rhs), static_cast<T>(1)});
+	}
+
 }// namespace neu
 
 #endif //NEU_VALIDATION_HPP
