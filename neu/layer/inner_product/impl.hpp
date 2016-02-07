@@ -153,6 +153,20 @@ namespace neu {
 				cpu_weight, optimizer, queue);
 		}
 
+		template<typename Rng>
+		decltype(auto) make_inner_product_xavier(
+				int input_dim,
+				int output_dim,
+				int batch_size,
+				Rng&& rng,
+				optimizer::any_optimizer const& optimizer,
+				boost::compute::command_queue& queue) {
+			auto dist = std::normal_distribution<>(0.f, std::sqrt(1.f/input_dim));
+			return neu::layer::make_inner_product(input_dim, output_dim, batch_size,
+				[&rng, dist]() mutable{ return dist(rng); },
+				optimizer, queue);
+		}
+
 		namespace traits {
 			template<>
 			class serialize<inner_product> {

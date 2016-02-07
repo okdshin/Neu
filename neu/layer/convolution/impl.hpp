@@ -1,6 +1,7 @@
 #ifndef NEU_LAYER_CONVOLUTION_IMPL_HPP
 #define NEU_LAYER_CONVOLUTION_IMPL_HPP
 //20151005
+#include <random>
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>
 #include <neu/basic_type.hpp>
@@ -211,9 +212,24 @@ namespace neu {
 			optimizer::any_optimizer const& optimizer,
 			boost::compute::command_queue& queue
 		) {
-			cpu_vector cpu_filters(filters_size(glp));
+			cpu_vector cpu_filters(neu::layer::filters_size(glp));
 			std::generate(cpu_filters.begin(), cpu_filters.end(), fg);
 			return convolution(glp, batch_size, cpu_filters, optimizer, queue);
+		}
+
+		template<typename Rng>
+		decltype(auto) make_convolution_xavier(
+			geometric_layer_property const& glp,
+			int batch_size,
+			Rng&& rng,
+			optimizer::any_optimizer const& optimizer,
+			boost::compute::command_queue& queue
+		) {
+			auto dist = std::normal_distribution<neu::scalar>(
+				0.f, std::sqrt(1.f/neu::layer::input_dim(glp)));
+			return neu::layer::make_convolution(glp, batch_size,
+				[&rng, dist]() mutable { return dist(rng); },
+				optimizer, queue);
 		}
 
 		decltype(auto) deserialize_convolution(YAML::Node const& node,
