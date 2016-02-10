@@ -60,7 +60,10 @@ if(${NEU_BUILD_UTILITIES})
   add_subdirectory(utility)
 endif()
 
-add_subdirectory(doc)
+option(NEU_BUILD_DOC "Build the Neu documentation" OFF)
+if(${NEU_BUILD_DOC})
+	add_subdirectory(doc)
+endif()
 
 # install header files
 install( DIRECTORY neu DESTINATION include FILES_MATCHING PATTERN "*.hpp" )
