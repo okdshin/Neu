@@ -28,3 +28,5 @@ add_neu_test("layer.softmax_loss" test_softmax_loss.cpp)
 #add_neu_test("layer.max_pooling" test_max_pooling.cpp)
 #add_neu_test("layer.automatic_differentiation_layer"
 #	test_automatic_differentiation_layer.cpp)
+
+add_neu_test("optimizer.momentum" test_momentum.cpp)
