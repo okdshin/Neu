@@ -1,6 +1,7 @@
 #ifndef NEU_LAYER_INNER_PRODUCT_IMPL_HPP
 #define NEU_LAYER_INNER_PRODUCT_IMPL_HPP
 //20151023
+#include <random>
 #include <yaml-cpp/yaml.h>
 #include <neu/assert.hpp>
 #include <neu/validation.hpp>

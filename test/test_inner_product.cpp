@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TestInnerProduct
 #include <boost/test/unit_test.hpp>
+#include <random>
 
 #include <neu/layer/inner_product.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
