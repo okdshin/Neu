@@ -25,7 +25,7 @@ namespace neu {
 		{
 			const int o = get_global_id(0);
 
-			float bias_sum = 0.0;
+			float bias_sum = 0.f;
 			for(int b = 0; b < batch_size; ++b) {
 				bias_sum += delta[o+input_dim*b];
 			}
