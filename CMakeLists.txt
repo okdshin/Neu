@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(Neu)
 
-set(CMAKE_MODULE_PATH ${Neu_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # build type
 set(CMAKE_BUILD_TYPE Debug)
@@ -42,7 +42,7 @@ find_package(YamlCpp REQUIRED)
 include_directories(SYSTEM ${YAMLCPP_INCLUDE_DIRS})
 link_directories(${YAMLCPP_LIBRARY_DIRS})
 
-include_directories(${Neu_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR})
 
 option(NEU_BUILD_TESTS "Build the Neu tests" ON)
 if(${NEU_BUILD_TESTS})
