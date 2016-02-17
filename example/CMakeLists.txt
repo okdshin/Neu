@@ -9,6 +9,7 @@ subdirs(max_pooling_layer)
 subdirs(average_pooling_layer)
 subdirs(local_contrast_normalization_layer)
 subdirs(dropout_layer)
+subdirs(shared_dropout_layer)
 
 subdirs(xor_sigmoid)
 subdirs(xor_softmax)

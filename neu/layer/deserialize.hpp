@@ -13,6 +13,7 @@
 #include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/layer/dropout.hpp>
+#include <neu/layer/shared_dropout.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 namespace neu {
 	namespace layer {
@@ -61,6 +62,9 @@ namespace neu {
 			} else
 			if(lt == "dropout") {
 				return static_cast<any_layer>(deserialize_dropout(node, queue));
+			} else
+			if(lt == "shared_dropout") {
+				return static_cast<any_layer>(deserialize_shared_dropout(node, queue));
 			} else
 			if(lt == "any_layer_vector") {
 				return static_cast<any_layer>(deserialize_any_layer_vector(node, queue));
