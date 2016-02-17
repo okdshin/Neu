@@ -13,27 +13,32 @@ namespace neu {
 			template<typename Rng, typename OptGen>
 			decltype(auto) make_deepcnet(
 					std::vector<neu::layer::any_layer>& nn,
-					int batch_size, int input_width, int l, int k, Rng& g,
+					int batch_size, int input_width, int l, int k, Rng&& g,
 					OptGen const& optgen,
 					boost::compute::command_queue& queue) {
 				for(int li = 0; li < l+1; ++li) {
 					// conv
-					geometric_layer_property glp{
-						li == 0 ? input_width : output_width(nn),
-						li == 0 ? 3 : 2,
-						li == 0 ? 3 : output_channel_num(nn),
-						(li+1)*k,
-						//static_cast<int>((li+1)*k*((10-li)/10.f)),
-						1, 1
-					};
-					nn.push_back(make_convolution(
+					const auto glp = [&nn, li, input_width, k]() {
+						if(li == 0) {
+							return geometric_layer_property{
+								input_width, 3, 3,
+								(li+1)*k, 1, 1};
+						}
+						else {
+							return geometric_layer_property{
+								output_width(nn), 2, output_channel_num(nn),
+								(li+1)*k, 1, 1};
+						}
+					}();
+					nn.push_back(make_convolution_xavier(
 						glp, batch_size, g, optgen(neu::layer::filters_size(glp)), queue));
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
 					// bias
 					nn.push_back(neu::layer::make_bias(
-						output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
+						output_dim(nn), batch_size, [](){ return 0; },
+						optgen(output_dim(nn)), queue));
 
 					// leaky relu
 					nn.push_back(neu::layer::make_leaky_rectifier(

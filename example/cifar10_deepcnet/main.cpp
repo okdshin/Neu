@@ -1,5 +1,5 @@
 //#define NEU_DISABLE_ASSERTION
-#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -20,6 +20,7 @@
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/io.hpp>
+#include <neu/layer/ready_made/deepcnet.hpp>
 #include <neu/layer/ready_made/deepcnet.hpp>
 #include <neu/dataset/load_cifar10.hpp>
 #include <neu/dataset/classification_dataset.hpp>
@@ -45,9 +46,9 @@ int main(int argc, char** argv) {
 		("help", "produce help message")
 		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
 		 "set number of data per label for Batch SGD")
-		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), 
+		("iteration_limit", po::value<int>(&iteration_limit)->default_value(500000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.000001), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.0001), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -75,226 +76,40 @@ int main(int argc, char** argv) {
 	auto& queue = boost::compute::system::default_queue();
 	auto context = boost::compute::system::default_context();
 
-	std::random_device rd; std::mt19937 rand(rd());
-	//std::mt19937 rand(1); std::cout << "INFO: fixed random engine" << std::endl;
+	//std::random_device rd; std::mt19937 rand(rd());
+	std::mt19937 rand(0); std::cout << "INFO: fixed random engine" << std::endl;
 
 	auto train_data = neu::dataset::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.)/127.f; });
+				[](auto e){ return (e-127.)/255.f; });
 		}
 	}
 	auto train_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
-	auto g = [&rand, dist=std::normal_distribution<>(0.f, 0.1f)]
-		() mutable { return dist(rand); };
-	auto optgen = [base_lr, momentum, &queue](int weight_dim) {
-		return neu::optimizer::fixed_learning_rate(base_lr);
-	};
-
-	auto fc12_g = [&rand, dist=std::normal_distribution<>(0.f, 0.1f)]
-		() mutable { return dist(rand); };
 	auto constant_g = [](){ return 0.f; };
-
+	auto optgen = [base_lr, momentum, &queue](int theta_size) {	
+		return neu::optimizer::momentum(
+			base_lr, momentum, theta_size, queue);
+	};
 	std::vector<neu::layer::any_layer> nn;
-
-	/*
 	neu::layer::ready_made::make_deepcnet(
-		nn, batch_size, input_width, 1, 10, g, optgen, queue);
-	*/
-	/*
-	{
-		const int k = 10;
-		{
-			// conv
-			neu::layer::geometric_layer_property glp{input_width, 3, 3, k, 1, 1};
-			nn.push_back(make_convolution(
-				glp, batch_size, g, optgen(neu::layer::filters_size(glp)), queue));
-		}
-		auto output_width = neu::layer::output_width(nn.back());
-		auto output_channel_num = neu::layer::output_channel_num(nn.back());
-
-		// bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-
-		// leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-
-		{
-			// max pooling
-			neu::layer::geometric_layer_property glp{
-				output_width,
-				2,
-				output_channel_num,
-				output_channel_num,
-				2, 1
-			};
-			nn.push_back(neu::layer::max_pooling(glp, batch_size, queue.get_context()));
-		}
-	}
-	*/
-	const int output_channel_num = 50;
-	int conv_output_width;
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			input_width, 3, input_channel_num, output_channel_num, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	{ // mpool
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num, output_channel_num, 2, 1};
-		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num, output_channel_num*2, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	{ // mpool
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*2, output_channel_num*2, 2, 1};
-		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*2, output_channel_num*3, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	{ // mpool
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*3, output_channel_num*3, 2, 1};
-		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*3, output_channel_num*4, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	{ // mpool
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*4, output_channel_num*4, 2, 1};
-		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*4, output_channel_num*5, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	{ // mpool
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*5, output_channel_num*5, 2, 1};
-		nn.push_back(neu::layer::max_pooling(glp, batch_size, context));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // conv
-		neu::layer::geometric_layer_property glp{
-			conv_output_width, 2, output_channel_num*5, output_channel_num*6, 1, 1};
-		nn.push_back(make_convolution(
-			glp, batch_size, g, neu::optimizer::fixed_learning_rate(base_lr), queue));
-		conv_output_width = neu::layer::output_width(glp);
-	}
-
-	{ // bias
-		nn.push_back(neu::layer::make_bias(
-			output_dim(nn), batch_size, g, optgen(output_dim(nn)), queue));
-	}
-
-	{ // leaky relu
-		nn.push_back(neu::layer::make_leaky_rectifier(
-			neu::layer::output_dim(nn), batch_size, 0.33f));
-	}
-
-	std::cout << "conv_output_width: " << conv_output_width << std::endl;
+		nn, batch_size, input_width, 2, 10, rand, optgen, queue);
 
 	{ // ip
-		nn.push_back(neu::layer::make_inner_product(
-			neu::layer::output_dim(nn), 10, batch_size, fc12_g,
-			neu::optimizer::fixed_learning_rate(base_lr),
+		nn.push_back(neu::layer::make_inner_product_xavier(
+			neu::layer::output_dim(nn), 10, batch_size, rand,
+			neu::optimizer::momentum(
+				base_lr, momentum, neu::layer::output_dim(nn)*10, queue),
 			queue));
 	}
 
 	{ // bias
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
-			neu::optimizer::fixed_learning_rate(base_lr),
+			neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 
@@ -302,7 +117,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_softmax_loss(
 			neu::layer::output_dim(nn), batch_size, context));
 	}
-	neu::layer::output_to_file(nn, "nn.yaml", queue);
+	neu::layer::output_to_file(nn, "nn0.yaml", queue);
 
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
@@ -322,7 +137,7 @@ int main(int argc, char** argv) {
 		const auto teach = batch.teach_data;
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 
-		if(i%(iteration_limit/100) == 0) {
+		if(i%100 == 0) {
 			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 		}
 		//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
