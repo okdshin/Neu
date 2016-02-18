@@ -7,6 +7,7 @@
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/bias.hpp>
+#include <neu/layer/batch_normalization.hpp>
 namespace neu {
 	namespace layer {
 		namespace ready_made {
@@ -35,10 +36,17 @@ namespace neu {
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
+					/*
 					// bias
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, [](){ return 0; },
 						optgen(output_dim(nn)), queue));
+					*/
+					nn.push_back(neu::layer::make_batch_normalization(
+						batch_size, neu::layer::output_dim(nn),
+						optgen(neu::layer::output_dim(nn)),
+						optgen(neu::layer::output_dim(nn)),
+						queue));
 
 					// leaky relu
 					nn.push_back(neu::layer::make_leaky_rectifier(
