@@ -105,7 +105,7 @@ namespace neu {
 				InputRange1 const& last_output_range, InputRange2 const& teach_range,
 				boost::compute::command_queue& queue) {
 			static BOOST_COMPUTE_FUNCTION(float, cross_entropy_kernel, (float d, float y), {
-				return -d*log(y+0.00001);
+				return -d*log(y+0.00001f);
 			});
 			::neu::gpu_vector error(::neu::range::distance(last_output_range),
 				queue.get_context());
