@@ -62,12 +62,21 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
+					int i = 0;
 					for(auto& l : layers) {
 						output.resize(::neu::layer::whole_output_size(l), queue);
 						auto output_range = range::to_range(output);
+#ifdef NEU_BENCHMARK_ENABLE
+						boost::timer t;
+#endif //NEU_BENCHMARK_ENABLE
 						l.test_forward(batch_size,
 							range::to_range(input), output_range, queue);
+#ifdef NEU_BENCHMARK_ENABLE
+						queue.finish();
+						std::cout << "layer" << i << "\ttest_forward\t" << t.elapsed() << " secs" << std::endl;
+#endif //NEU_BENCHMARK_ENABLE
 						input.swap(output);
+						++i;
 					}
 					range::copy(input, result_output, queue);
 				}
@@ -81,10 +90,19 @@ namespace neu {
 						boost::compute::command_queue& queue) {
 					gpu_vector input(initial_input.begin(), initial_input.end(), queue);
 					gpu_vector output(queue.get_context());
+					int i = 0;
 					for(auto& l : layers) {
 						output.resize(::neu::layer::whole_output_size(l), queue);
 						auto output_range = range::to_range(output);
+#ifdef NEU_BENCHMARK_ENABLE
+						boost::timer t;
+#endif //NEU_BENCHMARK_ENABLE
 						l.forward(range::to_range(input), output_range, queue);
+#ifdef NEU_BENCHMARK_ENABLE
+						queue.finish();
+						std::cout << "layer" << i << "\tforward\t" << t.elapsed() << " secs" << std::endl;
+#endif //NEU_BENCHMARK_ENABLE
+						++i;
 						input.swap(output);
 					}
 					range::copy(input, result_output, queue);
@@ -105,9 +123,16 @@ namespace neu {
 						auto& l = layers.at(i);
 						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
 						auto prev_delta_range = range::to_range(prev_delta);
+#ifdef NEU_BENCHMARK_ENABLE
+						boost::timer t;
+#endif //NEU_BENCHMARK_ENABLE
 						l.backward(
 							range::to_range(delta), prev_delta_range,
 							queue);
+#ifdef NEU_BENCHMARK_ENABLE
+						queue.finish();
+						std::cout << "layer" << i << "\tbackward_top\t" << t.elapsed() << " secs" << std::endl;
+#endif //NEU_BENCHMARK_ENABLE
 						delta.swap(prev_delta);
 					}
 
@@ -130,9 +155,16 @@ namespace neu {
 						auto& l = layers.at(i);
 						prev_delta.resize(::neu::layer::whole_input_size(l), queue);
 						auto prev_delta_range = range::to_range(prev_delta);
+#ifdef NEU_BENCHMARK_ENABLE
+						boost::timer t;
+#endif //NEU_BENCHMARK_ENABLE
 						l.backward(
 							range::to_range(delta), prev_delta_range,
 							queue);
+#ifdef NEU_BENCHMARK_ENABLE
+						queue.finish();
+						std::cout << "layer" << i << "\tbackward\t" << t.elapsed() << " secs" << std::endl;
+#endif //NEU_BENCHMARK_ENABLE
 						delta.swap(prev_delta);
 					}
 					range::copy(delta, result_prev_delta, queue);
@@ -143,8 +175,17 @@ namespace neu {
 			public:
 				static decltype(auto) call(std::vector<neu::layer::any_layer>& layers,
 						boost::compute::command_queue& queue) {
+					int i = 0;
 					for(auto& l : layers) {
+#ifdef NEU_BENCHMARK_ENABLE
+						boost::timer t;
+#endif //NEU_BENCHMARK_ENABLE
 						l.update(queue);
+#ifdef NEU_BENCHMARK_ENABLE
+						queue.finish();
+						std::cout << "layer" << i << "\tupdate\t" << t.elapsed() << " secs" << std::endl;
+#endif //NEU_BENCHMARK_ENABLE
+						++i;
 					}
 				}
 			};

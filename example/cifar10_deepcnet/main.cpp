@@ -1,5 +1,6 @@
 //#define NEU_DISABLE_ASSERTION
-//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+//#define NEU_BENCHMARK_ENABLE
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -44,11 +45,11 @@ int main(int argc, char** argv) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(8),
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(500000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.0001), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.1), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
 	};
 	std::vector<neu::layer::any_layer> nn;
 	neu::layer::ready_made::make_deepcnet(
-		nn, batch_size, input_width, 2, 10, rand, optgen, queue);
+		nn, batch_size, input_width, 2, 300, rand, optgen, queue);
 
 	{ // ip
 		nn.push_back(neu::layer::make_inner_product_xavier(
@@ -117,7 +118,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_softmax_loss(
 			neu::layer::output_dim(nn), batch_size, context));
 	}
-	neu::layer::output_to_file(nn, "nn0.yaml", queue);
+	//neu::layer::output_to_file(nn, "nn0.yaml", queue);
 
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
@@ -126,7 +127,7 @@ int main(int argc, char** argv) {
 
 	neu::gpu_vector output(neu::layer::whole_output_size(nn), context);
 	neu::gpu_vector error(output.size(), context);
-	neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
+	//neu::gpu_vector prev_delta(neu::layer::whole_input_size(nn), context);
 
 	boost::progress_display progress(iteration_limit);
 	boost::timer timer;
@@ -137,9 +138,11 @@ int main(int argc, char** argv) {
 		const auto teach = batch.teach_data;
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 
+		/*
 		if(i%100 == 0) {
 			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 		}
+		*/
 		//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 
 		neu::layer::forward(nn, input, output, queue);
@@ -147,15 +150,18 @@ int main(int argc, char** argv) {
 		{
 			neu::print(output_log, output, label_num);
 
+			/*
 			auto mse = neu::range::mean_square_error(output, teach, queue);
 			mse_error_log << i << " " << mse/batch_size << std::endl;
+			*/
 
 			auto cel = neu::range::cross_entropy_loss(output, teach, queue);
 			cel_error_log << i << " " << cel/batch_size << std::endl;
 		}
 
 		neu::range::calc_last_layer_delta(output, teach, error, queue);
-		neu::layer::backward(nn, error, prev_delta, queue);
+		neu::layer::backward_top(nn, error, queue);
+		//neu::layer::backward(nn, error, prev_delta, queue);
 		neu::layer::update(nn, queue);
 
 		make_next_batch_future.wait();

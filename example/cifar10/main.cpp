@@ -1,5 +1,5 @@
 //#define NEU_DISABLE_ASSERTION
-//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -12,6 +12,7 @@
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
 #include <neu/layer/convolution.hpp>
+#include <neu/layer/convolution_optimized.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/average_pooling.hpp>
 #include <neu/layer/inner_product.hpp>
@@ -117,7 +118,8 @@ int main(int argc, char** argv) {
 			32,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution(
+		nn.push_back(neu::layer::make_convolution_optimized(
+		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv1_g,
 			neu::optimizer::momentum(base_lr, momentum,
 				neu::layer::filters_size(glp), queue), queue));
@@ -156,7 +158,8 @@ int main(int argc, char** argv) {
 			32,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution(
+		nn.push_back(neu::layer::make_convolution_optimized(
+		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv23_g,
 			neu::optimizer::momentum(base_lr, momentum,
 				neu::layer::filters_size(glp), queue), queue));
@@ -194,7 +197,8 @@ int main(int argc, char** argv) {
 			64,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution(
+		nn.push_back(neu::layer::make_convolution_optimized(
+		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv23_g,
 			neu::optimizer::momentum(base_lr, momentum,
 				neu::layer::filters_size(glp), queue), queue));

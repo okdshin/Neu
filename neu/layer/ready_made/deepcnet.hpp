@@ -4,6 +4,7 @@
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 #include <neu/layer/convolution.hpp>
+#include <neu/layer/convolution_optimized.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/bias.hpp>
@@ -31,7 +32,8 @@ namespace neu {
 								(li+1)*k, 1, 1};
 						}
 					}();
-					nn.push_back(make_convolution_xavier(
+					nn.push_back(make_convolution_optimized_xavier(
+					//nn.push_back(make_convolution_xavier(
 						glp, batch_size, g, optgen(neu::layer::filters_size(glp)), queue));
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
