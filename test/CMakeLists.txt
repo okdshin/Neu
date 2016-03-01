@@ -20,6 +20,7 @@ function(add_neu_test TEST_NAME TEST_SOURCE)
   add_test(${TEST_NAME} ${TEST_TARGET})
 endfunction()
 
+add_neu_test("layer.common_kernel" test_common_kernel.cpp)
 add_neu_test("layer.inner_product" test_inner_product.cpp)
 add_neu_test("layer.convolution" test_convolution.cpp)
 add_neu_test("layer.softmax_loss" test_softmax_loss.cpp)
