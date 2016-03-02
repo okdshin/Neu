@@ -24,7 +24,6 @@ decltype(auto) matrix_multiply_cpu(
 		}
 	}
 }
-
 /*
 BOOST_AUTO_TEST_CASE(matrix_multiply_test) {
 	for(int m_size = 1; m_size < 64; ++m_size) {
@@ -49,10 +48,9 @@ BOOST_AUTO_TEST_CASE(matrix_multiply_test) {
 	const auto gpu_b = neu::to_gpu_vector(b, queue);
 	neu::gpu_vector gpu_c(c.size(), 0.f, queue);
 	auto mm_kernel = neu::make_kernel(neu::layer::impl::common_kernel_source,
-		"matrix_multiply_more_works_per_thread",
-		//"matrix_multiply_tiled",
+		"matrix_multiply_more_works_per_thread4_reg",
 		queue.get_context());
-	neu::layer::impl::matrix_multiply_more_works_per_thread(
+	neu::layer::impl::matrix_multiply_more_works_per_thread4_reg(
 		mm_kernel, gpu_a, gpu_b, gpu_c, m_size, n_size, k_size, queue);
 	neu::cpu_vector cpu_c(c.size());
 	neu::range::copy(gpu_c, cpu_c, queue);
@@ -170,6 +168,20 @@ BOOST_AUTO_TEST_CASE(matrix_multiply_benchmark) {
 	}
 	{
 		auto mm_kernel = neu::make_kernel(neu::layer::impl::common_kernel_source,
+			"matrix_multiply_more_works_per_thread2_reg_64",
+			queue.get_context());
+		std::cout << "start more works per thread2 reg 64" << std::endl;
+		boost::timer t;
+		neu::layer::impl::matrix_multiply_more_works_per_thread2_reg_64(
+			mm_kernel, gpu_a, gpu_b, gpu_c, m_size, n_size, k_size, queue);
+		queue.finish();
+		const auto elapsed = t.elapsed();
+		std::cout << elapsed << std::endl;
+		std::cout << ((4096.f*4096.f*4096.f)/elapsed)/1000'000'000.f << "GFLOPS" << std::endl;
+		std::cout << 100.f*((4096.f*4096.f*4096.f)/elapsed)/1000'000'000.f/2308.f << "%" << std::endl;
+	}
+	{
+		auto mm_kernel = neu::make_kernel(neu::layer::impl::common_kernel_source,
 			"matrix_multiply_more_works_per_thread4_reg",
 			queue.get_context());
 		std::cout << "start more works per thread4 reg" << std::endl;
@@ -184,11 +196,11 @@ BOOST_AUTO_TEST_CASE(matrix_multiply_benchmark) {
 	}
 	{
 		auto mm_kernel = neu::make_kernel(neu::layer::impl::common_kernel_source,
-			"matrix_multiply_more_works_per_thread8_reg",
+			"matrix_multiply_more_works_per_thread4_reg_64",
 			queue.get_context());
-		std::cout << "start more works per thread8 reg" << std::endl;
+		std::cout << "start more works per thread4 reg 64" << std::endl;
 		boost::timer t;
-		neu::layer::impl::matrix_multiply_more_works_per_thread8_reg(
+		neu::layer::impl::matrix_multiply_more_works_per_thread4_reg_64(
 			mm_kernel, gpu_a, gpu_b, gpu_c, m_size, n_size, k_size, queue);
 		queue.finish();
 		const auto elapsed = t.elapsed();
