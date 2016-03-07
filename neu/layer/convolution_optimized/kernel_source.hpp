@@ -48,9 +48,7 @@ namespace neu {
 				else {
 					reordered_input[reordered_input_index] = 0.f;
 				}
-			}
-			}
-			}
+			}}}
 		}
 
 		__kernel void forward(
