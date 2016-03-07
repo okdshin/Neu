@@ -1,4 +1,5 @@
 //#define NEU_DISABLE_ASSERTION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -89,6 +90,7 @@ int main(int argc, char** argv) {
 		auto input = batch.train_data;
 		auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
+		make_next_batch_future.wait();
 
 		neu::layer::forward(nn, input, output, queue);
 		{
@@ -105,7 +107,6 @@ int main(int argc, char** argv) {
 		neu::layer::backward(nn, error, prev_delta, queue);
 		neu::layer::update(nn, queue);
 
-		make_next_batch_future.wait();
 		++progress;
 	}
 	queue.finish();
