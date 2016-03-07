@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 			() mutable { return dist(rand); });
 		return vec;
 	};
-	for(int t = 0; t < 10; ++t) {
+	for(int t = 0; t < 100; ++t) {
 		const auto cpu_input = random_vector_gen(input_dim*batch_size);
 		const neu::gpu_vector input(cpu_input.begin(), cpu_input.end(), queue);
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 					return neu::range::half_square_error_sum(output2, teach, queue)/batch_size;
 				}, theta, eps);
 			const auto relative_error = neu::calc_relative_error(numeric_grad, analytic_grad);
-			std::cout << numeric_grad << " " << analytic_grad << std::endl;
+			//std::cout << numeric_grad << " " << analytic_grad << std::endl;
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 	}

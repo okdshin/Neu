@@ -75,16 +75,6 @@ namespace neu {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 				neu::layer::impl::matrix_multiply(input, weight_, output,
 					test_batch_size, output_dim_, input_dim_, queue);
-				/*
-				enqueue_nd_range_kernel<2>(queue, forward_kernel_,
-					{0, 0}, {output_dim_, test_batch_size},
-					range::get_buffer(input),
-					static_cast<cl_int>(range::get_begin_index(input)),
-					range::get_buffer(output),
-					static_cast<cl_int>(range::get_begin_index(output)),
-					weight_,
-					static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
-				*/
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			}
 
@@ -114,16 +104,6 @@ namespace neu {
 				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				backward_top(delta, queue);
-				/*
-				enqueue_nd_range_kernel<2>(queue, backward_kernel_,
-					{0, 0}, {input_dim_, batch_size_},
-					range::get_buffer(prev_delta),
-					static_cast<cl_int>(range::get_begin_index(prev_delta)),
-					range::get_buffer(delta),
-					static_cast<cl_int>(range::get_begin_index(delta)),
-					weight_,
-					static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
-				*/
 				neu::layer::impl::matrix_transpose(
 					weight_, transposed_weight_, input_dim_, output_dim_, queue);
 				neu::layer::impl::matrix_multiply(delta, transposed_weight_, prev_delta,
