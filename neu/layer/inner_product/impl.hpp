@@ -13,7 +13,8 @@
 #include <neu/layer/inner_product/kernel_source.hpp>
 #include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>
-#include <neu/layer/impl/common_kernel.hpp>
+#include <neu/layer/impl/matrix_transpose.hpp>
+#include <neu/layer/impl/matrix_multiply.hpp>
 namespace neu {
 	namespace layer {
 		class inner_product {
