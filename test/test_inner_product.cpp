@@ -9,9 +9,16 @@
 #include "context_setup.hpp"
 
 BOOST_AUTO_TEST_CASE(forward) {
+	/*
 	neu::cpu_vector weight = {
 		1.f, 1.f, 1.f,
 		1.f, 0.f, 0.f
+	};
+	*/
+	neu::cpu_vector weight = {
+		1.f, 1.f,
+		1.f, 0.f,
+		1.f, 0.f
 	};
 	neu::layer::inner_product ip(3, 2, 3, weight,
 		neu::optimizer::fixed_learning_rate(0.001), queue);
@@ -30,30 +37,35 @@ BOOST_AUTO_TEST_CASE(forward) {
 		1.f, 0.f
 	));
 }
-
 BOOST_AUTO_TEST_CASE(backward) {
+	/*
 	neu::cpu_vector weight = {
 		1.f, 1.f, 1.f,
 		1.f, 0.f, 0.f
 	};
+	*/
+	neu::cpu_vector weight = {
+		1.f, 1.f,
+		1.f, 0.f,
+		1.f, 0.f
+	};
 	neu::layer::inner_product ip(3, 2, 3, weight,
 		neu::optimizer::fixed_learning_rate(0.001), queue);
-	neu::gpu_vector next_delta({
+	neu::gpu_vector delta({
 		1.f, 0.f,
 		2.f, 1.f,
 		1.f, 0.f
 	}, queue);
-	neu::gpu_vector delta(neu::layer::whole_input_size(ip), context);
-	neu::layer::backward(ip, next_delta, delta, queue);
+	neu::gpu_vector prev_delta(neu::layer::whole_input_size(ip), context);
+	neu::layer::backward(ip, delta, prev_delta, queue);
 	queue.finish();
-	BOOST_CHECK(delta.size() == 9);
-	CHECK_RANGE_EQUAL(neu::scalar, 9, delta, (
+	BOOST_CHECK(prev_delta.size() == 9);
+	CHECK_RANGE_EQUAL(neu::scalar, 9, prev_delta, (
 		1.f, 1.f, 1.f,
 		3.f, 2.f, 2.f,
 		1.f, 1.f, 1.f
 	));
 }
-
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
 
@@ -101,7 +113,6 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 		BOOST_CHECK(relative_error < 1.0e-2f);
 	}
 }
-
 BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
 	const int batch_size = 10;
@@ -168,6 +179,7 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 					return neu::range::half_square_error_sum(output2, teach, queue)/batch_size;
 				}, theta, eps);
 			const auto relative_error = neu::calc_relative_error(numeric_grad, analytic_grad);
+			std::cout << numeric_grad << " " << analytic_grad << std::endl;
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 	}

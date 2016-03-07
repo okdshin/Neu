@@ -13,6 +13,7 @@
 #include <neu/layer/inner_product/kernel_source.hpp>
 #include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>
+#include <neu/layer/impl/common_kernel.hpp>
 namespace neu {
 	namespace layer {
 		class inner_product {
@@ -35,6 +36,8 @@ namespace neu {
 			output_dim_(output_dim),
 			batch_size_(batch_size),
 			weight_(weight.begin(), weight.end(), queue),
+			transposed_weight_(weight.size(),
+				std::numeric_limits<cl_float>::quiet_NaN(), queue),
 			optimizer_(optimizer),
 			forward_kernel_(make_kernel(
 				inner_product_forward_kernel_source, "forward", queue.get_context())),
@@ -70,6 +73,9 @@ namespace neu {
 				NEU_ASSERT(range::distance(input) == input_dim_*test_batch_size);
 				NEU_ASSERT(range::distance(output) ==  output_dim_*test_batch_size);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
+				neu::layer::impl::matrix_multiply(input, weight_, output,
+					test_batch_size, output_dim_, input_dim_, queue);
+				/*
 				enqueue_nd_range_kernel<2>(queue, forward_kernel_,
 					{0, 0}, {output_dim_, test_batch_size},
 					range::get_buffer(input),
@@ -78,6 +84,7 @@ namespace neu {
 					static_cast<cl_int>(range::get_begin_index(output)),
 					weight_,
 					static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
+				*/
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			}
 
@@ -87,7 +94,7 @@ namespace neu {
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(input) == range::distance(input_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
-				range::copy(input, input_, queue); //TODO async operation
+				range::copy(input, input_, queue);
 				test_forward(batch_size_, input, output, queue);
 			}
 
@@ -97,7 +104,7 @@ namespace neu {
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
-				range::copy(delta, delta_, queue); //TODO async operation
+				range::copy(delta, delta_, queue);
 			}
 
 			template<typename InputRange, typename OutputRange>
@@ -107,6 +114,7 @@ namespace neu {
 				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				backward_top(delta, queue);
+				/*
 				enqueue_nd_range_kernel<2>(queue, backward_kernel_,
 					{0, 0}, {input_dim_, batch_size_},
 					range::get_buffer(prev_delta),
@@ -115,6 +123,11 @@ namespace neu {
 					static_cast<cl_int>(range::get_begin_index(delta)),
 					weight_,
 					static_cast<cl_int>(input_dim_), static_cast<cl_int>(output_dim_));
+				*/
+				neu::layer::impl::matrix_transpose(
+					weight_, transposed_weight_, input_dim_, output_dim_, queue);
+				neu::layer::impl::matrix_multiply(delta, transposed_weight_, prev_delta,
+					batch_size_, input_dim_, output_dim_, queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
@@ -133,7 +146,7 @@ namespace neu {
 			int input_dim_;
 			int output_dim_;
 			int batch_size_;
-			gpu_vector weight_;
+			gpu_vector weight_, transposed_weight_;
 
 			optimizer::any_optimizer optimizer_;
 			kernel forward_kernel_, backward_kernel_, update_kernel_;

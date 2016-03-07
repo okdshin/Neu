@@ -50,7 +50,8 @@ namespace neu {
 			for(int b = 0; b < batch_size; ++b) {
 				weight_sum += delta[o+output_dim*b]*input[i+input_dim*b];
 			}
-			del_weight[i+input_dim*o] = weight_sum/batch_size;
+			//del_weight[i+input_dim*o] = weight_sum/batch_size;
+			del_weight[o+output_dim*i] = weight_sum/batch_size;
 		}
 	);
 }// namespace neu
