@@ -58,39 +58,6 @@ namespace neu {
 			}}}
 		}
 
-		__kernel void forward(
-			const __global float* reordered_input,
-			const __global float* filters,
-			__global float* output, const int output_offset,
-			const int output_width,
-			const int filter_width,
-			const int input_channel_num,
-			const int output_channel_num)
-		{
-			const int b = get_global_id(2);
-			const int m = get_global_id(1);
-			const int o = get_global_id(0);
-
-			float sum = 0.f;
-			const int row_size = filter_width*filter_width*input_channel_num;
-			const int col_size = output_width*output_width;
-			for(int i = 0; i < row_size; ++i) {
-				const int filters_index =
-					m*row_size+
-					i;
-				const int reordered_input_index =
-					b*row_size*col_size+
-					o*row_size+
-					i;
-				sum += filters[filters_index]*reordered_input[reordered_input_index];
-			}
-			const int output_index =
-				b*col_size*output_channel_num+
-				m*col_size+
-				o;
-			output[output_index+output_offset] = sum;
-		}
-
 		__kernel void reorder_filters(
 			const __global float* filters,
 			__global float* reordered_filters,

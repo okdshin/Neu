@@ -1,6 +1,6 @@
 //#define NEU_DISABLE_ASSERTION
-//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
-#define NEU_BENCHMARK_ENABLE
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+//#define NEU_BENCHMARK_ENABLE
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>

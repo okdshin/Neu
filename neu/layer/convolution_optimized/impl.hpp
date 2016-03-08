@@ -33,8 +33,6 @@ namespace neu {
 			output_width_(output_width(glp)),
 			reorder_input_kernel_(make_kernel(convolution_optimized_kernel_source,
 				"reorder_input", queue.get_context())),
-			forward_kernel_(make_kernel(convolution_optimized_kernel_source,
-				"forward", queue.get_context())),
 			reorder_filters_kernel_(make_kernel(convolution_optimized_kernel_source,
 				"reorder_filters", queue.get_context())),
 			reorder_delta_kernel_(make_kernel(convolution_optimized_kernel_source,
@@ -122,23 +120,7 @@ namespace neu {
 					output_width_*output_width_,
 					glp_.filter_width*glp_.filter_width*glp_.input_channel_num,
 					queue);
-				/*
-				neu::enqueue_nd_range_kernel<3>(queue, forward_kernel_,
-					{0, 0, 0},
-					{output_width_*output_width_, glp_.output_channel_num,
-						test_batch_size},
-					reordered_input_,
-					filters_,
-					neu::range::get_buffer(output),
-					static_cast<cl_int>(neu::range::get_begin_index(output)),
-					static_cast<cl_int>(output_width_),
-					static_cast<cl_int>(glp_.filter_width),
-					static_cast<cl_int>(glp_.input_channel_num),
-					static_cast<cl_int>(glp_.output_channel_num));
-				*/
-				//boost::compute::fill(neu::range::begin(output), neu::range::end(output), 0.f);
-
-				//NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			}
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) forward(
@@ -158,7 +140,7 @@ namespace neu {
 				NEU_ASSERT(neu::range::distance(delta)
 					== static_cast<int>(delta_.size()));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
-				neu::range::copy(delta, delta_, queue); //TODO async operation
+				neu::range::copy(delta, delta_, queue);
 			}
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) backward(
@@ -200,6 +182,14 @@ namespace neu {
 					is_all_of_finite(reordered_delta_, queue));
 
 				// backward
+				neu::layer::impl::multiple_matrix_multiply(
+					reordered_filters_, reordered_delta_, prev_delta,
+					batch_size_,
+					glp_.input_channel_num,
+					glp_.input_width*glp_.input_width,
+					glp_.filter_width*glp_.filter_width*glp_.output_channel_num,
+					queue);
+				/*
 				neu::enqueue_nd_range_kernel<3>(queue,
 					backward_kernel_,
 					{0,0,0},
@@ -213,6 +203,7 @@ namespace neu {
 					static_cast<cl_int>(glp_.filter_width),
 					static_cast<cl_int>(glp_.input_channel_num),
 					static_cast<cl_int>(glp_.output_channel_num));
+				*/
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
@@ -263,7 +254,7 @@ namespace neu {
 
 			int output_width_;
 
-			kernel reorder_input_kernel_, forward_kernel_,
+			kernel reorder_input_kernel_,
 				reorder_filters_kernel_, reorder_delta_kernel_, backward_kernel_,
 				update_kernel_;
 

@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TestConvolutionOptimized
 #include <boost/test/unit_test.hpp>
+#include <boost/progress.hpp>
 
 #include <neu/layer/convolution_optimized.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
@@ -96,7 +97,7 @@ BOOST_AUTO_TEST_CASE(forward) {
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
 	neu::layer::geometric_layer_property glp{10, 3, 2, 3, 1, 1};
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
-	const int batch_size = 1;
+	const int batch_size = 100;
 
 	auto random_vector_gen = [](int size) {
 		neu::cpu_vector vec(size);
@@ -106,7 +107,10 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 			() mutable { return dist(rand); });
 		return vec;
 	};
-	for(int t = 0; t < 1; ++t) {
+
+	const auto t_limit = 1;
+	boost::progress_display progress(t_limit);
+	for(int t = 0; t < t_limit; ++t) {
 		const auto cpu_input = random_vector_gen(neu::layer::input_dim(glp)*batch_size);
 		const neu::gpu_vector input(cpu_input.begin(), cpu_input.end(), queue);
 
@@ -142,18 +146,20 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
+			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
+			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
+		++progress;
 	}
 }
-/*
 BOOST_AUTO_TEST_CASE(gradient_check_multi) {
-	neu::layer::geometric_layer_property glp1{3, 3, 2, 3, 1, 1};
-	neu::layer::geometric_layer_property glp2{3, 3, 3, 3, 1, 1};
+	neu::layer::geometric_layer_property glp1{10, 3, 2, 3, 1, 1};
+	neu::layer::geometric_layer_property glp2{10, 3, 3, 3, 1, 1};
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
 	const int batch_size = 100;
 
@@ -165,7 +171,9 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 			() mutable { return dist(rand); });
 		return vec;
 	};
-	for(int t = 0; t < 100; ++t) {
+	const auto t_limit = 100;
+	boost::progress_display progress(t_limit);
+	for(int t = 0; t < t_limit; ++t) {
 		const auto cpu_input = random_vector_gen(neu::layer::input_dim(glp1)*batch_size);
 		const neu::gpu_vector input(cpu_input.begin(), cpu_input.end(), queue);
 
@@ -217,13 +225,15 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
+			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
+			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
+		++progress;
 	}
 }
-*/
 BOOST_AUTO_TEST_SUITE_END()
