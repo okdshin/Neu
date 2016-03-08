@@ -43,6 +43,7 @@ BOOST_AUTO_TEST_CASE(forward) {
 		0.f, 1.f, 0.f,
 		1.f, 0.f, 1.f,
 		0.f, 1.f, 0.f,
+		//0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f,
 
 		1.f, 0.f, 0.f,
 		0.f, 0.f, 1.f,
@@ -60,10 +61,9 @@ BOOST_AUTO_TEST_CASE(forward) {
 	neu::gpu_vector output(neu::layer::whole_output_size(conv), context);
 	neu::layer::forward(conv, input, output, queue);
 	queue.finish();
-	/*
 	auto reordered_input = conv.reordered_input(queue);
-	neu::print(std::cout, reordered_input, 36);
-	*/
+	neu::print(std::cout, reordered_input, 9);
+	neu::print(std::cout, output, 54);
 	BOOST_CHECK(output.size() == 54);
 	CHECK_RANGE_EQUAL(neu::scalar, 54, output, (
 		1.f, 2.5f, 1.f,
@@ -92,78 +92,11 @@ BOOST_AUTO_TEST_CASE(forward) {
 		0.f, 1.f, 1.f
 	));
 }
-/*
-BOOST_AUTO_TEST_CASE(backward) {
-	neu::layer::geometric_layer_property glp{3, 3, 2, 3, 1, 1};
-	neu::cpu_vector filters = {
-		0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-		0.5f, 0.5f, 0.5f,
-
-		0.f, 0.f, 0.f,
-		0.f, 0.f, 0.f,
-		0.f, 0.f, 1.f,
-
-
-		0.1f, 0.1f, 0.1f,
-		0.1f, 0.1f, 0.1f,
-		0.1f, 0.1f, 0.1f,
-
-		1.f, 0.f, 0.f,
-		0.f, 0.f, 0.f,
-		0.f, 0.f, 0.f,
-
-
-		0.f, 0.f, 0.f,
-		0.f, 0.f, 0.f,
-		0.f, 0.f, 0.f,
-
-		0.f, 0.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 0.f, 0.f
-	};
-	neu::layer::convolution_optimized conv(glp, 1, filters,
-		neu::optimizer::fixed_learning_rate(0.001), queue);
-	neu::gpu_vector delta({
-		1.f, 2.f, 3.f,
-		4.f, 5.f, 6.f,
-		7.f, 8.f, 9.f,
-
-		0.1f, 0.2f, 0.3f,
-		0.4f, 0.5f, 0.6f,
-		0.7f, 0.8f, 0.9f,
-
-		1.f, 0.f, 0.f,
-		0.f, 0.f, 1.f,
-		0.f, 1.f, 0.f
-	}, queue);
-	neu::gpu_vector prev_delta(neu::layer::whole_input_size(conv), context);
-	neu::layer::backward(conv, delta, prev_delta, queue);
-	queue.finish();
-	auto reordered_delta = conv.reordered_delta(queue);
-	neu::print(std::cout << "reordered_delta\n", reordered_delta, 27);
-
-	neu::print(std::cout << "filters\n", filters, 9);
-
-	auto reordered_filters = conv.reordered_filters(queue);
-	neu::print(std::cout << "reordered_filters\n", reordered_filters, 9);
-	BOOST_CHECK(prev_delta.size() == 18);
-	CHECK_RANGE_EQUAL(neu::scalar, 18, prev_delta, (
-		1.f, 2.5f, 1.f,
-		2.5f, 2.f, 1.5f,
-		1.f, 1.5f, 1.f,
-
-		0.2f, 0.3f, 0.2f,
-		0.3f, 1.4f, 0.3f,
-		0.2f, 0.3f, 0.2f,
-	));
-}
-*/
 
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
-	neu::layer::geometric_layer_property glp{3, 3, 2, 3, 1, 1};
+	neu::layer::geometric_layer_property glp{10, 3, 2, 3, 1, 1};
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
-	const int batch_size = 100;
+	const int batch_size = 1;
 
 	auto random_vector_gen = [](int size) {
 		neu::cpu_vector vec(size);
@@ -173,7 +106,7 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 			() mutable { return dist(rand); });
 		return vec;
 	};
-	for(int t = 0; t < 100; ++t) {
+	for(int t = 0; t < 1; ++t) {
 		const auto cpu_input = random_vector_gen(neu::layer::input_dim(glp)*batch_size);
 		const neu::gpu_vector input(cpu_input.begin(), cpu_input.end(), queue);
 
@@ -209,17 +142,15 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
-			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
-			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 	}
 }
-
+/*
 BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 	neu::layer::geometric_layer_property glp1{3, 3, 2, 3, 1, 1};
 	neu::layer::geometric_layer_property glp2{3, 3, 3, 3, 1, 1};
@@ -286,14 +217,13 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
-			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
-			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 	}
 }
+*/
 BOOST_AUTO_TEST_SUITE_END()

@@ -39,6 +39,13 @@ namespace neu {
 						*filter_width*filter_width*input_channel_num+
 					output_index*filter_width*filter_width*input_channel_num+
 					filter_index;
+				/*
+				const int reordered_input_index =
+					b*output_width*output_width
+						*filter_width*filter_width*input_channel_num+
+					filter_index*output_width*output_width+
+					output_index;
+				*/
 				if(0 <= ir && ir < input_width && 0 <= ic && ic < input_width) {
 					reordered_input[reordered_input_index] =
 						input[input_index+

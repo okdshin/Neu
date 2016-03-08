@@ -11,6 +11,7 @@
 #include <neu/kernel.hpp>
 #include <neu/layer/geometric_layer_property.hpp>
 #include <neu/layer/convolution_optimized/kernel_source.hpp>
+#include <neu/layer/impl/multiple_matrix_multiply.hpp>
 #include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>
 
@@ -114,6 +115,14 @@ namespace neu {
 					is_all_of_finite(reordered_input_, queue));
 
 				// forward
+				neu::layer::impl::multiple_matrix_multiply(
+					filters_, reordered_input_, output,
+					test_batch_size,
+					glp_.output_channel_num,
+					output_width_*output_width_,
+					glp_.filter_width*glp_.filter_width*glp_.input_channel_num,
+					queue);
+				/*
 				neu::enqueue_nd_range_kernel<3>(queue, forward_kernel_,
 					{0, 0, 0},
 					{output_width_*output_width_, glp_.output_channel_num,
@@ -126,8 +135,10 @@ namespace neu {
 					static_cast<cl_int>(glp_.filter_width),
 					static_cast<cl_int>(glp_.input_channel_num),
 					static_cast<cl_int>(glp_.output_channel_num));
+				*/
+				//boost::compute::fill(neu::range::begin(output), neu::range::end(output), 0.f);
 
-				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
+				//NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			}
 			template<typename InputRange, typename OutputRange>
 			decltype(auto) forward(
