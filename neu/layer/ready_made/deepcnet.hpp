@@ -9,14 +9,16 @@
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/batch_normalization.hpp>
+#include <neu/layer/activation/softmax_loss.hpp>
 namespace neu {
 	namespace layer {
 		namespace ready_made {
 			template<typename Rng, typename OptGen>
 			decltype(auto) make_deepcnet(
 					std::vector<neu::layer::any_layer>& nn,
-					int batch_size, int input_width, int l, int k, Rng&& g,
-					OptGen const& optgen,
+					int batch_size, int input_width, int label_num,
+					int l, int k,
+					Rng&& g, OptGen const& optgen,
 					boost::compute::command_queue& queue) {
 				for(int li = 0; li < l+1; ++li) {
 					// conv
@@ -24,35 +26,47 @@ namespace neu {
 						if(li == 0) {
 							return geometric_layer_property{
 								input_width, 3, 3,
-								(li+1)*k, 1, 1};
+								(li+1)*k, 1, input_width};
 						}
 						else {
 							return geometric_layer_property{
 								output_width(nn), 2, output_channel_num(nn),
-								(li+1)*k, 1, 1};
+								(li+1)*k, 1, 0};
 						}
 					}();
-					nn.push_back(make_convolution_optimized_xavier(
-					//nn.push_back(make_convolution_xavier(
-						glp, batch_size, g, optgen(neu::layer::filters_size(glp)), queue));
+
+					if(li <= -1) {
+						nn.push_back(make_convolution_xavier(
+							glp, batch_size, g,
+							optgen(neu::layer::filters_size(glp)), queue));
+					}
+					else {
+						nn.push_back(make_convolution_optimized_xavier(
+							glp, batch_size, g,
+							optgen(neu::layer::filters_size(glp)), queue));
+					}
+
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
+					// bias //TODO shared
 					/*
-					// bias
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, [](){ return 0; },
 						optgen(output_dim(nn)), queue));
 					*/
+					// bn
 					nn.push_back(neu::layer::make_batch_normalization(
 						batch_size, neu::layer::output_dim(nn),
-						optgen(neu::layer::output_dim(nn)),
-						optgen(neu::layer::output_dim(nn)),
+						optgen(output_dim(nn)),
+						optgen(output_dim(nn)),
 						queue));
 
-					// leaky relu
-					nn.push_back(neu::layer::make_leaky_rectifier(
-						neu::layer::output_dim(nn), batch_size, 0.33f));
+					if(li != l) {
+						// leaky relu
+						nn.push_back(neu::layer::make_leaky_rectifier(
+							neu::layer::output_dim(nn), batch_size, 0.33f));
+					}
 
 					if(li != l) {
 						// max pooling
@@ -61,11 +75,30 @@ namespace neu {
 							2,
 							output_channel_num,
 							output_channel_num,
-							2, 1
+							2, 0
 						};
-						nn.push_back(neu::layer::max_pooling(glp, batch_size, queue.get_context()));
+						nn.push_back(neu::layer::max_pooling(
+							glp, batch_size, queue.get_context()));
 					}
 				}
+
+				// inner_product
+				nn.push_back(neu::layer::make_inner_product_xavier(
+					neu::layer::output_dim(nn), label_num, batch_size, g,
+					optgen(neu::layer::output_dim(nn)*label_num),
+					queue));
+
+				// bn
+				nn.push_back(neu::layer::make_batch_normalization(
+					batch_size, neu::layer::output_dim(nn),
+					optgen(output_dim(nn)),
+					optgen(output_dim(nn)),
+					queue));
+
+				// softmax_loss
+				nn.push_back(neu::layer::make_softmax_loss(
+					neu::layer::output_dim(nn), batch_size, queue.get_context()));
+
 				return nn;
 			}
 		}
