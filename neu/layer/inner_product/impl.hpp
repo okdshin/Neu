@@ -177,8 +177,10 @@ namespace neu {
 							<< YAML::Value << neu::layer::output_dim(ip)
 						<< YAML::Key << "batch_size"
 							<< YAML::Value << neu::layer::batch_size(ip)
+#ifndef NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 						<< YAML::Key << "weight"
 							<< YAML::Value << YAML::Flow << ip.weight(queue)
+#endif
 						<< YAML::Key << "optimizer"
 							<< YAML::Value;
 					optimizer::serialize(ip.optimizer(), emitter, queue);

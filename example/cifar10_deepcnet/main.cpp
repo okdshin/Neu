@@ -45,11 +45,11 @@ int main(int argc, char** argv) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(2),
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(500000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.01), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 	};
 	std::vector<neu::layer::any_layer> nn;
 	neu::layer::ready_made::make_deepcnet(
-		nn, batch_size, input_width, label_num, 5, 10, rand, optgen, queue);
+		nn, batch_size, input_width, label_num, 5, 300, rand, optgen, queue);
 
 	/*
 	{ // ip

@@ -56,8 +56,10 @@ namespace neu {
 						<< YAML::Value << learning_rate_
 					<< YAML::Key << "momentum_rate"
 						<< YAML::Value << momentum_rate_
+#ifndef NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 					<< YAML::Key << "delta_weight"
 						<< YAML::Value << YAML::Flow << delta_weight(queue)
+#endif
 				<< YAML::EndMap;
 			}
 

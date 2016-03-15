@@ -314,10 +314,12 @@ namespace neu {
 							<< YAML::Value << neu::layer::output_dim(bn)
 						<< YAML::Key << "batch_size"
 							<< YAML::Value << neu::layer::batch_size(bn)
+#ifndef NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 						<< YAML::Key << "gamma"
 							<< YAML::Value << YAML::Flow << bn.gamma(queue)
 						<< YAML::Key << "beta"
 							<< YAML::Value << YAML::Flow << bn.beta(queue)
+#endif
 						<< YAML::Key << "gamma_optimizer"
 							<< YAML::Value;
 					optimizer::serialize(bn.gamma_optimizer(), emitter, queue);

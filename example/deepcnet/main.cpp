@@ -1,5 +1,6 @@
 //#define NEU_DISABLE_ASSERTION
 #define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+#define NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 //#define NEU_BENCHMARK_ENABLE
 #include <iostream>
 #include <boost/timer.hpp>
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(6),
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(500000), 
 		 "set training iteration limit")

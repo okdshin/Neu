@@ -142,8 +142,10 @@ namespace neu {
 							<< YAML::Value << neu::layer::output_dim(b)
 						<< YAML::Key << "batch_size"
 							<< YAML::Value << neu::layer::batch_size(b)
+#ifndef NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 						<< YAML::Key << "weight"
 							<< YAML::Value << YAML::Flow << b.weight(queue)
+#endif
 						<< YAML::Key << "optimizer"
 							<< YAML::Value;
 					optimizer::serialize(b.optimizer(), emitter, queue);
