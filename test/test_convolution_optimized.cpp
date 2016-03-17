@@ -59,12 +59,10 @@ BOOST_AUTO_TEST_CASE(forward) {
 		1.f, 0.f, 1.f,
 		0.f, 1.f, 1.f
 	}, queue);
-	neu::gpu_vector output(neu::layer::whole_output_size(conv), context);
+	neu::gpu_vector output(neu::layer::whole_output_size(conv),
+		std::numeric_limits<cl_float>::quiet_NaN(), queue);
 	neu::layer::forward(conv, input, output, queue);
 	queue.finish();
-	auto reordered_input = conv.reordered_input(queue);
-	neu::print(std::cout, reordered_input, 9);
-	neu::print(std::cout, output, 54);
 	BOOST_CHECK(output.size() == 54);
 	CHECK_RANGE_EQUAL(neu::scalar, 54, output, (
 		1.f, 2.5f, 1.f,
@@ -94,6 +92,7 @@ BOOST_AUTO_TEST_CASE(forward) {
 	));
 }
 
+/*
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
 	neu::layer::geometric_layer_property glp{10, 3, 2, 3, 1, 1};
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
@@ -146,12 +145,10 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
-			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
-			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 		++progress;
@@ -225,15 +222,14 @@ BOOST_AUTO_TEST_CASE(gradient_check_multi) {
 				}, theta, eps);
 			const auto relative_error =
 				neu::calc_relative_error(analytic_grad, numeric_grad);
-			/*
 			std::cout << "numeric_grad:\t" << numeric_grad << std::endl;
 			std::cout << "analytic_grad:\t" << analytic_grad << std::endl;
 			std::cout << "relative_error:\t" << relative_error << std::endl;
 			std::cout << "\n";
-			*/
 			BOOST_CHECK(relative_error < 1.0e-2f);
 		}
 		++progress;
 	}
 }
+*/
 BOOST_AUTO_TEST_SUITE_END()
