@@ -1,6 +1,7 @@
 //#define NEU_DISABLE_ASSERTION
 #define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 //#define NEU_BENCHMARK_ENABLE
+#define NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -41,11 +42,13 @@ int main(int argc, char** argv) {
 	neu::scalar momentum;
 	//neu::scalar weight_decay = 0.004;
 	neu::scalar weight_decay;
+	int layer_num;
+	int filter_num;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(2),
+		("data_num_per_label", po::value<int>(&data_num_per_label)->default_value(10),
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(500000), 
 		 "set training iteration limit")
@@ -55,6 +58,10 @@ int main(int argc, char** argv) {
 		 "set momentum rate")
 		("weight_decay", po::value<neu::scalar>(&weight_decay)->default_value(0.), 
 		 "set weight decay rate")
+		("layer_num", po::value<int>(&layer_num)->default_value(5), 
+		 "deepcnet layer num")
+		("filter_num", po::value<int>(&filter_num)->default_value(300), 
+		 "deepcnet filter num")
 		;
 
 	po::variables_map vm;
@@ -73,6 +80,8 @@ int main(int argc, char** argv) {
 	std::cout << "base_lr was set to " << base_lr << ".\n";
 	std::cout << "momentum was set to " << momentum << ".\n";
 	std::cout << "weight_decay was set to " << weight_decay << ".\n";
+	std::cout << "layer_num was set to " << layer_num << ".\n";
+	std::cout << "filter_num was set to " << filter_num << ".\n";
 
 	auto& queue = boost::compute::system::default_queue();
 	auto context = boost::compute::system::default_context();
@@ -84,12 +93,13 @@ int main(int argc, char** argv) {
 	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.)/127.f; });
+				[](auto e){ return (e-127.)/255.f; });
 		}
 	}
 	auto train_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
+	/*
 	auto test_data = neu::dataset::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : test_data) {
 		for(auto& d : labeled) {
@@ -97,8 +107,10 @@ int main(int argc, char** argv) {
 				[](auto e){ return (e-127.)/255.f; });
 		}
 	}
+	
 	auto test_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, test_data, rand, context);
+	*/
 
 	auto constant_g = [](){ return 0.f; };
 	auto optgen = [base_lr, momentum, &queue](int theta_size) {	
@@ -106,34 +118,9 @@ int main(int argc, char** argv) {
 			base_lr, momentum, theta_size, queue);
 	};
 	std::vector<neu::layer::any_layer> nn;
-	neu::layer::ready_made::make_deepcnet(
-		nn, batch_size, input_width, label_num, 5, 300, rand, optgen, queue);
-
-	/*
-	{ // ip
-		nn.push_back(neu::layer::make_inner_product_xavier(
-			neu::layer::output_dim(nn), 10, batch_size, rand,
-			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn)*10, queue),
-			queue));
-	}
-
-	{ // bias // bn
-		nn.push_back(neu::layer::make_batch_normalization(
-			batch_size, neu::layer::output_dim(nn),
-			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
-			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
-			queue));
-	}
-
-	{ // softmax_loss
-		nn.push_back(neu::layer::make_softmax_loss(
-			neu::layer::output_dim(nn), batch_size, context));
-	}
-	*/
-	//neu::layer::output_to_file(nn, "nn0.yaml", queue);
+	neu::layer::ready_made::make_deepcnet(nn, batch_size, input_width,
+		label_num, layer_num, filter_num, rand, optgen, queue);
+	neu::layer::output_to_file(nn, "nn0.yaml", queue);
 
 	std::ofstream mse_error_log("mse_error.txt");
 	std::ofstream cel_error_log("cel_error.txt");
@@ -177,11 +164,6 @@ int main(int argc, char** argv) {
 
 		{
 			neu::print(output_log, output, label_num);
-
-			/*
-			auto mse = neu::range::mean_square_error(output, teach, queue);
-			mse_error_log << i << " " << mse/batch_size << std::endl;
-			*/
 
 			const auto cel = neu::range::cross_entropy_loss(output, teach, queue);
 			cel_error_log << i << " " << cel/batch_size << std::endl;

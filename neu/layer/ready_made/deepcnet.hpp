@@ -35,7 +35,7 @@ namespace neu {
 						}
 					}();
 
-					if(li <= -1) {
+					if(li <= -100) {
 						nn.push_back(make_convolution_xavier(
 							glp, batch_size, g,
 							optgen(neu::layer::filters_size(glp)), queue));
@@ -88,12 +88,18 @@ namespace neu {
 					optgen(neu::layer::output_dim(nn)*label_num),
 					queue));
 
+				/*
 				// bn
 				nn.push_back(neu::layer::make_batch_normalization(
 					batch_size, neu::layer::output_dim(nn),
 					optgen(output_dim(nn)),
 					optgen(output_dim(nn)),
 					queue));
+				*/
+				// bias //TODO shared
+				nn.push_back(neu::layer::make_bias(
+					output_dim(nn), batch_size, [](){ return 0; },
+					optgen(output_dim(nn)), queue));
 
 				// softmax_loss
 				nn.push_back(neu::layer::make_softmax_loss(
