@@ -36,7 +36,8 @@ namespace neu {
 			backward_kernel_(make_kernel(convolution_optimized_kernel_source,
 				"backward", queue.get_context())),
 			update_kernel_(make_kernel(convolution_optimized_kernel_source,
-				"update", queue.get_context())),
+				"update_tile32",
+				queue.get_context())),
 			input_(layer::input_dim(glp)*batch_size_,
 				std::numeric_limits<cl_float>::quiet_NaN(), queue),
 			delta_(layer::output_dim(glp)*batch_size_,
@@ -121,7 +122,8 @@ namespace neu {
 			}
 
 			decltype(auto) update(boost::compute::command_queue& queue) {
-				neu::layer::convolution_optimized_update(
+				//neu::layer::convolution_optimized_update_tile64_wpt2_reg(
+				neu::layer::convolution_optimized_update_tile32(
 					update_kernel_,
 					delta_, input_, del_filters_,
 					batch_size_,

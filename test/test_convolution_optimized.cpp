@@ -143,18 +143,18 @@ BOOST_AUTO_TEST_CASE(backward) {
 	queue.finish();
 	BOOST_CHECK(prev_delta.size() == 18);
 	ct::check_range_close(prev_delta, {
-		4.22000027f, 5.52000046f, 3.72000003f,
-		5.52000046f, 7.34000063f, 5.02000046f,
-		3.72000003f, 5.02000046f, 3.22000003f,
+		4.22f, 5.52f, 3.72f,
+		5.52f, 7.34f, 5.02f,
+		3.72f, 5.02f, 3.22f,
 
-		2.4000001f, 0.300000012f, 0.f,
-		0.300000012f, 1.20000005f, 3.5f,
+		2.4f, 0.3f, 0.f,
+		0.3f, 1.2f, 3.5f,
 		0.f, 3.5f, 2.f
 	}, 1.e-4f);
 }
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
 	auto gradient_check_single_test = [this](int stride) {
-		const int batch_size = 10;
+		const int batch_size = 1;
 		neu::layer::geometric_layer_property glp1{10, 3, 2, 3, stride, 1};
 		const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);
 
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(gradient_check_single) {
 				() mutable { return dist(rand); });
 			return vec;
 		};
-		const auto t_limit = 10;
+		const auto t_limit = 1;
 		boost::progress_display progress(t_limit);
 		for(int t = 0; t < t_limit; ++t) {
 			const auto cpu_input = random_vector_gen(neu::layer::input_dim(glp1)*batch_size);
