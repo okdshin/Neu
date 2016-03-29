@@ -1,6 +1,6 @@
 //#define NEU_DISABLE_ASSERTION
 #define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
-#define NEU_BENCHMARK_ENABLE
+//#define NEU_BENCHMARK_ENABLE
 #define NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 #include <iostream>
 #include <boost/timer.hpp>
@@ -99,7 +99,6 @@ int main(int argc, char** argv) {
 	auto train_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
-	/*
 	auto test_data = neu::dataset::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : test_data) {
 		for(auto& d : labeled) {
@@ -107,10 +106,8 @@ int main(int argc, char** argv) {
 				[](auto e){ return (e-127.)/255.f; });
 		}
 	}
-	
 	auto test_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, test_data, rand, context);
-	*/
 
 	auto constant_g = [](){ return 0.f; };
 	auto optgen = [base_lr, momentum, &queue](int theta_size) {	
@@ -142,10 +139,9 @@ int main(int argc, char** argv) {
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 		make_next_batch_future.wait();
 
-		if(i%1000 == 0) {
+		if(i%100 == 0) {
 			//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 
-			/*
 			test_ds.async_make_next_batch().wait();
 			auto test_batch = test_ds.get_batch();
 			neu::gpu_vector test_output(neu::layer::whole_output_size(nn), context);
@@ -155,8 +151,6 @@ int main(int argc, char** argv) {
 			const auto test_cel =
 				neu::range::cross_entropy_loss(test_output, test_teach, queue);
 			test_cel_error_log << i << " " << test_cel/batch_size << std::endl;
-			*/
-
 		}
 		//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 

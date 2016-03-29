@@ -50,17 +50,17 @@ namespace neu {
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
 					// bias //TODO shared
-					/*
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, [](){ return 0; },
 						optgen(output_dim(nn)), queue));
-					*/
+					/*
 					// bn
 					nn.push_back(neu::layer::make_batch_normalization(
 						batch_size, neu::layer::output_dim(nn),
 						optgen(output_dim(nn)),
 						optgen(output_dim(nn)),
 						queue));
+					*/
 
 					if(li != l) {
 						// leaky relu
@@ -88,17 +88,17 @@ namespace neu {
 					optgen(neu::layer::output_dim(nn)*label_num),
 					queue));
 
+				// bias //TODO shared
+				nn.push_back(neu::layer::make_bias(
+					output_dim(nn), batch_size, [](){ return 0; },
+					optgen(output_dim(nn)), queue));
+				/*
 				// bn
 				nn.push_back(neu::layer::make_batch_normalization(
 					batch_size, neu::layer::output_dim(nn),
 					optgen(output_dim(nn)),
 					optgen(output_dim(nn)),
 					queue));
-				// bias //TODO shared
-				/*
-				nn.push_back(neu::layer::make_bias(
-					output_dim(nn), batch_size, [](){ return 0; },
-					optgen(output_dim(nn)), queue));
 				*/
 
 				// softmax_loss
