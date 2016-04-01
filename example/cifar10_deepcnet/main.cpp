@@ -1,7 +1,7 @@
 //#define NEU_DISABLE_ASSERTION
 #define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 //#define NEU_BENCHMARK_ENABLE
-#define NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
+//#define NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
 	neu::scalar weight_decay;
 	int layer_num;
 	int filter_num;
+	bool dropout_on = false;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -62,6 +63,8 @@ int main(int argc, char** argv) {
 		 "deepcnet layer num")
 		("filter_num", po::value<int>(&filter_num)->default_value(300), 
 		 "deepcnet filter num")
+		("dropout_on", po::value<bool>(&dropout_on)->default_value(false), 
+		 "dropout on")
 		;
 
 	po::variables_map vm;
@@ -82,6 +85,7 @@ int main(int argc, char** argv) {
 	std::cout << "weight_decay was set to " << weight_decay << ".\n";
 	std::cout << "layer_num was set to " << layer_num << ".\n";
 	std::cout << "filter_num was set to " << filter_num << ".\n";
+	std::cout << "dropout on was set to " << dropout_on << ".\n";
 
 	auto& queue = boost::compute::system::default_queue();
 	auto context = boost::compute::system::default_context();
@@ -89,34 +93,36 @@ int main(int argc, char** argv) {
 	//std::random_device rd; std::mt19937 rand(rd());
 	std::mt19937 rand(0); std::cout << "INFO: fixed random engine" << std::endl;
 
-	auto train_data = neu::dataset::load_cifar10_train_data("../../../data/cifar-10-batches-bin/");
+	auto train_data = neu::dataset::load_cifar10_train_data(
+		"../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.)/255.f; });
+				[](auto e){ return (e-127.)/*/255.f*/; });
 		}
 	}
 	auto train_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, train_data, rand, context);
 
-	auto test_data = neu::dataset::load_cifar10_test_data("../../../data/cifar-10-batches-bin/");
+	auto test_data = neu::dataset::load_cifar10_test_data(
+		"../../../data/cifar-10-batches-bin/");
 	for(auto& labeled : test_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.)/255.f; });
+				[](auto e){ return (e-127.)/*/255.f*/; });
 		}
 	}
 	auto test_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, test_data, rand, context);
 
 	auto constant_g = [](){ return 0.f; };
-	auto optgen = [base_lr, momentum, &queue](int theta_size) {	
+	auto optgen = [base_lr, momentum, weight_decay, &queue](int theta_size) {	
 		return neu::optimizer::momentum(
-			base_lr, momentum, theta_size, queue);
+			base_lr, momentum, weight_decay, theta_size, queue);
 	};
 	std::vector<neu::layer::any_layer> nn;
 	neu::layer::ready_made::make_deepcnet(nn, batch_size, input_width,
-		label_num, layer_num, filter_num, rand, optgen, queue);
+		label_num, layer_num, filter_num, dropout_on ? 0.1f : 0.f, rand, optgen, queue);
 	neu::layer::output_to_file(nn, "nn0.yaml", queue);
 
 	std::ofstream mse_error_log("mse_error.txt");
@@ -157,6 +163,9 @@ int main(int argc, char** argv) {
 		neu::layer::forward(nn, input, output, queue);
 
 		{
+			if(std::isnan(output[0])) {
+				neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
+			}
 			neu::print(output_log, output, label_num);
 
 			const auto cel = neu::range::cross_entropy_loss(output, teach, queue);

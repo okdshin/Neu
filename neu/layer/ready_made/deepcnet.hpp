@@ -8,6 +8,7 @@
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/leaky_rectifier.hpp>
 #include <neu/layer/bias.hpp>
+#include <neu/layer/shared_dropout.hpp>
 #include <neu/layer/batch_normalization.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 namespace neu {
@@ -18,10 +19,10 @@ namespace neu {
 					std::vector<neu::layer::any_layer>& nn,
 					int batch_size, int input_width, int label_num,
 					int l, int k,
+					scalar dropout_base_probability,
 					Rng&& g, OptGen const& optgen,
 					boost::compute::command_queue& queue) {
 				for(int li = 0; li < l+1; ++li) {
-					// conv
 					const auto glp = [&nn, li, input_width, k]() {
 						if(li == 0) {
 							return geometric_layer_property{
@@ -35,24 +36,36 @@ namespace neu {
 						}
 					}();
 
-					if(li <= -100) {
-						nn.push_back(make_convolution_xavier(
-							glp, batch_size, g,
-							optgen(neu::layer::filters_size(glp)), queue));
-					}
-					else {
-						nn.push_back(make_convolution_optimized_xavier(
-							glp, batch_size, g,
-							optgen(neu::layer::filters_size(glp)), queue));
-					}
+					// dropout
+					nn.push_back(neu::layer::dropout(
+						neu::layer::input_dim(glp),
+						batch_size,
+						1.f-dropout_base_probability*li,
+						queue));
+					/*
+					// shared_dropout
+					nn.push_back(neu::layer::shared_dropout(
+						batch_size,
+						neu::layer::input_dim(glp),
+						glp.input_width*glp.input_width,
+						1.f-dropout_base_probability*li,
+						queue));
+					*/
+
+					// conv
+					nn.push_back(make_convolution_optimized_xavier(
+						glp, batch_size, g,
+						optgen(neu::layer::filters_size(glp)), queue));
 
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
+					/*
 					// bias //TODO shared
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, [](){ return 0; },
 						optgen(output_dim(nn)), queue));
+					*/
 					/*
 					// bn
 					nn.push_back(neu::layer::make_batch_normalization(
@@ -88,10 +101,12 @@ namespace neu {
 					optgen(neu::layer::output_dim(nn)*label_num),
 					queue));
 
+				/*
 				// bias //TODO shared
 				nn.push_back(neu::layer::make_bias(
 					output_dim(nn), batch_size, [](){ return 0; },
 					optgen(output_dim(nn)), queue));
+				*/
 				/*
 				// bn
 				nn.push_back(neu::layer::make_batch_normalization(
