@@ -36,13 +36,14 @@ namespace neu {
 						}
 					}();
 
+					/*
 					// dropout
 					nn.push_back(neu::layer::dropout(
 						neu::layer::input_dim(glp),
 						batch_size,
 						1.f-dropout_base_probability*li,
 						queue));
-					/*
+					*/
 					// shared_dropout
 					nn.push_back(neu::layer::shared_dropout(
 						batch_size,
@@ -50,7 +51,6 @@ namespace neu {
 						glp.input_width*glp.input_width,
 						1.f-dropout_base_probability*li,
 						queue));
-					*/
 
 					// conv
 					nn.push_back(make_convolution_optimized_xavier(
