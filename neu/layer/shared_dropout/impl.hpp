@@ -30,30 +30,33 @@ namespace neu {
 			shared_dropout(
 				int batch_size,
 				int input_dim,
-				int shared_size,
+				int mask_size,
 				scalar probability,
 				boost::compute::command_queue& queue)
 			: batch_size_(batch_size),
 			input_dim_(input_dim),
-			shared_size_(shared_size),
+			mask_size_(mask_size),
 			probability_(probability),
-			mask_(input_dim_, queue.get_context()),
+			mask_(mask_size_, std::numeric_limits<cl_float>::quiet_NaN(), queue),
 			engine_(queue), dist_(0.f, 1.f),
-			dropout_test_forward_kernel_(make_kernel(dropout_test_forward_kernel_source,
+			dropout_test_forward_kernel_(make_kernel(
+				shared_dropout_test_forward_kernel_source,
 				"test_forward", queue.get_context())),
-			dropout_forward_kernel_(make_kernel(dropout_forward_kernel_source,
+			dropout_forward_kernel_(make_kernel(
+				shared_dropout_forward_kernel_source,
 				"forward", queue.get_context())),
-			dropout_backward_kernel_(make_kernel(dropout_backward_kernel_source,
+			dropout_backward_kernel_(make_kernel(
+				shared_dropout_backward_kernel_source,
 				"backward", queue.get_context()))
 			{
-				if(input_dim%shared_size != 0) {
-					throw "shared_size is wrong";
+				if(input_dim%mask_size != 0) {
+					throw "mask_size is wrong";
 				}
-				update(queue);
+				update(queue); // init mask
 			}
 
 			decltype(auto) batch_size() const { return batch_size_; }
-			decltype(auto) shared_size() const { return shared_size_; }
+			decltype(auto) mask_size() const { return mask_size_; }
 
 			decltype(auto) input_rank() const { return 1; }
 			decltype(auto) output_rank() const { return 1; }
@@ -96,7 +99,8 @@ namespace neu {
 					neu::range::get_buffer(output),
 					static_cast<int>(neu::range::get_begin_index(output)),
 					mask_,
-					static_cast<int>(input_dim_));
+					static_cast<int>(input_dim_),
+					static_cast<int>(mask_size_));
 
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(output, queue));
 			}
@@ -121,23 +125,18 @@ namespace neu {
 					neu::range::get_buffer(delta),
 					static_cast<int>(neu::range::get_begin_index(delta)),
 					mask_,
-					static_cast<int>(input_dim_));
+					static_cast<int>(input_dim_),
+					static_cast<int>(mask_size_));
 
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
 			void update(boost::compute::command_queue& queue) {
-				dist_.generate(mask_.begin(), mask_.begin()+shared_size_, engine_, queue);
-				boost::compute::transform(mask_.begin(), mask_.begin()+shared_size_,
+				dist_.generate(mask_.begin(), mask_.begin()+mask_size_, engine_, queue);
+				boost::compute::transform(mask_.begin(), mask_.begin()+mask_size_,
 					mask_.begin(),
 					boost::compute::bind(shared_dropout_update_kernel,
 						boost::compute::placeholders::_1, probability_), queue);
-				//TODO dirty implementation, need to optimize
-				for(int i = 1; i < static_cast<int>(mask_.size()/shared_size_); ++i) {
-					boost::compute::copy(
-						mask_.begin(), mask_.begin()+shared_size_,
-						mask_.begin()+i*shared_size_);
-				}
 
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(mask_, queue));
 			}
@@ -155,15 +154,15 @@ namespace neu {
 						<< YAML::Value << batch_size_
 					<< YAML::Key << "probability"
 						<< YAML::Value << probability_
-					<< YAML::Key << "shared_size"
-						<< YAML::Value << shared_size_
+					<< YAML::Key << "mask_size"
+						<< YAML::Value << mask_size_
 				<< YAML::EndMap;
 			}
 
 		private:
 			int batch_size_;
 			int input_dim_;
-			int shared_size_;
+			int mask_size_;
 
 			scalar probability_;
 
@@ -182,7 +181,7 @@ namespace neu {
 			return shared_dropout(
 				node["batch_size"].as<int>(),
 				node["input_dim"].as<int>(),
-				node["shared_size"].as<int>(),
+				node["mask_size"].as<int>(),
 				node["probability"].as<float>(),
 				queue
 			);

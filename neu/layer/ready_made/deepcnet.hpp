@@ -51,6 +51,7 @@ namespace neu {
 						glp.input_width*glp.input_width,
 						1.f-dropout_base_probability*li,
 						queue));
+					std::cout << li << ": dropout: " << (1.f-dropout_base_probability*li) << std::endl;
 
 					// conv
 					nn.push_back(make_convolution_optimized_xavier(

@@ -22,13 +22,14 @@ namespace neu {
 			const __global float* input, const int input_offset,
 			__global float* output, const int output_offset,
 			const __global float* mask,
-			const int input_dim)
+			const int input_dim,
+			const int mask_size)
 		{
 			const int b = get_global_id(1);
 			const int o = get_global_id(0);
 
 			output[o+input_dim*b+output_offset] =
-				mask[o]*input[o+input_dim*b+input_offset];
+				mask[o%mask_size]*input[o+input_dim*b+input_offset];
 		}
 	);
 	constexpr char shared_dropout_backward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
@@ -36,13 +37,14 @@ namespace neu {
 			__global float* input, const int input_offset,
 			const __global float* output, const int output_offset,
 			const __global float* mask,
-			const int input_dim)
+			const int input_dim,
+			const int mask_size)
 		{
 			const int b = get_global_id(1);
 			const int i = get_global_id(0);
 
 			input[i+input_dim*b+input_offset] =
-				mask[i]*output[i+input_dim*b+output_offset];
+				mask[i%mask_size]*output[i+input_dim*b+output_offset];
 		}
 	);
 }// namespace neu
