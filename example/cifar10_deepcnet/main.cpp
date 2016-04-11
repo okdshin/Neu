@@ -86,6 +86,19 @@ int main(int argc, char** argv) {
 	std::cout << "layer_num was set to " << layer_num << ".\n";
 	std::cout << "filter_num was set to " << filter_num << ".\n";
 	std::cout << "dropout on was set to " << dropout_on << ".\n";
+	{
+		std::ofstream logf("setting_log.txt");
+		logf << "data_num_per_label was set to " << data_num_per_label << ".";
+		logf << "(so batch_size was set to 10*" << data_num_per_label 
+			<< "=" << batch_size << ".)\n";
+		logf << "iteration_limit was set to " << iteration_limit << ".\n";
+		logf << "base_lr was set to " << base_lr << ".\n";
+		logf << "momentum was set to " << momentum << ".\n";
+		logf << "weight_decay was set to " << weight_decay << ".\n";
+		logf << "layer_num was set to " << layer_num << ".\n";
+		logf << "filter_num was set to " << filter_num << ".\n";
+		logf << "dropout on was set to " << dropout_on << ".\n";
+	}
 
 	auto& queue = boost::compute::system::default_queue();
 	auto context = boost::compute::system::default_context();

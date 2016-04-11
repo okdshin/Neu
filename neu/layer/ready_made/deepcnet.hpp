@@ -22,6 +22,7 @@ namespace neu {
 					scalar dropout_base_probability,
 					Rng&& g, OptGen const& optgen,
 					boost::compute::command_queue& queue) {
+				std::cout << "dro:" << dropout_base_probability << std::endl;
 				for(int li = 0; li < l+1; ++li) {
 					const auto glp = [&nn, li, input_width, k]() {
 						if(li == 0) {

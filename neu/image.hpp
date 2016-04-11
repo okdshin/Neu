@@ -8,6 +8,7 @@
 namespace neu {
 decltype(auto) load_rgb_image_as_3ch_image_vector(std::string const& filename) {
 	fipImage image;
+	//std::cout << "load " << filename << std::endl;
 	if(!image.load(filename.c_str())) {
 		throw "image load error";
 	}

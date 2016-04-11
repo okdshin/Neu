@@ -6,6 +6,7 @@
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/convolution.hpp>
+#include <neu/layer/convolution_optimized.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/sigmoid.hpp>
 #include <neu/layer/activation/rectifier.hpp>
@@ -42,8 +43,14 @@ namespace neu {
 			if(lt == "convolution") {
 				return static_cast<any_layer>(deserialize_convolution(node, queue));
 			} else
+			if(lt == "convolution_optimized") {
+				return static_cast<any_layer>(deserialize_convolution_optimized(node, queue));
+			} else
 			if(lt == "max_pooling") {
 				return static_cast<any_layer>(deserialize_max_pooling(node, queue.get_context()));
+			} else
+			if(lt == "average_pooling") {
+				return static_cast<any_layer>(deserialize_average_pooling(node, queue));
 			} else
 			if(lt == "sigmoid") {
 				return static_cast<any_layer>(deserialize_sigmoid(node, queue));
