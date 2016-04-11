@@ -175,6 +175,9 @@ int main(int argc, char** argv) {
 
 		neu::layer::forward(nn, input, output, queue);
 
+
+		// WARN: reading one value causes Out pf Resource error.
+		/*
 		{
 			if(std::isnan(output[0])) {
 				neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
@@ -184,6 +187,7 @@ int main(int argc, char** argv) {
 			const auto cel = neu::range::cross_entropy_loss(output, teach, queue);
 			cel_error_log << i << " " << cel/batch_size << std::endl;
 		}
+		*/
 
 		neu::range::calc_last_layer_delta(output, teach, error, queue);
 		neu::layer::backward_top(nn, error, queue);
