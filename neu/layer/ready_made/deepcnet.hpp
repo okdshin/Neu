@@ -11,6 +11,7 @@
 #include <neu/layer/shared_dropout.hpp>
 #include <neu/layer/batch_normalization.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
+#include <neu/layer/dropout_cpu.hpp>
 namespace neu {
 	namespace layer {
 		namespace ready_made {
@@ -37,8 +38,14 @@ namespace neu {
 						}
 					}();
 
-					/*
+					// dropout_cpu
+					nn.push_back(neu::layer::dropout_cpu(
+						neu::layer::input_dim(glp),
+						batch_size,
+						1.f-dropout_base_probability*li,
+						queue));
 					// dropout
+					/*
 					nn.push_back(neu::layer::dropout(
 						neu::layer::input_dim(glp),
 						batch_size,
@@ -46,6 +53,7 @@ namespace neu {
 						queue));
 					*/
 					// shared_dropout
+					/*
 					nn.push_back(neu::layer::shared_dropout(
 						batch_size,
 						neu::layer::input_dim(glp),
@@ -53,6 +61,7 @@ namespace neu {
 						1.f-dropout_base_probability*li,
 						queue));
 					std::cout << li << ": dropout: " << (1.f-dropout_base_probability*li) << std::endl;
+					*/
 
 					// conv
 					nn.push_back(make_convolution_optimized_xavier(
@@ -62,8 +71,8 @@ namespace neu {
 					auto output_width = neu::layer::output_width(nn.back());
 					auto output_channel_num = neu::layer::output_channel_num(nn.back());
 
-					/*
 					// bias //TODO shared
+					/*
 					nn.push_back(neu::layer::make_bias(
 						output_dim(nn), batch_size, [](){ return 0; },
 						optgen(output_dim(nn)), queue));
@@ -103,8 +112,8 @@ namespace neu {
 					optgen(neu::layer::output_dim(nn)*label_num),
 					queue));
 
-				/*
 				// bias //TODO shared
+				/*
 				nn.push_back(neu::layer::make_bias(
 					output_dim(nn), batch_size, [](){ return 0; },
 					optgen(output_dim(nn)), queue));

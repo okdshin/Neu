@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 #include <neu/optimizer/any_optimizer.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 namespace neu {
 	namespace optimizer {
 		class deserialize_error : public std::exception {

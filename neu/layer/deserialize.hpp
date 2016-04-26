@@ -7,6 +7,7 @@
 #include <neu/layer/bias.hpp>
 #include <neu/layer/convolution.hpp>
 #include <neu/layer/convolution_optimized.hpp>
+#include <neu/layer/average_pooling.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/sigmoid.hpp>
 #include <neu/layer/activation/rectifier.hpp>

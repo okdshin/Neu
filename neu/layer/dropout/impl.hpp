@@ -121,7 +121,7 @@ namespace neu {
 			}
 
 			void update(boost::compute::command_queue& queue) {
-				dist_.generate(mask_.begin(), mask_.end(), engine_, queue);
+				//dist_.generate(mask_.begin(), mask_.end(), engine_, queue);
 				range::transform(mask_, mask_,
 					boost::compute::bind(dropout_update_kernel,
 						boost::compute::placeholders::_1, probability_), queue);
@@ -153,7 +153,7 @@ namespace neu {
 
 			gpu_vector mask_;
 			boost::compute::default_random_engine engine_;
-			boost::compute::uniform_real_distribution<float> dist_;
+			boost::compute::uniform_real_distribution<scalar> dist_;
 
 			kernel dropout_test_forward_kernel_;
 			kernel dropout_forward_kernel_;

@@ -3,7 +3,7 @@
 //20151023
 #include <boost/compute/utility/source.hpp>
 namespace neu {
-	constexpr char bias_forward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+	constexpr char bias_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void forward(
 			const __global float* input, const int input_offset,
 			__global float* output, const int output_offset,
@@ -16,8 +16,7 @@ namespace neu {
 			const int index = o+input_dim*b;
 			output[index+output_offset] = input[index+input_offset] + bias[o];
 		}
-	);
-	constexpr char bias_update_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+
 		__kernel void update(
 			const __global float* delta,
 			__global float* del_bias,

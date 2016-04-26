@@ -128,7 +128,6 @@ int main(int argc, char** argv) {
 	auto test_ds = neu::dataset::make_classification_dataset(
 		label_num, data_num_per_label, input_dim, test_data, rand, context);
 
-	auto constant_g = [](){ return 0.f; };
 	auto optgen = [base_lr, momentum, weight_decay, &queue](int theta_size) {	
 		return neu::optimizer::momentum(
 			base_lr, momentum, weight_decay, theta_size, queue);
@@ -158,6 +157,7 @@ int main(int argc, char** argv) {
 		auto make_next_batch_future = train_ds.async_make_next_batch();
 		make_next_batch_future.wait();
 
+		/*
 		if(i%100 == 0) {
 			//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 
@@ -171,23 +171,28 @@ int main(int argc, char** argv) {
 				neu::range::cross_entropy_loss(test_output, test_teach, queue);
 			test_cel_error_log << i << " " << test_cel/batch_size << std::endl;
 		}
+		*/
 		//neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 
 		neu::layer::forward(nn, input, output, queue);
 
 
 		// WARN: reading one value causes Out pf Resource error.
-		/*
 		{
+		/*
 			if(std::isnan(output[0])) {
 				neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
 			}
 			neu::print(output_log, output, label_num);
 
+		*/
+			const auto mse = neu::range::mean_square_error(output, teach, queue);
+			cel_error_log << i << " " << mse/batch_size << std::endl;
+		/*
 			const auto cel = neu::range::cross_entropy_loss(output, teach, queue);
 			cel_error_log << i << " " << cel/batch_size << std::endl;
-		}
 		*/
+		}
 
 		neu::range::calc_last_layer_delta(output, teach, error, queue);
 		neu::layer::backward_top(nn, error, queue);

@@ -64,7 +64,12 @@ namespace neu {
 					gpu_vector output(queue.get_context());
 					int i = 0;
 					for(auto& l : layers) {
-						output.resize(::neu::layer::whole_output_size(l), queue);
+						output.resize(::neu::layer::output_dim(l)*batch_size, queue);
+						/*
+						std::cout << "whole" << ::neu::layer::whole_output_size(l) << std::endl;
+						std::cout << "i" << i << std::endl;
+						std::cout << "aa" << output.size() << std::endl;
+						*/
 						auto output_range = range::to_range(output);
 #ifdef NEU_BENCHMARK_ENABLE
 						boost::timer t;
