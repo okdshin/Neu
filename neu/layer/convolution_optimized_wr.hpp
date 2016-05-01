@@ -1,0 +1,5 @@
+#ifndef NEU_LAYER_CONVOLUTION_OPTIMIZED_WR_HPP
+#define NEU_LAYER_CONVOLUTION_OPTIMIZED_WR_HPP
+//20151220
+#include <neu/layer/convolution_optimized_wr/impl.hpp>
+#endif //NEU_LAYER_CONVOLUTION_OPTIMIZED_WR_HPP

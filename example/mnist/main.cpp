@@ -11,7 +11,7 @@
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
-#include <neu/layer/inner_product.hpp>
+#include <neu/layer/inner_product_wr.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 	for(auto& labeled : data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return e/255.f; });
+				[](auto e){ return /*e/255.f*/e-127.f; });
 		}
 	}
 	auto ds = neu::dataset::make_classification_dataset(
@@ -48,19 +48,20 @@ int main(int argc, char** argv) {
 	constexpr neu::scalar base_lr = 0.001f;
 	constexpr neu::scalar momentum = 0.9f;
 	constexpr std::size_t hidden_node_num = 100u;
-
+	constexpr neu::scalar c = 1.f;
 	std::vector<neu::layer::any_layer> nn;
-	nn.push_back(neu::layer::make_inner_product(
-		input_dim, hidden_node_num, batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum, input_dim*hidden_node_num, queue),
+	nn.push_back(neu::layer::make_inner_product_wr(
+		input_dim, hidden_node_num, batch_size, c, g,
+		//neu::optimizer::momentum(base_lr, momentum, weight_decay, input_dim*hidden_node_num, queue),
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
 		//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
 		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
-	nn.push_back(neu::layer::make_inner_product(
-		neu::layer::output_dim(nn), label_num, batch_size, g,
+	nn.push_back(neu::layer::make_inner_product_wr(
+		neu::layer::output_dim(nn), label_num, batch_size, c, g,
 		/*
 		neu::optimizer::momentum(base_lr, momentum,
 			neu::layer::output_dim(nn)*label_num, queue),
@@ -68,7 +69,8 @@ int main(int argc, char** argv) {
 		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		//neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
+		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(
 		neu::layer::make_softmax_loss(neu::layer::output_dim(nn), batch_size, context));
