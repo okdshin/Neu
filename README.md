@@ -11,7 +11,8 @@ Learned initial filters of example/cifar10
 
 Learning curve of example/cifar10_deepcnet  
 (DeepCNet(5,300), the purple is train cross entropy error, the green is test one)  
-<img src="https://raw.githubusercontent.com/okdshin/Neu/master/cifar10_deepcnet.png" width="480">
+<img src="https://raw.githubusercontent.com/okdshin/Neu/master/cifar10_deepcnet.png" width="480">  
+It took about 48hour with GTX980
 
 Dependency
 ---
@@ -50,5 +51,5 @@ Installation
 ```
 mkdir build && cd build
 cmake ..
-make
+make install
 ```
