@@ -67,8 +67,13 @@ namespace neu {
 					*/
 
 					// conv
+					/*
 					nn.push_back(make_convolution_optimized_wr_xavier(
 						glp, batch_size, c, g,
+						optgen(neu::layer::filters_size(glp)), queue));
+					*/
+					nn.push_back(make_convolution_optimized_xavier(
+						glp, batch_size, g,
 						optgen(neu::layer::filters_size(glp)), queue));
 
 					auto output_width = neu::layer::output_width(nn.back());
@@ -110,8 +115,14 @@ namespace neu {
 				}
 
 				// inner_product
+				/*
 				nn.push_back(neu::layer::make_inner_product_wr_xavier(
 					neu::layer::output_dim(nn), label_num, batch_size, c, g,
+					optgen(neu::layer::output_dim(nn)*label_num),
+					queue));
+				*/
+				nn.push_back(neu::layer::make_inner_product_xavier(
+					neu::layer::output_dim(nn), label_num, batch_size, g,
 					optgen(neu::layer::output_dim(nn)*label_num),
 					queue));
 
