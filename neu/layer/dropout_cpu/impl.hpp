@@ -1,8 +1,7 @@
-#ifndef NEU_LAYER_DROPOUT_IMPL_HPP
-#define NEU_LAYER_DROPOUT_IMPL_HPP
+#ifndef NEU_LAYER_DROPOUT_CPU_IMPL_HPP
+#define NEU_LAYER_DROPOUT_CPU_IMPL_HPP
 //20151005
-#include <boost/compute/random/default_random_engine.hpp>
-#include <boost/compute/random/uniform_real_distribution.hpp>
+#include <random>
 #include <boost/compute/functional/common.hpp>
 #include <boost/compute/functional/bind.hpp>
 #include <neu/assert.hpp>
@@ -13,21 +12,21 @@
 #include <neu/layer/traits.hpp>
 #include <neu/kernel.hpp>
 #include <neu/layer/geometric_layer_property.hpp>
-#include <neu/layer/dropout/kernel_source.hpp>
+#include <neu/layer/dropout_cpu/kernel_source.hpp>
 #include <neu/optimizer/deserialize.hpp>
 #include <neu/optimizer/any_optimizer.hpp>
 
 namespace neu {
 	namespace layer {
-		BOOST_COMPUTE_FUNCTION(float, dropout_update_kernel,
+		BOOST_COMPUTE_FUNCTION(float, dropout_cpu_update_kernel,
 				(float x, float probability), {
 			return x < probability ? 1.f : 0.f;
 		});
-		class dropout {
+		class dropout_cpu {
 		public:
-			dropout() = default;
+			dropout_cpu() = default;
 
-			dropout(
+			dropout_cpu(
 				int input_dim,
 				int batch_size,
 				scalar probability,
@@ -35,13 +34,14 @@ namespace neu {
 			: input_dim_(input_dim),
 			batch_size_(batch_size),
 			probability_(probability),
+			cpu_mask_(input_dim_),
 			mask_(input_dim_, queue.get_context()),
-			engine_(queue), dist_(0.f, 1.f),
-			dropout_test_forward_kernel_(make_kernel(dropout_test_forward_kernel_source,
+			engine_(), dist_(0.f, 1.f),
+			dropout_cpu_test_forward_kernel_(make_kernel(dropout_cpu_test_forward_kernel_source,
 				"test_forward", queue.get_context())),
-			dropout_forward_kernel_(make_kernel(dropout_forward_kernel_source,
+			dropout_cpu_forward_kernel_(make_kernel(dropout_cpu_forward_kernel_source,
 				"forward", queue.get_context())),
-			dropout_backward_kernel_(make_kernel(dropout_backward_kernel_source,
+			dropout_cpu_backward_kernel_(make_kernel(dropout_cpu_backward_kernel_source,
 				"backward", queue.get_context()))
 			{
 				update(queue);
@@ -66,7 +66,7 @@ namespace neu {
 					neu::layer::output_dim(*this)*test_batch_size);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 
-				neu::enqueue_nd_range_kernel<2>(queue, dropout_test_forward_kernel_,
+				neu::enqueue_nd_range_kernel<2>(queue, dropout_cpu_test_forward_kernel_,
 					{0, 0}, {input_dim_, test_batch_size},
 					neu::range::get_buffer(input),
 					static_cast<int>(neu::range::get_begin_index(input)),
@@ -83,7 +83,7 @@ namespace neu {
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(input, queue));
 
-				neu::enqueue_nd_range_kernel<2>(queue, dropout_forward_kernel_,
+				neu::enqueue_nd_range_kernel<2>(queue, dropout_cpu_forward_kernel_,
 					{0, 0}, {input_dim_, batch_size_},
 					neu::range::get_buffer(input),
 					static_cast<int>(neu::range::get_begin_index(input)),
@@ -108,7 +108,7 @@ namespace neu {
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 
-				neu::enqueue_nd_range_kernel<2>(queue, dropout_backward_kernel_,
+				neu::enqueue_nd_range_kernel<2>(queue, dropout_cpu_backward_kernel_,
 					{0, 0}, {input_dim_, batch_size_},
 					neu::range::get_buffer(prev_delta),
 					static_cast<int>(neu::range::get_begin_index(prev_delta)),
@@ -122,8 +122,12 @@ namespace neu {
 
 			void update(boost::compute::command_queue& queue) {
 				//dist_.generate(mask_.begin(), mask_.end(), engine_, queue);
+				std::generate(cpu_mask_.begin(), cpu_mask_.end(),
+					[this](){ return dist_(engine_); });
+				boost::compute::copy(cpu_mask_.begin(), cpu_mask_.end(),
+					mask_.begin(), queue);
 				range::transform(mask_, mask_,
-					boost::compute::bind(dropout_update_kernel,
+					boost::compute::bind(dropout_cpu_update_kernel,
 						boost::compute::placeholders::_1, probability_), queue);
 
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(mask_, queue));
@@ -133,7 +137,7 @@ namespace neu {
 					YAML::Emitter& emitter, boost::compute::command_queue& queue) const {
 				emitter << YAML::BeginMap
 					<< YAML::Key << "layer_type"
-						<< YAML::Value << "dropout"
+						<< YAML::Value << "dropout_cpu"
 					<< YAML::Key << "input_dim"
 						<< YAML::Value << input_dim_
 					<< YAML::Key << "output_dim(equal to input_dim)"
@@ -151,19 +155,22 @@ namespace neu {
 
 			scalar probability_;
 
+			cpu_vector cpu_mask_;
 			gpu_vector mask_;
-			boost::compute::default_random_engine engine_;
-			boost::compute::uniform_real_distribution<scalar> dist_;
+			//boost::compute::default_random_engine engine_;
+			//boost::compute::uniform_real_distribution<float> dist_;
+			std::default_random_engine engine_;
+			std::uniform_real_distribution<scalar> dist_;
 
-			kernel dropout_test_forward_kernel_;
-			kernel dropout_forward_kernel_;
-			kernel dropout_backward_kernel_;
+			kernel dropout_cpu_test_forward_kernel_;
+			kernel dropout_cpu_forward_kernel_;
+			kernel dropout_cpu_backward_kernel_;
 
 		};
 
-		decltype(auto) deserialize_dropout(YAML::Node const& node,
+		decltype(auto) deserialize_dropout_cpu(YAML::Node const& node,
 				boost::compute::command_queue& queue) {
-			return dropout(
+			return dropout_cpu(
 				node["input_dim"].as<int>(),
 				node["batch_size"].as<int>(),
 				node["probability"].as<float>(),
@@ -173,4 +180,4 @@ namespace neu {
 	}
 }// namespace neu
 
-#endif //NEU_LAYER_DROPOUT_IMPL_HPP
+#endif //NEU_LAYER_DROPOUT_CPU_IMPL_HPP

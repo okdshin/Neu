@@ -1,5 +1,6 @@
 //#define NEU_DISABLE_ASSERTION
-//#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
+//#define NEU_BENCHMARK_ENABLE
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -112,7 +113,7 @@ int main(int argc, char** argv) {
 			32,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution_xavier(
+		nn.push_back(neu::layer::make_convolution_optimized_xavier(
 			glp, batch_size, rng, neu::optimizer::fixed_learning_rate(base_lr), queue));
 	}
 	auto conv1 = nn.back();
@@ -148,7 +149,7 @@ int main(int argc, char** argv) {
 			32,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution_xavier(
+		nn.push_back(neu::layer::make_convolution_optimized_xavier(
 			glp, batch_size, rng,
 			neu::optimizer::fixed_learning_rate(base_lr),
 			queue));
@@ -185,7 +186,7 @@ int main(int argc, char** argv) {
 			64,
 			1, 2
 		};
-		nn.push_back(neu::layer::make_convolution_xavier(
+		nn.push_back(neu::layer::make_convolution_optimized_xavier(
 			glp, batch_size, rng,
 			neu::optimizer::fixed_learning_rate(base_lr),
 			queue));

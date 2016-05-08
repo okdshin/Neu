@@ -29,9 +29,9 @@ namespace neu {
 			batch_size_(batch_size),
 			bias_(bias.begin(), bias.end(), queue),
 			optimizer_(optimizer),
-			forward_kernel_(make_kernel(bias_forward_kernel_source,
+			forward_kernel_(make_kernel(bias_kernel_source,
 				"forward", queue.get_context())),
-			update_kernel_(make_kernel(bias_update_kernel_source,
+			update_kernel_(make_kernel(bias_kernel_source,
 				"update", queue.get_context())),
 			delta_(input_dim*batch_size, queue.get_context()),
 			del_bias_(bias_.size(), queue.get_context()) {
@@ -81,7 +81,7 @@ namespace neu {
 					boost::compute::command_queue& queue) {
 				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
-				range::copy(delta, delta_, queue); //TODO async operation
+				range::copy(delta, delta_, queue);
 			}
 
 			template<typename InputRange, typename OutputRange>
@@ -91,7 +91,7 @@ namespace neu {
 				NEU_ASSERT(range::distance(delta) == range::distance(delta_));
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(delta, queue));
 				backward_top(delta, queue);
-				range::copy(delta, prev_delta, queue); //TODO async operation
+				range::copy(delta, prev_delta, queue);
 				NEU_ASSERT_FOR_HEAVY_CALCULATION(is_all_of_finite(prev_delta, queue));
 			}
 
@@ -142,8 +142,10 @@ namespace neu {
 							<< YAML::Value << neu::layer::output_dim(b)
 						<< YAML::Key << "batch_size"
 							<< YAML::Value << neu::layer::batch_size(b)
+#ifndef NEU_LAYER_SERIALIZE_WITHOUT_LONG_VECTOR
 						<< YAML::Key << "weight"
 							<< YAML::Value << YAML::Flow << b.weight(queue)
+#endif
 						<< YAML::Key << "optimizer"
 							<< YAML::Value;
 					optimizer::serialize(b.optimizer(), emitter, queue);

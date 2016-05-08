@@ -1,9 +1,9 @@
-#ifndef NEU_INNER_PRODUCT_LAYER_KERNEL_SOURCE_HPP
-#define NEU_INNER_PRODUCT_LAYER_KERNEL_SOURCE_HPP
+#ifndef NEU_INNER_PRODUCT_WR_LAYER_KERNEL_SOURCE_HPP
+#define NEU_INNER_PRODUCT_WR_LAYER_KERNEL_SOURCE_HPP
 //20151023
 #include <boost/compute/utility/source.hpp>
 namespace neu {
-	constexpr char inner_product_forward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+	constexpr char inner_product_wr_forward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void forward(
 			const __global float* input, const int input_offset,
 			__global float* output, const int output_offset,
@@ -20,7 +20,7 @@ namespace neu {
 			output[o+output_dim*b+output_offset] = sum;
 		}
 	);
-	constexpr char inner_product_backward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+	constexpr char inner_product_wr_backward_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void backward(
 			__global float* input, const int input_offset,
 			const __global float* output, const int output_offset,
@@ -37,7 +37,7 @@ namespace neu {
 			input[i+input_dim*b+input_offset] = sum;
 		}
 	);
-	constexpr char inner_product_update_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
+	constexpr char inner_product_wr_update_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void update(
 			const __global float* input, const __global float* delta,
 			__global float* del_weight,
@@ -56,4 +56,4 @@ namespace neu {
 	);
 }// namespace neu
 
-#endif //NEU_INNER_PRODUCT_LAYER_KERNEL_SOURCE_HPP
+#endif //NEU_INNER_PRODUCT_WR_LAYER_KERNEL_SOURCE_HPP

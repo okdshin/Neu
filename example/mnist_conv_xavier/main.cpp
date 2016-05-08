@@ -1,4 +1,5 @@
 //#define NEU_DISABLE_ASSERTION
+#define NEU_DISABLE_ASSERT_FOR_HEAVY_CALCULATION
 #include <iostream>
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -10,9 +11,10 @@
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/optimizer/momentum.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
-#include <neu/layer/convolution.hpp>
+#include <neu/layer/convolution_optimized_wr.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/inner_product.hpp>
+#include <neu/layer/inner_product_wr.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/any_layer.hpp>
 #include <neu/layer/any_layer_vector.hpp>
@@ -39,7 +41,7 @@ int main(int argc, char** argv) {
 	auto data = neu::dataset::load_mnist("../../../data/mnist/");
 	for(auto& labeled : data) {
 		for(auto& d : labeled) {
-			std::transform(d.begin(), d.end(), d.begin(), [](auto e){ return e/255.f; });
+			std::transform(d.begin(), d.end(), d.begin(), [](auto e){ return e-127.f; });
 		}
 	}
 	auto ds = neu::dataset::make_classification_dataset(label_num, data_num_per_label, input_dim, data, rand, context);
@@ -53,15 +55,17 @@ int main(int argc, char** argv) {
 
 	constexpr neu::scalar base_lr = 0.001;
 	constexpr neu::scalar momentum = 0.9;
-	constexpr std::size_t hidden_node_num = 50u;
+	constexpr std::size_t hidden_node_num = 51u;
 
 	std::vector<neu::layer::any_layer> nn;
+
+	neu::scalar c = 1.f;
 
 	// conv1
 	neu::layer::geometric_layer_property glp1{
 		input_width, 5, input_channel_num, 20, 1, 2};
-	auto conv1 = neu::layer::make_convolution_xavier(
-		glp1, batch_size, g,
+	auto conv1 = neu::layer::make_convolution_optimized_wr_xavier(
+		glp1, batch_size, c, g,
 		/*
 		neu::optimizer::momentum(base_lr, momentum,
 			neu::layer::filters_size(glp1), queue),
@@ -86,8 +90,8 @@ int main(int argc, char** argv) {
 	//conv2
 	neu::layer::geometric_layer_property glp2{
 		neu::layer::output_width(nn), 5, neu::layer::output_channel_num(nn), 50, 1, 2};
-	nn.push_back(neu::layer::make_convolution_xavier(
-		glp2, batch_size, g,
+	nn.push_back(neu::layer::make_convolution_optimized_wr_xavier(
+		glp2, batch_size, c, g,
 		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 
@@ -98,8 +102,8 @@ int main(int argc, char** argv) {
 	*/
 
 	// fc1
-	nn.push_back(neu::layer::make_inner_product_xavier(
-		neu::layer::output_dim(nn), hidden_node_num, batch_size, g,
+	nn.push_back(neu::layer::make_inner_product_wr_xavier(
+		neu::layer::output_dim(nn), hidden_node_num, batch_size, c, g,
 		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, constant_g,
@@ -108,8 +112,8 @@ int main(int argc, char** argv) {
 	nn.push_back(neu::layer::make_rectifier(neu::layer::output_dim(nn), batch_size));
 
 	// fc2
-	nn.push_back(neu::layer::make_inner_product_xavier(
-		neu::layer::output_dim(nn), label_num, batch_size, g,
+	nn.push_back(neu::layer::make_inner_product_wr_xavier(
+		neu::layer::output_dim(nn), label_num, batch_size, c, g,
 		neu::optimizer::fixed_learning_rate(base_lr),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, constant_g,
@@ -138,6 +142,7 @@ int main(int argc, char** argv) {
 		auto input = batch.train_data;
 		auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
+		make_next_batch_future.wait();
 
 		if(i%(iteration_limit/10) == 0) {
 			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
@@ -157,7 +162,7 @@ int main(int argc, char** argv) {
 		neu::layer::backward(nn, error, prev_delta, queue);
 		neu::layer::update(nn, queue);
 
-		make_next_batch_future.wait();
+
 		++progress;
 	}
 	queue.finish();

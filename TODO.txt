@@ -1,3 +1,6 @@
+- batch normalization for CNN
+- Dropout for CNN
+- optimization of CNN
 - modify data_set function
 - accuracy
 - zca whitening

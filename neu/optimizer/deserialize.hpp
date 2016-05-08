@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 #include <neu/optimizer/any_optimizer.hpp>
 #include <neu/optimizer/momentum.hpp>
+#include <neu/optimizer/fixed_learning_rate.hpp>
 namespace neu {
 	namespace optimizer {
 		class deserialize_error : public std::exception {
@@ -24,6 +25,9 @@ namespace neu {
 			const auto ot = node["optimizer_type"].as<std::string>();
 			if(ot == "momentum") {
 				return static_cast<any_optimizer>(deserialize_momentum(node, queue));
+			} else
+			if(ot == "fixed_learning_rate") {
+				return static_cast<any_optimizer>(deserialize_fixed_learning_rate(node, queue));
 			}
 			else {
 				throw deserialize_error(ot);

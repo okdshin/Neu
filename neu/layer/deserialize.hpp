@@ -6,6 +6,8 @@
 #include <neu/layer/inner_product.hpp>
 #include <neu/layer/bias.hpp>
 #include <neu/layer/convolution.hpp>
+#include <neu/layer/convolution_optimized.hpp>
+#include <neu/layer/average_pooling.hpp>
 #include <neu/layer/max_pooling.hpp>
 #include <neu/layer/activation/sigmoid.hpp>
 #include <neu/layer/activation/rectifier.hpp>
@@ -13,6 +15,7 @@
 #include <neu/layer/activation/sigmoid_loss.hpp>
 #include <neu/layer/activation/softmax_loss.hpp>
 #include <neu/layer/dropout.hpp>
+#include <neu/layer/shared_dropout.hpp>
 #include <neu/layer/any_layer_vector.hpp>
 namespace neu {
 	namespace layer {
@@ -41,8 +44,14 @@ namespace neu {
 			if(lt == "convolution") {
 				return static_cast<any_layer>(deserialize_convolution(node, queue));
 			} else
+			if(lt == "convolution_optimized") {
+				return static_cast<any_layer>(deserialize_convolution_optimized(node, queue));
+			} else
 			if(lt == "max_pooling") {
 				return static_cast<any_layer>(deserialize_max_pooling(node, queue.get_context()));
+			} else
+			if(lt == "average_pooling") {
+				return static_cast<any_layer>(deserialize_average_pooling(node, queue));
 			} else
 			if(lt == "sigmoid") {
 				return static_cast<any_layer>(deserialize_sigmoid(node, queue));
@@ -61,6 +70,9 @@ namespace neu {
 			} else
 			if(lt == "dropout") {
 				return static_cast<any_layer>(deserialize_dropout(node, queue));
+			} else
+			if(lt == "shared_dropout") {
+				return static_cast<any_layer>(deserialize_shared_dropout(node, queue));
 			} else
 			if(lt == "any_layer_vector") {
 				return static_cast<any_layer>(deserialize_any_layer_vector(node, queue));

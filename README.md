@@ -1,19 +1,20 @@
 Neu
 ===
 
-Neu is an auto-differention library to construct, train and test deep neural networks written in C++14.
+Neu is an auto-differention library to construct, train and test deep neural networks.
+Neu is written in C++14.
 
-This software is released under the MIT License, see LICENSE.
+This library is released under the MIT License, see LICENSE.
 
 Dependency
 ---
 
-- OpenCL
-- Boost
-- Boost.Compute
-- yaml-cpp
-- freeimageplus
-- cldoc(optional)
+- [OpenCL](https://www.khronos.org/opencl/)
+- [Boost](http://www.boost.org/)
+- [Boost.Compute](https://github.com/boostorg/compute)
+- [freeimageplus](http://freeimage.sourceforge.net/)
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+- [cldoc(optional)](https://jessevdk.github.io/cldoc/)
 
 Features
 ---

@@ -98,7 +98,8 @@ namespace neu {
 		class any_optimizer {
 		public:
 			any_optimizer() = default;
-			any_optimizer(any_optimizer const& other) : holder_(other.holder_->clone()) {}
+			any_optimizer(any_optimizer const& other) :
+				holder_(other.holder_->clone()) {}
 			any_optimizer& operator=(any_optimizer const& other) {
 				auto h = other.holder_->clone();
 				std::swap(holder_, h);

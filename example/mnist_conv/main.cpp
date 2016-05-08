@@ -148,6 +148,7 @@ int main(int argc, char** argv) {
 		auto input = batch.train_data;
 		auto teach = batch.teach_data;
 		auto make_next_batch_future = ds.async_make_next_batch();
+		make_next_batch_future.wait();
 
 		if(i%(iteration_limit/10) == 0) {
 			neu::layer::output_to_file(nn, "nn"+std::to_string(i)+".yaml", queue);
@@ -167,7 +168,6 @@ int main(int argc, char** argv) {
 		neu::layer::backward(nn, error, prev_delta, queue);
 		neu::layer::update(nn, queue);
 
-		make_next_batch_future.wait();
 		++progress;
 	}
 	queue.finish();
