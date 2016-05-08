@@ -5,8 +5,10 @@
 #include <neu/layer/inner_product.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
 
-#include "check_macros.hpp"
+#include "check_tool.hpp"
 #include "context_setup.hpp"
+
+namespace ct = neu_check_tool;
 
 BOOST_AUTO_TEST_CASE(forward) {
 	/*
@@ -31,11 +33,11 @@ BOOST_AUTO_TEST_CASE(forward) {
 	neu::layer::forward(ip, input, output, queue);
 	queue.finish();
 	BOOST_CHECK(output.size() == 6);
-	CHECK_RANGE_EQUAL(neu::scalar, 6, output, (
+	ct::check_range_close(output, {
 		1.f, 0.f,
 		2.f, 1.f,
 		1.f, 0.f
-	));
+	}, 1.e-4f);
 }
 BOOST_AUTO_TEST_CASE(backward) {
 	/*
@@ -60,11 +62,11 @@ BOOST_AUTO_TEST_CASE(backward) {
 	neu::layer::backward(ip, delta, prev_delta, queue);
 	queue.finish();
 	BOOST_CHECK(prev_delta.size() == 9);
-	CHECK_RANGE_EQUAL(neu::scalar, 9, prev_delta, (
+	ct::check_range_close(prev_delta, {
 		1.f, 1.f, 1.f,
 		3.f, 2.f, 2.f,
 		1.f, 1.f, 1.f
-	));
+	}, 1.e-4f);
 }
 BOOST_AUTO_TEST_CASE(gradient_check_single) {
 	const auto opt = neu::optimizer::fixed_learning_rate(1.0e-4f);

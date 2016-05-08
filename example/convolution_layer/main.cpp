@@ -32,6 +32,7 @@ int main() {
 
 	constexpr neu::scalar base_lr = 0.1;
 	constexpr neu::scalar momentum = 0.0;
+	constexpr neu::scalar weight_decay = 0.0;
 
 	auto input_width = 256;
 	auto input_channel_num = 3;
@@ -51,7 +52,7 @@ int main() {
 		return 0;
 	}
 	auto conv = make_convolution(glp, batch_size, g,
-		neu::optimizer::momentum(base_lr, momentum,
+		neu::optimizer::momentum(base_lr, momentum, weight_decay,
 			neu::layer::filters_size(glp), queue), queue);
 
 	std::ofstream mse_error_log("mse_error.txt");

@@ -4,14 +4,17 @@
 #include <neu/optimizer/momentum.hpp>
 #include <neu/optimizer/fixed_learning_rate.hpp>
 
-#include "check_macros.hpp"
+#include "check_tool.hpp"
 #include "context_setup.hpp"
+
+namespace ct = neu_check_tool;
 
 BOOST_AUTO_TEST_CASE(forward) {
 	const auto base_lr = 0.01f;
 	const auto mom_rate = 0.9f;
+	const auto weight_decay = 0.0004f;
 	const auto weight_dim = 3;
-	neu::optimizer::momentum mom(base_lr, mom_rate, weight_dim, queue);
+	neu::optimizer::momentum mom(base_lr, mom_rate, weight_decay, weight_dim, queue);
 	neu::gpu_vector weight({
 		1.f, 1.f, 1.f,
 	}, queue);
@@ -20,15 +23,15 @@ BOOST_AUTO_TEST_CASE(forward) {
 	}, queue);
 	mom.apply(weight, del_weight, queue);
 	queue.finish();
-	CHECK_RANGE_EQUAL(neu::scalar, 3, weight, (
+	ct::check_range_close(weight, {
 		0.99f, 0.99f, 0.99f
-	));
+	}, 1.e-4f);
 
 	mom.apply(weight, del_weight, queue);
 	queue.finish();
-	CHECK_RANGE_EQUAL(neu::scalar, 3, weight, (
+	ct::check_range_close(weight, {
 		0.971f, 0.971f, 0.971f
-	));
+	}, 1.e-4f);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -41,25 +41,26 @@ int main(int argc, char** argv) {
 
 	constexpr neu::scalar base_lr = 0.1f;
 	constexpr neu::scalar momentum = 0.9f;
+	constexpr neu::scalar weight_decay = 0.f;
 	constexpr std::size_t hidden_node_num = 10u;
 
 	std::vector<neu::layer::any_layer> nn;
 	nn.push_back(neu::layer::make_inner_product(
 		input_dim, hidden_node_num, batch_size, fc12_g,
-		neu::optimizer::momentum(base_lr, momentum, input_dim*hidden_node_num, queue),
+		neu::optimizer::momentum(base_lr, momentum, weight_decay, input_dim*hidden_node_num, queue),
 		queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, constant_g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
-		queue));
+		neu::optimizer::momentum(base_lr, momentum, weight_decay,
+			neu::layer::output_dim(nn), queue), queue));
 	nn.push_back(neu::layer::make_activation(neu::layer::output_dim(nn), batch_size,
 		neu::rectifier()));
 	nn.push_back(neu::layer::make_inner_product(
 		neu::layer::output_dim(nn), output_dim, batch_size, fc12_g,
-		neu::optimizer::momentum(base_lr, momentum,
+		neu::optimizer::momentum(base_lr, momentum, weight_decay,
 			neu::layer::output_dim(nn)*output_dim, queue), queue));
 	nn.push_back(neu::layer::make_bias(neu::layer::output_dim(nn), batch_size, constant_g,
-		neu::optimizer::momentum(base_lr, momentum, neu::layer::output_dim(nn), queue),
-		queue));
+		neu::optimizer::momentum(base_lr, momentum, weight_decay,
+			neu::layer::output_dim(nn), queue), queue));
 	nn.push_back(neu::layer::make_activation(neu::layer::output_dim(nn), batch_size,
 		neu::sigmoid_loss()));
 

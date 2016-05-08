@@ -6,7 +6,7 @@
 #include <neu/optimizer/fixed_learning_rate.hpp>
 #include <random>
 
-#include "check_macros.hpp"
+#include "check_tool.hpp"
 #include "context_setup.hpp"
 
 BOOST_AUTO_TEST_CASE(forward) {

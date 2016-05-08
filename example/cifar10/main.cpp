@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
 	int iteration_limit;
 	neu::scalar base_lr;
 	neu::scalar momentum;
-	//neu::scalar weight_decay = 0.004;
 	neu::scalar weight_decay;
 
 	po::options_description desc("Allowed options");
@@ -121,7 +120,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_convolution_optimized(
 		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv1_g,
-			neu::optimizer::momentum(base_lr, momentum,
+			neu::optimizer::momentum(base_lr, momentum, weight_decay,
 				neu::layer::filters_size(glp), queue), queue));
 	}
 	auto conv1 = nn.back();
@@ -130,7 +129,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 
@@ -161,7 +160,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_convolution_optimized(
 		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv23_g,
-			neu::optimizer::momentum(base_lr, momentum,
+			neu::optimizer::momentum(base_lr, momentum, weight_decay,
 				neu::layer::filters_size(glp), queue), queue));
 	}
 	auto conv2 = nn.back();
@@ -170,7 +169,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 
@@ -200,7 +199,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_convolution_optimized(
 		//nn.push_back(neu::layer::make_convolution(
 			glp, batch_size, conv23_g,
-			neu::optimizer::momentum(base_lr, momentum,
+			neu::optimizer::momentum(base_lr, momentum, weight_decay,
 				neu::layer::filters_size(glp), queue), queue));
 	}
 	auto conv3 = nn.back();
@@ -209,7 +208,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 
@@ -232,7 +231,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_inner_product(
 			neu::layer::output_dim(nn), 64, batch_size, fc12_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn)*64, queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn)*64, queue),
 			queue));
 	}
 
@@ -240,7 +239,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 
@@ -248,7 +247,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_inner_product(
 			neu::layer::output_dim(nn), label_num, batch_size, fc12_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn)*label_num, queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn)*label_num, queue),
 			queue));
 	}
 
@@ -256,7 +255,7 @@ int main(int argc, char** argv) {
 		nn.push_back(neu::layer::make_bias(
 			neu::layer::output_dim(nn), batch_size, constant_g,
 			neu::optimizer::momentum(
-				base_lr, momentum, neu::layer::output_dim(nn), queue),
+				base_lr, momentum, weight_decay, neu::layer::output_dim(nn), queue),
 			queue));
 	}
 

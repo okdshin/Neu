@@ -3,8 +3,10 @@
 
 #include <neu/layer/activation/softmax_loss.hpp>
 
-#include "check_macros.hpp"
+#include "check_tool.hpp"
 #include "context_setup.hpp"
+
+namespace ct = neu_check_tool;
 
 BOOST_AUTO_TEST_CASE(forward) {
 	neu::gpu_vector input({
@@ -17,12 +19,11 @@ BOOST_AUTO_TEST_CASE(forward) {
 	neu::layer::forward(sl, input, output, queue);
 	queue.finish();
 	BOOST_CHECK(output.size() == 9);
-	// TODO
-	CHECK_RANGE_EQUAL(neu::scalar, 9, output, (
+	ct::check_range_close(output, {
 		0.f, 1.f, 0.f,
 		1.f, 0.f, 1.f,
 		0.f, 1.f, 0.f
-	));
+	}, 1.e-4f);
 }
 
 /*
