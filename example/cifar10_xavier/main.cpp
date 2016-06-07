@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
 		 "set number of data per label for Batch SGD")
 		("iteration_limit", po::value<int>(&iteration_limit)->default_value(5000), 
 		 "set training iteration limit")
-		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.001), 
+		("base_lr", po::value<neu::scalar>(&base_lr)->default_value(0.01), 
 		 "set base learning rate")
 		("momentum", po::value<neu::scalar>(&momentum)->default_value(0.9), 
 		 "set momentum rate")
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 	for(auto& labeled : train_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.)/127.f; });
+				[](auto e){ return (e-127.); });
 		}
 	}
 	auto train_ds = neu::dataset::make_classification_dataset(
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 	for(auto& labeled : test_data) {
 		for(auto& d : labeled) {
 			std::transform(d.begin(), d.end(), d.begin(),
-				[](auto e){ return (e-127.f)/127.f; });
+				[](auto e){ return (e-127.f); });
 		}
 	}
 	auto test_ds = neu::dataset::make_classification_dataset(

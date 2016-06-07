@@ -41,12 +41,14 @@ namespace neu {
 						}
 					}();
 
+					/*
 					// dropout_cpu
 					nn.push_back(neu::layer::dropout_cpu(
 						neu::layer::input_dim(glp),
 						batch_size,
 						1.f-dropout_base_probability*li,
 						queue));
+					*/
 					// dropout
 					/*
 					nn.push_back(neu::layer::dropout(
