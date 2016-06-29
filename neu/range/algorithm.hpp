@@ -100,6 +100,7 @@ namespace neu {
 			return range::sum(error, queue) / error.size();
 		}
 
+		/*
 		template<typename InputRange1, typename InputRange2>
 		decltype(auto) cross_entropy_loss(
 				InputRange1 const& last_output_range, InputRange2 const& teach_range,
@@ -110,6 +111,20 @@ namespace neu {
 			::neu::gpu_vector error(::neu::range::distance(last_output_range),
 				queue.get_context());
 			::neu::range::transform(last_output_range, teach_range,
+				error, cross_entropy_kernel, queue);
+			return range::sum(error, queue);
+		}
+		*/
+		template<typename InputRange1, typename InputRange2>
+		decltype(auto) cross_entropy_loss(
+				InputRange1 const& last_output_range, InputRange2 const& teach_range,
+				boost::compute::command_queue& queue) {
+			static BOOST_COMPUTE_FUNCTION(float, cross_entropy_kernel, (float d, float y), {
+				return -d*log(y);
+			});
+			::neu::gpu_vector error(::neu::range::distance(last_output_range),
+				queue.get_context());
+			::neu::range::transform(teach_range, last_output_range,
 				error, cross_entropy_kernel, queue);
 			return range::sum(error, queue);
 		}
